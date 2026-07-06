@@ -1,0 +1,184 @@
+{
+  "extensionName": {
+    "message": "Magic Manager für NotebookLM",
+    "description": "Nom de l'extension affiché dans le navigateur"
+  },
+  "extensionDescription": {
+    "message": "Erweitern Sie NotebookLM mit globaler Suche, intelligenter Zusammenführung, vereinfachten Exporten, Inline-Löschung, Code-Syntaxhervorhebung und Chat-Export.",
+    "description": "Description de l'extension pour le store"
+  },
+  "searchPlaceholder": {
+    "message": "Quellen durchsuchen...",
+    "description": "Placeholder du champ de recherche globale"
+  },
+  "searchNoResults": {
+    "message": "Keine passende Quelle gefunden",
+    "description": "Message affiché quand aucune source ne correspond à la recherche"
+  },
+  "mergeButton": {
+    "message": "Zusammenführen",
+    "description": "Libellé du bouton de fusion de sources"
+  },
+  "mergeDialogTitle": {
+    "message": "Quellen zusammenführen",
+    "description": "Titre de la boîte de dialogue de fusion"
+  },
+  "mergeFormatLabel": {
+    "message": "Ausgabeformat:",
+    "description": "Libellé du sélecteur de format de sortie pour la fusion"
+  },
+  "mergeFormatMd": {
+    "message": "Markdown",
+    "description": "Option de format Markdown pour la fusion"
+  },
+  "mergeFormatPdf": {
+    "message": "PDF",
+    "description": "Option de format PDF pour la fusion"
+  },
+  "mergeConfirmButton": {
+    "message": "Zusammenführen und importieren",
+    "description": "Bouton de confirmation de la fusion"
+  },
+  "mergeCancelButton": {
+    "message": "Abbrechen",
+    "description": "Bouton d'annulation de la fusion"
+  },
+  "mergeSuccess": {
+    "message": "Quellen erfolgreich zusammengeführt",
+    "description": "Message de succès après fusion"
+  },
+  "mergeError": {
+    "message": "Fehler beim Zusammenführen",
+    "description": "Message d'erreur lors de la fusion"
+  },
+  "exportButton": {
+    "message": "Exportieren",
+    "description": "Libellé du bouton d'export"
+  },
+  "exportFormatMd": {
+    "message": "Markdown (.md)",
+    "description": "Option d'export au format Markdown"
+  },
+  "exportFormatPdf": {
+    "message": "PDF (.pdf)",
+    "description": "Option d'export au format PDF"
+  },
+  "exportFormatZip": {
+    "message": "ZIP-Archiv (.zip)",
+    "description": "Option d'export au format ZIP"
+  },
+  "exportSuccess": {
+    "message": "Export abgeschlossen",
+    "description": "Message de succès après export"
+  },
+  "exportError": {
+    "message": "Fehler beim Export",
+    "description": "Message d'erreur lors de l'export"
+  },
+  "deleteButton": {
+    "message": "Löschen",
+    "description": "Libellé du bouton de suppression"
+  },
+  "deleteConfirmTitle": {
+    "message": "Quelle löschen",
+    "description": "Titre de la boîte de dialogue de confirmation de suppression"
+  },
+  "deleteConfirmMessage": {
+    "message": "Sind Sie sicher, dass Sie \"$sourceName$\" löschen möchten? Diese Aktion kann nicht rückgängig gemacht werden.",
+    "description": "Message de confirmation de suppression avec le nom de la source",
+    "placeholders": {
+      "sourceName": {
+        "content": "$1",
+        "example": "Mein Forschungsartikel"
+      }
+    }
+  },
+  "deleteConfirmYes": {
+    "message": "Löschen",
+    "description": "Bouton de confirmation de suppression"
+  },
+  "deleteConfirmNo": {
+    "message": "Abbrechen",
+    "description": "Bouton d'annulation de suppression"
+  },
+  "deleteSuccess": {
+    "message": "Quelle gelöscht",
+    "description": "Message de succès après suppression"
+  },
+  "deleteError": {
+    "message": "Fehler beim Löschen",
+    "description": "Message d'erreur lors de la suppression"
+  },
+  "codeCopyButton": {
+    "message": "Kopieren",
+    "description": "Libellé du bouton de copie de code"
+  },
+  "codeCopied": {
+    "message": "Kopiert!",
+    "description": "Message affiché après copie réussie du code"
+  },
+  "chatExportButton": {
+    "message": "Als Notiz speichern",
+    "description": "Libellé du bouton d'export de conversation"
+  },
+  "chatExportSuccess": {
+    "message": "Konversation als Notiz gespeichert",
+    "description": "Message de succès après export du chat"
+  },
+  "chatExportError": {
+    "message": "Fehler beim Speichern der Konversation",
+    "description": "Message d'erreur lors de l'export du chat"
+  },
+  "settingsTitle": {
+    "message": "Magic Manager",
+    "description": "Titre de la page de paramètres"
+  },
+  "settingsFeatureSearch": {
+    "message": "Globale Suche",
+    "description": "Libellé du toggle de recherche globale dans les paramètres"
+  },
+  "settingsFeatureMerge": {
+    "message": "Intelligente Zusammenführung",
+    "description": "Libellé du toggle de fusion intelligente dans les paramètres"
+  },
+  "settingsFeatureExport": {
+    "message": "Vereinfachte Exporte",
+    "description": "Libellé du toggle d'exports simplifiés dans les paramètres"
+  },
+  "settingsFeatureDelete": {
+    "message": "Inline-Löschung",
+    "description": "Libellé du toggle de suppression en ligne dans les paramètres"
+  },
+  "settingsFeatureSyntax": {
+    "message": "Code-Hervorhebung",
+    "description": "Libellé du toggle de coloration syntaxique dans les paramètres"
+  },
+  "settingsFeatureChatExport": {
+    "message": "Chat-Export",
+    "description": "Libellé du toggle d'export du chat dans les paramètres"
+  },
+  "dialogConfirmButton": {
+    "message": "Bestätigen",
+    "description": "Bouton de confirmation générique pour les dialogues"
+  },
+  "dialogCancelButton": {
+    "message": "Abbrechen",
+    "description": "Bouton d'annulation générique pour les dialogues"
+  },
+  "batchExportTitle": {
+    "message": "Ausgewählte Quellen exportieren",
+    "description": "Traduction pour batchExportTitle"
+  },
+  "batchExportDescription": {
+    "message": "Wählen Sie das Exportformat für das ZIP-Archiv:",
+    "description": "Traduction pour batchExportDescription"
+  },
+  "batchExportProgressTitle": {
+    "message": "Magic Manager — Export läuft",
+    "description": "Traduction pour batchExportProgressTitle"
+  },
+  "exportFailedNoContent": {
+    "message": "Inhalt der ausgewählten Quellen konnte nicht gelesen werden.",
+    "description": "Traduction pour exportFailedNoContent"
+  }
+}

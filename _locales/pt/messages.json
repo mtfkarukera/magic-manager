@@ -1,0 +1,184 @@
+{
+  "extensionName": {
+    "message": "Magic Manager para NotebookLM",
+    "description": "Nom de l'extension affiché dans le navigateur"
+  },
+  "extensionDescription": {
+    "message": "Aprimore o NotebookLM com busca global, fusão inteligente, exportações simplificadas, exclusão em linha, destaque de sintaxe de código e exportação do chat.",
+    "description": "Description de l'extension pour le store"
+  },
+  "searchPlaceholder": {
+    "message": "Buscar fontes...",
+    "description": "Placeholder du champ de recherche globale"
+  },
+  "searchNoResults": {
+    "message": "Nenhuma fonte encontrada",
+    "description": "Message affiché quand aucune source ne correspond à la recherche"
+  },
+  "mergeButton": {
+    "message": "Mesclar",
+    "description": "Libellé du bouton de fusion de sources"
+  },
+  "mergeDialogTitle": {
+    "message": "Mesclar fontes",
+    "description": "Titre de la boîte de dialogue de fusion"
+  },
+  "mergeFormatLabel": {
+    "message": "Formato de saída:",
+    "description": "Libellé du sélecteur de format de sortie pour la fusion"
+  },
+  "mergeFormatMd": {
+    "message": "Markdown",
+    "description": "Option de format Markdown pour la fusion"
+  },
+  "mergeFormatPdf": {
+    "message": "PDF",
+    "description": "Option de format PDF pour la fusion"
+  },
+  "mergeConfirmButton": {
+    "message": "Mesclar e importar",
+    "description": "Bouton de confirmation de la fusion"
+  },
+  "mergeCancelButton": {
+    "message": "Cancelar",
+    "description": "Bouton d'annulation de la fusion"
+  },
+  "mergeSuccess": {
+    "message": "Fontes mescladas com sucesso",
+    "description": "Message de succès après fusion"
+  },
+  "mergeError": {
+    "message": "Erro ao mesclar",
+    "description": "Message d'erreur lors de la fusion"
+  },
+  "exportButton": {
+    "message": "Exportar",
+    "description": "Libellé du bouton d'export"
+  },
+  "exportFormatMd": {
+    "message": "Markdown (.md)",
+    "description": "Option d'export au format Markdown"
+  },
+  "exportFormatPdf": {
+    "message": "PDF (.pdf)",
+    "description": "Option d'export au format PDF"
+  },
+  "exportFormatZip": {
+    "message": "Arquivo ZIP (.zip)",
+    "description": "Option d'export au format ZIP"
+  },
+  "exportSuccess": {
+    "message": "Exportação concluída",
+    "description": "Message de succès après export"
+  },
+  "exportError": {
+    "message": "Erro na exportação",
+    "description": "Message d'erreur lors de l'export"
+  },
+  "deleteButton": {
+    "message": "Excluir",
+    "description": "Libellé du bouton de suppression"
+  },
+  "deleteConfirmTitle": {
+    "message": "Excluir fonte",
+    "description": "Titre de la boîte de dialogue de confirmation de suppression"
+  },
+  "deleteConfirmMessage": {
+    "message": "Tem certeza de que deseja excluir \"$sourceName$\"? Esta ação não pode ser desfeita.",
+    "description": "Message de confirmation de suppression avec le nom de la source",
+    "placeholders": {
+      "sourceName": {
+        "content": "$1",
+        "example": "Meu artigo de pesquisa"
+      }
+    }
+  },
+  "deleteConfirmYes": {
+    "message": "Excluir",
+    "description": "Bouton de confirmation de suppression"
+  },
+  "deleteConfirmNo": {
+    "message": "Cancelar",
+    "description": "Bouton d'annulation de suppression"
+  },
+  "deleteSuccess": {
+    "message": "Fonte excluída",
+    "description": "Message de succès après suppression"
+  },
+  "deleteError": {
+    "message": "Erro ao excluir",
+    "description": "Message d'erreur lors de la suppression"
+  },
+  "codeCopyButton": {
+    "message": "Copiar",
+    "description": "Libellé du bouton de copie de code"
+  },
+  "codeCopied": {
+    "message": "Copiado!",
+    "description": "Message affiché après copie réussie du code"
+  },
+  "chatExportButton": {
+    "message": "Salvar como nota",
+    "description": "Libellé du bouton d'export de conversation"
+  },
+  "chatExportSuccess": {
+    "message": "Conversa salva como nota",
+    "description": "Message de succès après export du chat"
+  },
+  "chatExportError": {
+    "message": "Erro ao salvar a conversa",
+    "description": "Message d'erreur lors de l'export du chat"
+  },
+  "settingsTitle": {
+    "message": "Magic Manager",
+    "description": "Titre de la page de paramètres"
+  },
+  "settingsFeatureSearch": {
+    "message": "Busca global",
+    "description": "Libellé du toggle de recherche globale dans les paramètres"
+  },
+  "settingsFeatureMerge": {
+    "message": "Fusão inteligente",
+    "description": "Libellé du toggle de fusion intelligente dans les paramètres"
+  },
+  "settingsFeatureExport": {
+    "message": "Exportações simplificadas",
+    "description": "Libellé du toggle d'exports simplifiés dans les paramètres"
+  },
+  "settingsFeatureDelete": {
+    "message": "Exclusão em linha",
+    "description": "Libellé du toggle de suppression en ligne dans les paramètres"
+  },
+  "settingsFeatureSyntax": {
+    "message": "Destaque de código",
+    "description": "Libellé du toggle de coloration syntaxique dans les paramètres"
+  },
+  "settingsFeatureChatExport": {
+    "message": "Exportação do chat",
+    "description": "Libellé du toggle d'export du chat dans les paramètres"
+  },
+  "dialogConfirmButton": {
+    "message": "Confirmar",
+    "description": "Bouton de confirmation générique pour les dialogues"
+  },
+  "dialogCancelButton": {
+    "message": "Cancelar",
+    "description": "Bouton d'annulation générique pour les dialogues"
+  },
+  "batchExportTitle": {
+    "message": "Exportar fontes selecionadas",
+    "description": "Traduction pour batchExportTitle"
+  },
+  "batchExportDescription": {
+    "message": "Selecione o formato de exportação para o arquivo ZIP:",
+    "description": "Traduction pour batchExportDescription"
+  },
+  "batchExportProgressTitle": {
+    "message": "Magic Manager — Exportação em andamento",
+    "description": "Traduction pour batchExportProgressTitle"
+  },
+  "exportFailedNoContent": {
+    "message": "Não foi possível ler o conteúdo das fontes selecionadas.",
+    "description": "Traduction pour exportFailedNoContent"
+  }
+}

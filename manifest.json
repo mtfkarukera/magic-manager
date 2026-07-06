@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "__MSG_extensionName__",
+  "short_name": "Magic Manager",
+  "version": "0.2.0",
+  "default_locale": "en",
+  "description": "__MSG_extensionDescription__",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "magic-manager@mtfkarukera",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
+    }
+  },
+  "permissions": [
+    "storage"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["*://notebooklm.google.com/*"],
+      "js": [
+        "lib/jspdf.umd.min.js",
+        "lib/jszip.min.js",
+        "src/shared/utils.js",
+        "src/content/ui/dialogs.js",
+        "src/content/ui/settings.js",
+        "src/content/modules/search.js",
+        "src/content/modules/merge.js",
+        "src/content/modules/export.js",
+        "src/content/modules/delete.js",
+        "src/content/modules/panel-observer.js",
+        "src/content/modules/syntax.js",
+        "src/content/modules/chatexport.js",
+        "src/content/orchestrator.js"
+      ],
+      "css": ["styles/magic-manager.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "48": "icons/icon.svg",
+    "128": "icons/icon.svg"
+  }
+}

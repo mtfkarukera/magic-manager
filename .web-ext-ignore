@@ -1,0 +1,23 @@
+# Fichiers privés SDD
+AGENTS.md
+spec.md
+tasks.md
+plan.md
+
+# Documentation interne
+ARCHITECTURE.md
+API-REFERENCE.md
+
+# Outils Node.js hors extension
+tools/
+
+# Configuration de build
+web-ext-config.cjs
+.web-ext-ignore
+build.sh
+
+# Dossiers de build
+dist/
+artifacts/
+*.zip
+*.xpi

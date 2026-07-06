@@ -1,0 +1,184 @@
+{
+  "extensionName": {
+    "message": "Magic Manager for NotebookLM",
+    "description": "Nom de l'extension affiché dans le navigateur"
+  },
+  "extensionDescription": {
+    "message": "Enhance NotebookLM with global search, smart merge, simplified exports, inline deletion, code syntax highlighting, and chat export.",
+    "description": "Description de l'extension pour le store"
+  },
+  "searchPlaceholder": {
+    "message": "Search sources...",
+    "description": "Placeholder du champ de recherche globale"
+  },
+  "searchNoResults": {
+    "message": "No matching source",
+    "description": "Message affiché quand aucune source ne correspond à la recherche"
+  },
+  "mergeButton": {
+    "message": "Merge",
+    "description": "Libellé du bouton de fusion de sources"
+  },
+  "mergeDialogTitle": {
+    "message": "Merge sources",
+    "description": "Titre de la boîte de dialogue de fusion"
+  },
+  "mergeFormatLabel": {
+    "message": "Output format:",
+    "description": "Libellé du sélecteur de format de sortie pour la fusion"
+  },
+  "mergeFormatMd": {
+    "message": "Markdown",
+    "description": "Option de format Markdown pour la fusion"
+  },
+  "mergeFormatPdf": {
+    "message": "PDF",
+    "description": "Option de format PDF pour la fusion"
+  },
+  "mergeConfirmButton": {
+    "message": "Merge and import",
+    "description": "Bouton de confirmation de la fusion"
+  },
+  "mergeCancelButton": {
+    "message": "Cancel",
+    "description": "Bouton d'annulation de la fusion"
+  },
+  "mergeSuccess": {
+    "message": "Sources merged successfully",
+    "description": "Message de succès après fusion"
+  },
+  "mergeError": {
+    "message": "Error during merge",
+    "description": "Message d'erreur lors de la fusion"
+  },
+  "exportButton": {
+    "message": "Export",
+    "description": "Libellé du bouton d'export"
+  },
+  "exportFormatMd": {
+    "message": "Markdown (.md)",
+    "description": "Option d'export au format Markdown"
+  },
+  "exportFormatPdf": {
+    "message": "PDF (.pdf)",
+    "description": "Option d'export au format PDF"
+  },
+  "exportFormatZip": {
+    "message": "ZIP archive (.zip)",
+    "description": "Option d'export au format ZIP"
+  },
+  "exportSuccess": {
+    "message": "Export completed",
+    "description": "Message de succès après export"
+  },
+  "exportError": {
+    "message": "Error during export",
+    "description": "Message d'erreur lors de l'export"
+  },
+  "deleteButton": {
+    "message": "Delete",
+    "description": "Libellé du bouton de suppression"
+  },
+  "deleteConfirmTitle": {
+    "message": "Delete source",
+    "description": "Titre de la boîte de dialogue de confirmation de suppression"
+  },
+  "deleteConfirmMessage": {
+    "message": "Are you sure you want to delete \"$sourceName$\"? This action cannot be undone.",
+    "description": "Message de confirmation de suppression avec le nom de la source",
+    "placeholders": {
+      "sourceName": {
+        "content": "$1",
+        "example": "My Research Paper"
+      }
+    }
+  },
+  "deleteConfirmYes": {
+    "message": "Delete",
+    "description": "Bouton de confirmation de suppression"
+  },
+  "deleteConfirmNo": {
+    "message": "Cancel",
+    "description": "Bouton d'annulation de suppression"
+  },
+  "deleteSuccess": {
+    "message": "Source deleted",
+    "description": "Message de succès après suppression"
+  },
+  "deleteError": {
+    "message": "Error during deletion",
+    "description": "Message d'erreur lors de la suppression"
+  },
+  "codeCopyButton": {
+    "message": "Copy",
+    "description": "Libellé du bouton de copie de code"
+  },
+  "codeCopied": {
+    "message": "Copied!",
+    "description": "Message affiché après copie réussie du code"
+  },
+  "chatExportButton": {
+    "message": "Save as note",
+    "description": "Libellé du bouton d'export de conversation"
+  },
+  "chatExportSuccess": {
+    "message": "Conversation saved as note",
+    "description": "Message de succès après export du chat"
+  },
+  "chatExportError": {
+    "message": "Error saving conversation",
+    "description": "Message d'erreur lors de l'export du chat"
+  },
+  "settingsTitle": {
+    "message": "Magic Manager",
+    "description": "Titre de la page de paramètres"
+  },
+  "settingsFeatureSearch": {
+    "message": "Global search",
+    "description": "Libellé du toggle de recherche globale dans les paramètres"
+  },
+  "settingsFeatureMerge": {
+    "message": "Smart merge",
+    "description": "Libellé du toggle de fusion intelligente dans les paramètres"
+  },
+  "settingsFeatureExport": {
+    "message": "Simplified exports",
+    "description": "Libellé du toggle d'exports simplifiés dans les paramètres"
+  },
+  "settingsFeatureDelete": {
+    "message": "Inline deletion",
+    "description": "Libellé du toggle de suppression en ligne dans les paramètres"
+  },
+  "settingsFeatureSyntax": {
+    "message": "Code highlighting",
+    "description": "Libellé du toggle de coloration syntaxique dans les paramètres"
+  },
+  "settingsFeatureChatExport": {
+    "message": "Chat export",
+    "description": "Libellé du toggle d'export du chat dans les paramètres"
+  },
+  "dialogConfirmButton": {
+    "message": "Confirm",
+    "description": "Bouton de confirmation générique pour les dialogues"
+  },
+  "dialogCancelButton": {
+    "message": "Cancel",
+    "description": "Bouton d'annulation générique pour les dialogues"
+  },
+  "batchExportTitle": {
+    "message": "Export selected sources",
+    "description": "Traduction pour batchExportTitle"
+  },
+  "batchExportDescription": {
+    "message": "Select the export format for the ZIP archive:",
+    "description": "Traduction pour batchExportDescription"
+  },
+  "batchExportProgressTitle": {
+    "message": "Magic Manager — Export in progress",
+    "description": "Traduction pour batchExportProgressTitle"
+  },
+  "exportFailedNoContent": {
+    "message": "Unable to read the content of the selected sources.",
+    "description": "Traduction pour exportFailedNoContent"
+  }
+}

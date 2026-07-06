@@ -1,0 +1,593 @@
+/* magic-manager.css — Styles injectés dans le DOM de NotebookLM
+ * Auteur : MTF Karukera | Licence : MPL-2.0
+ * Tous les sélecteurs sont préfixés .mm- pour éviter les conflits.
+ * Design System : Material Design 3 (calqué sur l'UI Google NotebookLM)
+ */
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Variables CSS — Tokens Material Design 3
+   ═══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* Couleurs primaires */
+  --mm-primary: #4285F4;
+  --mm-primary-hover: #3367D6;
+  --mm-primary-light: #E8F0FE;
+  --mm-on-primary: #FFFFFF;
+
+  /* Couleurs de surface */
+  --mm-surface: #FFFFFF;
+  --mm-surface-variant: #F1F3F4;
+  --mm-on-surface: #202124;
+  --mm-on-surface-variant: #5F6368;
+
+  /* Couleurs d'erreur / danger */
+  --mm-error: #D93025;
+  --mm-error-hover: #C5221F;
+  --mm-on-error: #FFFFFF;
+
+  /* Couleurs de succès */
+  --mm-success: #0D652D;
+
+  /* Bordures et ombres */
+  --mm-outline: #DADCE0;
+  --mm-outline-variant: #E8EAED;
+  --mm-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
+  --mm-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
+  --mm-shadow-3: 0 8px 16px rgba(0, 0, 0, 0.16), 0 4px 8px rgba(0, 0, 0, 0.08);
+
+  /* Espacement */
+  --mm-spacing-xs: 4px;
+  --mm-spacing-sm: 8px;
+  --mm-spacing-md: 16px;
+  --mm-spacing-lg: 24px;
+  --mm-spacing-xl: 32px;
+
+  /* Bordures */
+  --mm-radius-sm: 4px;
+  --mm-radius-md: 8px;
+  --mm-radius-lg: 12px;
+  --mm-radius-full: 9999px;
+
+  /* Transitions */
+  --mm-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  --mm-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  --mm-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Typographie */
+  --mm-font-family: 'Google Sans', 'Roboto', system-ui, -apple-system, sans-serif;
+  --mm-font-size-sm: 12px;
+  --mm-font-size-md: 14px;
+  --mm-font-size-lg: 16px;
+  --mm-font-size-xl: 20px;
+
+  /* Coloration syntaxique */
+  --mm-token-keyword: #0000FF;
+  --mm-token-string: #A31515;
+  --mm-token-comment: #008000;
+  --mm-token-number: #098658;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Mode sombre — Adaptation automatique
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --mm-primary: #8AB4F8;
+    --mm-primary-hover: #AECBFA;
+    --mm-primary-light: #1A2733;
+    --mm-on-primary: #202124;
+
+    --mm-surface: #292A2D;
+    --mm-surface-variant: #35363A;
+    --mm-on-surface: #E8EAED;
+    --mm-on-surface-variant: #9AA0A6;
+
+    --mm-error: #F28B82;
+    --mm-error-hover: #EE675C;
+    --mm-on-error: #202124;
+
+    --mm-success: #81C995;
+
+    --mm-outline: #5F6368;
+    --mm-outline-variant: #3C4043;
+    --mm-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+    --mm-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+    --mm-shadow-3: 0 8px 16px rgba(0, 0, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.2);
+
+    /* Coloration syntaxique */
+    --mm-token-keyword: #569CD6;
+    --mm-token-string: #CE9178;
+    --mm-token-comment: #6A9955;
+    --mm-token-number: #B5CEA8;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Animations
+   ═══════════════════════════════════════════════════════════════════════ */
+
+@keyframes mm-fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes mm-slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes mm-scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Bouton paramétrage (micro-menu)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mm-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: var(--mm-radius-full);
+  background: transparent;
+  color: var(--mm-on-surface-variant);
+  cursor: pointer;
+  transition: background var(--mm-transition-fast), color var(--mm-transition-fast);
+  padding: 0;
+  margin: var(--mm-spacing-xs);
+}
+
+.mm-settings-btn:hover {
+  background: var(--mm-surface-variant);
+  color: var(--mm-on-surface);
+}
+
+.mm-settings-btn:active {
+  background: var(--mm-outline-variant);
+}
+
+.mm-settings-btn svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+/* Positionnement fixe quand le bouton n'a pas de point d'ancrage DOM */
+.mm-settings-btn-fixed {
+  position: fixed;
+  bottom: 20px;
+  left: 20px;
+  z-index: 9999;
+  width: 40px;
+  height: 40px;
+  background: var(--mm-surface);
+  border: 1px solid var(--mm-outline);
+  box-shadow: var(--mm-shadow-2);
+  opacity: 0.85;
+  transition: opacity var(--mm-transition-fast), background var(--mm-transition-fast), box-shadow var(--mm-transition-fast);
+}
+
+.mm-settings-btn-fixed:hover {
+  opacity: 1;
+  background: var(--mm-surface-variant);
+  box-shadow: var(--mm-shadow-3);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Popover paramétrage
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mm-settings-popover {
+  position: absolute;
+  z-index: 10000;
+  min-width: 240px;
+  background: var(--mm-surface);
+  border: 1px solid var(--mm-outline);
+  border-radius: var(--mm-radius-lg);
+  box-shadow: var(--mm-shadow-3);
+  padding: var(--mm-spacing-md);
+  animation: mm-slideIn var(--mm-transition-normal) ease-out;
+}
+
+.mm-settings-popover-title {
+  font-family: var(--mm-font-family);
+  font-size: var(--mm-font-size-lg);
+  font-weight: 500;
+  color: var(--mm-on-surface);
+  margin: 0 0 var(--mm-spacing-md) 0;
+  padding-bottom: var(--mm-spacing-sm);
+  border-bottom: 1px solid var(--mm-outline-variant);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Toggles (switches Material Design 3)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mm-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--mm-spacing-sm) 0;
+}
+
+.mm-toggle-label {
+  font-family: var(--mm-font-family);
+  font-size: var(--mm-font-size-md);
+  color: var(--mm-on-surface);
+  user-select: none;
+  cursor: pointer;
+}
+
+.mm-toggle {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  flex-shrink: 0;
+  margin-left: var(--mm-spacing-md);
+}
+
+.mm-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+
+.mm-toggle-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--mm-outline);
+  border-radius: var(--mm-radius-full);
+  transition: background var(--mm-transition-fast);
+  cursor: pointer;
+}
+
+.mm-toggle-track::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  top: 2px;
+  left: 2px;
+  background: var(--mm-surface);
+  border-radius: 50%;
+  box-shadow: var(--mm-shadow-1);
+  transition: transform var(--mm-transition-fast);
+}
+
+.mm-toggle input:checked + .mm-toggle-track {
+  background: var(--mm-primary);
+}
+
+.mm-toggle input:checked + .mm-toggle-track::after {
+  transform: translateX(16px);
+}
+
+.mm-toggle input:focus-visible + .mm-toggle-track {
+  outline: 2px solid var(--mm-primary);
+  outline-offset: 2px;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Dialogues modaux
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mm-dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 10001;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: mm-fadeIn var(--mm-transition-fast);
+}
+
+.mm-dialog {
+  background: var(--mm-surface);
+  border-radius: var(--mm-radius-lg);
+  box-shadow: var(--mm-shadow-3);
+  padding: var(--mm-spacing-lg);
+  min-width: 320px;
+  max-width: 480px;
+  animation: mm-scaleIn var(--mm-transition-normal) ease-out;
+}
+
+.mm-dialog-title {
+  font-family: var(--mm-font-family);
+  font-size: var(--mm-font-size-xl);
+  font-weight: 500;
+  color: var(--mm-on-surface);
+  margin: 0 0 var(--mm-spacing-md) 0;
+}
+
+.mm-dialog-message {
+  font-family: var(--mm-font-family);
+  font-size: var(--mm-font-size-md);
+  color: var(--mm-on-surface-variant);
+  line-height: 1.5;
+  margin: 0 0 var(--mm-spacing-lg) 0;
+}
+
+.mm-dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--mm-spacing-sm);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Boutons
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--mm-spacing-xs);
+  font-family: var(--mm-font-family);
+  font-size: var(--mm-font-size-md);
+  font-weight: 500;
+  padding: var(--mm-spacing-sm) var(--mm-spacing-md);
+  border: none;
+  border-radius: var(--mm-radius-full);
+  cursor: pointer;
+  transition: background var(--mm-transition-fast), box-shadow var(--mm-transition-fast);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.mm-btn-primary {
+  background: var(--mm-primary);
+  color: var(--mm-on-primary);
+}
+
+.mm-btn-primary:hover {
+  background: var(--mm-primary-hover);
+  box-shadow: var(--mm-shadow-1);
+}
+
+.mm-btn-secondary {
+  background: transparent;
+  color: var(--mm-primary);
+}
+
+.mm-btn-secondary:hover {
+  background: var(--mm-primary-light);
+}
+
+.mm-btn-danger {
+  background: var(--mm-error);
+  color: var(--mm-on-error);
+}
+
+.mm-btn-danger:hover {
+  background: var(--mm-error-hover);
+  box-shadow: var(--mm-shadow-1);
+}
+
+.mm-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: var(--mm-radius-full);
+  background: transparent;
+  color: var(--mm-on-surface-variant);
+  cursor: pointer;
+  transition: background var(--mm-transition-fast), color var(--mm-transition-fast);
+  padding: 0;
+}
+
+.mm-btn-icon:hover {
+  background: var(--mm-surface-variant);
+  color: var(--mm-on-surface);
+}
+
+.mm-btn-icon svg {
+  width: 20px;
+  height: 20px;
+  fill: currentColor;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Barre de recherche
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mm-search-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--mm-spacing-sm);
+  padding: var(--mm-spacing-xs) 0;
+  margin-bottom: var(--mm-spacing-sm);
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  animation: mm-slideIn var(--mm-transition-normal) ease-out;
+}
+
+.mm-search-input {
+  flex: 1;
+  font-family: var(--mm-font-family);
+  font-size: var(--mm-font-size-md);
+  color: var(--mm-on-surface);
+  background: var(--mm-surface-variant);
+  border: 1px solid var(--mm-outline);
+  border-radius: var(--mm-radius-full);
+  padding: var(--mm-spacing-sm) var(--mm-spacing-md);
+  outline: none;
+  transition: border-color var(--mm-transition-fast), box-shadow var(--mm-transition-fast);
+}
+
+.mm-search-input::placeholder {
+  color: var(--mm-on-surface-variant);
+}
+
+.mm-search-input:focus {
+  border-color: var(--mm-primary);
+  box-shadow: 0 0 0 2px var(--mm-primary-light);
+}
+
+.mm-search-no-results {
+  font-family: var(--mm-font-family);
+  font-size: var(--mm-font-size-sm);
+  color: var(--mm-on-surface-variant);
+  text-align: center;
+  padding: var(--mm-spacing-md);
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Boîtes de code (coloration syntaxique)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mm-code-block {
+  position: relative;
+  background: var(--mm-surface-variant);
+  border: 1px solid var(--mm-outline-variant);
+  border-radius: var(--mm-radius-md);
+  margin: var(--mm-spacing-sm) 0;
+  overflow: hidden;
+  animation: mm-fadeIn var(--mm-transition-normal);
+}
+
+.mm-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--mm-spacing-xs) var(--mm-spacing-md);
+  background: var(--mm-outline-variant);
+  font-family: var(--mm-font-family);
+  font-size: var(--mm-font-size-sm);
+  color: var(--mm-on-surface-variant);
+}
+
+.mm-code-lang {
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.mm-code-copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--mm-spacing-xs);
+  font-family: var(--mm-font-family);
+  font-size: var(--mm-font-size-sm);
+  color: var(--mm-primary);
+  background: transparent;
+  border: none;
+  border-radius: var(--mm-radius-sm);
+  padding: 2px var(--mm-spacing-sm);
+  cursor: pointer;
+  transition: background var(--mm-transition-fast);
+}
+
+.mm-code-copy-btn:hover {
+  background: var(--mm-primary-light);
+}
+
+.mm-code-copy-btn.mm-copied {
+  color: var(--mm-success);
+}
+
+.mm-code-block pre {
+  margin: 0;
+  padding: var(--mm-spacing-md);
+  overflow-x: auto;
+  font-size: var(--mm-font-size-sm);
+  line-height: 1.6;
+}
+
+.mm-code-block code {
+  font-family: 'Roboto Mono', 'Consolas', 'Monaco', monospace;
+}
+
+/* Tokens de coloration syntaxique */
+.mm-token-keyword {
+  color: var(--mm-token-keyword);
+  font-weight: bold;
+}
+.mm-token-string {
+  color: var(--mm-token-string);
+}
+.mm-token-comment {
+  color: var(--mm-token-comment);
+  font-style: italic;
+}
+.mm-token-number {
+  color: var(--mm-token-number);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Utilitaires
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mm-hidden {
+  display: none !important;
+}
+
+.mm-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+/* Bouton corbeille dans le header du panneau individuel (dans l'encadré rouge souhaité) */
+.mm-individual-delete-btn {
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  margin-right: 8px; /* Marge à droite pour aérer avant le bouton suivant */
+  margin-left: 8px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--mm-on-surface, #e3e3e3); /* Même couleur contrastée que les icônes de Google */
+  cursor: pointer;
+
+  transition: background-color 150ms ease, color 150ms ease;
+  flex-shrink: 0;
+}
+
+.mm-individual-delete-btn:hover {
+  background-color: rgba(217, 48, 37, 0.15) !important;
+  color: #D93025 !important;
+}
+

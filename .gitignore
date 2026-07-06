@@ -1,0 +1,29 @@
+# Dépendances
+node_modules/
+
+# Artefacts de build
+dist/
+web-ext-artifacts/
+
+# Fichiers système
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Fichiers sensibles
+*.pem
+*.key
+.env
+.env.local
+
+# Notes privées et documents internes
+JUSTIFICATION_*.md
+NOTES_*.md
+BRAINSTORM_*.md
+spec.md
+AGENTS.md
