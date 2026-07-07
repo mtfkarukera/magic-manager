@@ -243,16 +243,29 @@
       jspdfDispo: !!(window.jspdf && window.jspdf.jsPDF)
     });
 
-    // Sécurité : vérifier que jsPDF est disponible dans l'environnement
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-      console.error('[MM] jsPDF non disponible (window.jspdf manquant). Export PDF annulé.');
+    // En Firefox, les content scripts s'exécutent dans un sandbox XPCOM isolé.
+    // jsPDF UMD attache son namespace à `this` (le global du sandbox), PAS à `window`
+    // (qui pointe sur la fenêtre de la page). On sonde dans l'ordre :
+    //   1. window.jspdf  — fonctionnerait en Chrome / hors-sandbox
+    //   2. globalThis.jspdf — global du sandbox Firefox ✓
+    //   3. self.jspdf — alias du global sandbox (Worker-like context)
+    const jspdfLib = window.jspdf
+      || (typeof globalThis !== 'undefined' && globalThis.jspdf)
+      || (typeof self !== 'undefined' && self.jspdf);
+
+    if (!jspdfLib || !jspdfLib.jsPDF) {
+      console.error('[MM] jsPDF non résolu (window / globalThis / self). Export PDF annulé.', {
+        window_jspdf: typeof window.jspdf,
+        globalThis_jspdf: typeof globalThis !== 'undefined' ? typeof globalThis.jspdf : 'N/A',
+        self_jspdf: typeof self !== 'undefined' ? typeof self.jspdf : 'N/A'
+      });
       return;
     }
 
     const cleanFilename = (filename || 'source').replace(/[\/\\?%*:|"<>\s]/g, '_') + '.pdf';
 
     try {
-      const { jsPDF } = window.jspdf;
+      const { jsPDF } = jspdfLib;
       const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
