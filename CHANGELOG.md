@@ -4,10 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
-## [0.4.1] — 2026-07-08 (En cours)
+## [0.4.1] — 2026-07-08
 
 ### Corrigé
-- 📑 **Fusion de sources** : Correction du sélecteur du panneau de gauche (singulier vs pluriel) empêchant l'affichage du bouton de fusion.
+- 📑 **Compteur exact de sources** : Correction de la détection des checkboxes en ciblant les cartes de sources physiques uniques. Résout le bug d'affichage de "+18" au lieu de "8".
+- 🐛 **Crash JavaScript** : Résolution du crash `TypeError: cb.className.includes is not a function` provoqué par des éléments SVG lors de la vérification de l'état coché.
+- 📦 **Modale d'exportation par lot** : Remplacement de l'ancien dialogue par une modale interactive proposant les trois formats de sortie (ZIP, Markdown, PDF) avec barre de progression de l'extraction et fermeture automatique de la visionneuse.
+- 🔗 **Fiabilité de fusion** : Association robuste des titres de sources aux cases à cocher en tant qu'attributs `aria-label` pour garantir la correspondance et l'extraction du contenu de chaque source.
 
 ## [0.4.0] — 2026-07-08
 

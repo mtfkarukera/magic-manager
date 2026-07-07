@@ -9,145 +9,6 @@
 
   let selectionObserver = null;
   let batchMergeButton = null;
-  let stylesElement = null;
-
-  // CSS injecté pour la modale de fusion et les animations
-  const CSS_STYLES = `
-    .mm-merge-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-      font-family: var(--mm-font-family, system-ui, -apple-system, sans-serif);
-      animation: mmFadeIn 0.2s ease-out;
-    }
-    .mm-merge-dialog {
-      background: var(--mm-surface, #1e1e1e);
-      border: 1px solid var(--mm-border, #333);
-      border-radius: var(--mm-radius-md, 12px);
-      padding: 24px;
-      width: 400px;
-      max-width: 90%;
-      color: var(--mm-on-surface, #e3e3e3);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      animation: mmSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .mm-merge-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: var(--mm-primary, #4285F4);
-    }
-    .mm-merge-field {
-      margin-bottom: 16px;
-    }
-    .mm-merge-label {
-      display: block;
-      font-size: 12px;
-      color: #aaa;
-      margin-bottom: 6px;
-    }
-    .mm-merge-input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 6px;
-      border: 1px solid #444;
-      background: #2b2b2b;
-      color: #fff;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-    .mm-merge-input:focus {
-      border-color: var(--mm-primary, #4285F4);
-      outline: none;
-    }
-    .mm-merge-formats {
-      display: flex;
-      gap: 12px;
-      margin-top: 8px;
-    }
-    .mm-merge-format-btn {
-      flex: 1;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #444;
-      background: #2b2b2b;
-      color: #ccc;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .mm-merge-format-btn.active {
-      border-color: var(--mm-primary, #4285F4);
-      background: rgba(66, 133, 244, 0.1);
-      color: var(--mm-primary, #4285F4);
-    }
-    .mm-merge-buttons {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 24px;
-    }
-    .mm-merge-btn-cancel {
-      padding: 8px 16px;
-      border-radius: 6px;
-      border: 1px solid #444;
-      background: transparent;
-      color: #ccc;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    .mm-merge-btn-confirm {
-      padding: 8px 16px;
-      border-radius: 6px;
-      border: none;
-      background: var(--mm-primary, #4285F4);
-      color: #fff;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    .mm-merge-btn-confirm:hover {
-      background: #357ae8;
-    }
-    .mm-merge-progress-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px 0;
-      text-align: center;
-    }
-    .mm-merge-spinner {
-      border: 3px solid rgba(255, 255, 255, 0.1);
-      border-top: 3px solid var(--mm-primary, #4285F4);
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      animation: mmSpin 1s linear infinite;
-      margin-bottom: 16px;
-    }
-    @keyframes mmFadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    @keyframes mmSlideUp {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    @keyframes mmSpin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  `;
 
   // ═══════════════════════════════════════════════════════════════════════
   // Sélecteurs DOM robustes (synchro avec export.js)
@@ -179,26 +40,54 @@
     const list = findSourcesListContainer();
     if (!list) return [];
     
-    const checkboxes = window.MM.findElementsInShadows(
-      'input[type="checkbox"], [role="checkbox"], mat-pseudo-checkbox, .mat-pseudo-checkbox, [class*="checkbox"]', 
+    // 1. Trouver toutes les cartes/lignes de sources physiques
+    const sourceCards = window.MM.findElementsInShadows(
+      'div[class*="source-card"], div[class*="source-item"], div[class*="sourceItem"], [class*="source-row"], [data-source-id]',
       list
     );
-    return checkboxes.filter(cb => {
-      const isChecked = 
-        cb.getAttribute('aria-checked') === 'true' || 
-        cb.checked === true || 
-        cb.classList.contains('mat-pseudo-checkbox-checked') || 
-        cb.getAttribute('state') === 'checked' ||
-        (typeof cb.className === 'string' && cb.className.includes('checked')) ||
-        cb.getAttribute('aria-selected') === 'true';
+    
+    const checkedCheckboxes = [];
+    const seenTitles = new Set();
+    
+    // 2. Pour chaque carte, trouver la checkbox à l'intérieur
+    sourceCards.forEach(card => {
+      // Trouver les checkboxes candidates sous cette carte uniquement
+      const cbs = window.MM.findElementsInShadows(
+        'input[type="checkbox"], [role="checkbox"], mat-pseudo-checkbox, .mat-pseudo-checkbox',
+        card
+      );
+      
+      if (cbs.length > 0) {
+        // On prend le premier élément interactif de checkbox dans la carte
+        const cb = cbs[0];
+        
+        const isChecked = 
+          cb.getAttribute('aria-checked') === 'true' || 
+          cb.checked === true || 
+          cb.classList.contains('mat-pseudo-checkbox-checked') || 
+          cb.getAttribute('state') === 'checked' ||
+          (typeof cb.className === 'string' && cb.className.includes('checked')) ||
+          cb.getAttribute('aria-selected') === 'true';
 
-      const isGlobal = 
-        (cb.id && cb.id.includes('select-all')) || 
-        (cb.getAttribute('aria-label') && cb.getAttribute('aria-label').includes('Tout sélectionner')) ||
-        window.MM.isInsideSelector(cb, '[class*="select-all"]');
-
-      return isChecked && !isGlobal;
+        if (isChecked) {
+          // Extraire le titre de la source depuis cette carte
+          const titleEl = card.querySelector('[class*="title"], [class*="name"], button.source-stretched-button');
+          let titleText = '';
+          if (titleEl) {
+            titleText = (titleEl.getAttribute('aria-label') || titleEl.textContent || '').trim();
+          }
+          
+          if (titleText && !seenTitles.has(titleText)) {
+            seenTitles.add(titleText);
+            // Associer le titre comme aria-label pour que les fonctions de recherche par titre le trouvent
+            cb.setAttribute('aria-label', titleText);
+            checkedCheckboxes.push(cb);
+          }
+        }
+      }
     });
+    
+    return checkedCheckboxes;
   }
 
   function findSourceContainerByTitle(sourceTitle) {
@@ -655,13 +544,6 @@
   }
 
   function initMerge() {
-    if (!stylesElement) {
-      stylesElement = document.createElement('style');
-      stylesElement.id = 'mm-merge-styles';
-      stylesElement.textContent = CSS_STYLES;
-      document.head.appendChild(stylesElement);
-    }
-
     updateBatchMergeButtonState();
     console.log('[MM] Module merge initialisé');
   }
@@ -670,10 +552,6 @@
     if (batchMergeButton) {
       batchMergeButton.remove();
       batchMergeButton = null;
-    }
-    if (stylesElement) {
-      stylesElement.remove();
-      stylesElement = null;
     }
     console.log('[MM] Module merge nettoyé');
   }
