@@ -220,11 +220,28 @@
   }
   // ═══════════════════════════════════════════════════════════════════════
 
+  /**
+   * Retire l'extension de document éventuellement incluse dans le titre affiché
+   * par NotebookLM (ex : "rapport.pdf" → "rapport", "notes.docx" → "notes").
+   * NotebookLM conserve parfois l'extension d'origine dans le titre de la source,
+   * ce qui provoquerait des noms de fichier du type "rapport.pdf.md" ou "rapport.pdf.pdf".
+   *
+   * @param {string} title - Titre brut de la source
+   * @returns {string} Titre sans extension de document
+   */
+  function stripSourceExtension(title) {
+    // Extensions courantes que NotebookLM peut conserver dans le titre
+    const KNOWN_EXTS = /\.(pdf|docx?|xlsx?|pptx?|txt|md|odt|ods|odp|rtf|csv|json|html?|xml|epub)$/i;
+    return (title || '').replace(KNOWN_EXTS, '');
+  }
+
   function downloadMarkdown(filename, content) {
-    const cleanFilename = (filename || 'source').replace(/[\/\\?%*:|"<>\s]/g, '_') + '.md';
+    // Nettoyer le titre : retirer l'extension source éventuelle puis ajouter .md
+    const baseName = stripSourceExtension(filename || 'source');
+    const cleanFilename = baseName.replace(/[\/\\?%*:|"<>\s]/g, '_') + '.md';
     const blob = new Blob([content], { type: 'text/markdown;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
-    
+
     const a = document.createElement('a');
     a.href = url;
     a.download = cleanFilename;
@@ -236,23 +253,21 @@
   }
 
   function downloadPDF(filename, content) {
-    // Log de diagnostic — visible dans la console de notebooklm.google.com (F12)
-    console.log('[MM] downloadPDF() appelé —', {
-      filename: filename,
-      contentLength: content ? content.length : 0,
-      jspdfDispo: !!(window.jspdf && window.jspdf.jsPDF)
-    });
-
-    // En Firefox, les content scripts s'exécutent dans un sandbox XPCOM isolé.
-    // jsPDF UMD attache son namespace à `this` (le global du sandbox), PAS à `window`
-    // (qui pointe sur la fenêtre de la page). On sonde dans l'ordre :
-    //   1. window.jspdf  — fonctionnerait en Chrome / hors-sandbox
-    //   2. globalThis.jspdf — global du sandbox Firefox ✓
-    //   3. self.jspdf — alias du global sandbox (Worker-like context)
+    // Résolution jsPDF : sandbox XPCOM Firefox → globalThis, puis self, puis window
     const jspdfLib = window.jspdf
       || (typeof globalThis !== 'undefined' && globalThis.jspdf)
       || (typeof self !== 'undefined' && self.jspdf);
 
+    // Log de diagnostic — visible dans la console de notebooklm.google.com (F12)
+    console.log('[MM] downloadPDF() appelé —', {
+      filename: filename,
+      contentLength: content ? content.length : 0,
+      jspdfDispo: !!(jspdfLib && jspdfLib.jsPDF)
+    });
+
+    // En Firefox, les content scripts s'exécutent dans un sandbox XPCOM isolé.
+    // jsPDF UMD s'attache au global sandbox (this), pas à window (page).
+    // jspdfLib est résolu ci-dessus (avant le log) pour couvrir les 3 contextes.
     if (!jspdfLib || !jspdfLib.jsPDF) {
       console.error('[MM] jsPDF non résolu (window / globalThis / self). Export PDF annulé.', {
         window_jspdf: typeof window.jspdf,
@@ -262,7 +277,9 @@
       return;
     }
 
-    const cleanFilename = (filename || 'source').replace(/[\/\\?%*:|"<>\s]/g, '_') + '.pdf';
+    // Retirer l'extension source existante (ex: rapport.pdf → rapport) avant d'ajouter .pdf
+    const baseName = stripSourceExtension(filename || 'source');
+    const cleanFilename = baseName.replace(/[\/\\?%*:|"<>\s]/g, '_') + '.pdf';
 
     try {
       const { jsPDF } = jspdfLib;
