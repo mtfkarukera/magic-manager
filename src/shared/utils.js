@@ -139,9 +139,28 @@ function findElementsInShadows(selector, root = document) {
   return elements;
 }
 
+/**
+ * Vérifie récursivement si un élément se trouve à l'intérieur d'un sélecteur,
+ * en traversant les Shadow Roots vers les hôtes parents.
+ * @param {Element} element - L'élément à tester.
+ * @param {string} selector - Le sélecteur CSS de recherche.
+ * @returns {boolean} True si l'élément ou l'un de ses parents correspond au sélecteur.
+ */
+function isInsideSelector(element, selector) {
+  let el = element;
+  while (el) {
+    if (el instanceof Element && el.matches(selector)) {
+      return true;
+    }
+    el = el.parentNode || (el.host ? el.host : null);
+  }
+  return false;
+}
+
 // Exposition dans le namespace global MM
 window.MM.t = t;
 window.MM.applyI18n = applyI18n;
 window.MM.createElement = createElement;
 window.MM.debounce = debounce;
 window.MM.findElementsInShadows = findElementsInShadows;
+window.MM.isInsideSelector = isInsideSelector;

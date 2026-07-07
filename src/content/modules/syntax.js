@@ -198,21 +198,6 @@
   }
 
   /**
-   * Vérifie récursivement si un élément se trouve à l'intérieur d'un sélecteur,
-   * en traversant les Shadow Roots vers les hôtes parents.
-   */
-  function isInsideSelector(element, selector) {
-    let el = element;
-    while (el) {
-      if (el instanceof Element && el.matches(selector)) {
-        return true;
-      }
-      el = el.parentNode || (el.host ? el.host : null);
-    }
-    return false;
-  }
-
-  /**
    * Parcourt la page pour traiter tous les blocs de code non encore gérés.
    */
   const scanAndHighlight = debounce(function () {
@@ -220,7 +205,7 @@
     const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])');
     preBlocks.forEach(function (pre) {
       // Exclure les blocs situés dans le panneau des sources, le visualiseur de sources ou le studio de notes
-      if (isInsideSelector(pre, '.sources-panel, [class*="sources-panel"], section.source-panel, source-viewer, .studio-panel, [class*="studio-"], [class*="note-"]')) {
+      if (window.MM.isInsideSelector(pre, '.sources-panel, [class*="sources-panel"], section.source-panel, source-viewer, .studio-panel, [class*="studio-"], [class*="note-"]')) {
         return;
       }
       if (!pre.closest('.mm-code-block')) {

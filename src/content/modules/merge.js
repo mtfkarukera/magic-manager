@@ -179,10 +179,24 @@
     const list = findSourcesListContainer();
     if (!list) return [];
     
-    const checkboxes = window.MM.findElementsInShadows('input[type="checkbox"], [role="checkbox"]', list);
+    const checkboxes = window.MM.findElementsInShadows(
+      'input[type="checkbox"], [role="checkbox"], mat-pseudo-checkbox, .mat-pseudo-checkbox, [class*="checkbox"]', 
+      list
+    );
     return checkboxes.filter(cb => {
-      const isChecked = cb.getAttribute('aria-checked') === 'true' || cb.checked === true;
-      const isGlobal = (cb.id && cb.id.includes('select-all')) || (cb.getAttribute('aria-label') && cb.getAttribute('aria-label').includes('Tout sélectionner'));
+      const isChecked = 
+        cb.getAttribute('aria-checked') === 'true' || 
+        cb.checked === true || 
+        cb.classList.contains('mat-pseudo-checkbox-checked') || 
+        cb.getAttribute('state') === 'checked' ||
+        cb.className.includes('checked') ||
+        cb.getAttribute('aria-selected') === 'true';
+
+      const isGlobal = 
+        (cb.id && cb.id.includes('select-all')) || 
+        (cb.getAttribute('aria-label') && cb.getAttribute('aria-label').includes('Tout sélectionner')) ||
+        window.MM.isInsideSelector(cb, '[class*="select-all"]');
+
       return isChecked && !isGlobal;
     });
   }
@@ -600,29 +614,10 @@
     }
 
     updateBatchMergeButtonState();
-
-    const listContainer = findSourcesListContainer();
-    if (listContainer && !selectionObserver) {
-      selectionObserver = new MutationObserver(window.MM.debounce(function () {
-        updateBatchMergeButtonState();
-      }, 150));
-      
-      selectionObserver.observe(listContainer, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['class', 'aria-checked', 'checked']
-      });
-    }
-
     console.log('[MM] Module merge initialisé');
   }
 
   function cleanupMerge() {
-    if (selectionObserver) {
-      selectionObserver.disconnect();
-      selectionObserver = null;
-    }
     if (batchMergeButton) {
       batchMergeButton.remove();
       batchMergeButton = null;
@@ -636,4 +631,5 @@
 
   window.MM.initMerge = initMerge;
   window.MM.cleanupMerge = cleanupMerge;
+  window.MM.updateBatchMergeButtonState = updateBatchMergeButtonState;
 })();

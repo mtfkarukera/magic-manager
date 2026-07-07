@@ -49,6 +49,14 @@
         // source-viewer absent → nettoyer les boutons orphelins
         cleanupPanelButtons();
       }
+
+      // Toujours rafraîchir l'état des boutons batch (fusion, export par lot)
+      if (typeof window.MM.updateBatchExportButtonState === 'function') {
+        window.MM.updateBatchExportButtonState();
+      }
+      if (typeof window.MM.updateBatchMergeButtonState === 'function') {
+        window.MM.updateBatchMergeButtonState();
+      }
     }, DEBOUNCE_DELAY);
   }
 
@@ -72,9 +80,12 @@
       panelObserver = new MutationObserver(onPanelMutation);
 
       // Scope restreint : uniquement section.source-panel (pas document.body)
+      // On observe aussi les attributs pour capturer le cochage/décochage des cases
       panelObserver.observe(sourcePanel, {
         childList: true,
-        subtree: true
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'aria-checked', 'checked', 'state', 'aria-selected']
       });
 
       // Vérification initiale au démarrage

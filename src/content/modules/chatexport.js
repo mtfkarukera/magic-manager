@@ -57,13 +57,14 @@
     );
 
     nativeButtons.forEach(btn => {
+      // S'assurer que le bouton est bien dans une zone de message du chat et pas dans l'en-tête ou les réglages
+      const isMessageBtn = window.MM.isInsideSelector(btn, '[class*="message"], [class*="response"], [class*="bubble"], chat-message, [class*="turn"], [class*="chat-scroll-card"]');
+      const isHeaderBtn = window.MM.isInsideSelector(btn, '[class*="header"], [class*="title-bar"], [class*="notebook-config"]');
+      
+      if (!isMessageBtn || isHeaderBtn) return;
+
       const actionsContainer = btn.parentElement;
       if (!actionsContainer || actionsContainer.querySelector('.mm-chat-export-btn')) return;
-
-      // S'assurer qu'il s'agit bien d'un conteneur d'actions de message (flex ou inline-flex)
-      // et qu'il contient au moins un bouton de pouce ou de copie/note
-      const hasMultipleButtons = window.MM.findElementsInShadows('button, [role="button"]', actionsContainer).length >= 2;
-      if (!hasMultipleButtons) return;
 
       // Bouton personnalisé stylisé
       const exportBtn = createElement('button', {

@@ -56,10 +56,24 @@
     
     // Retourne toutes les cases à cocher cochées (aria-checked="true")
     // en ignorant la case globale "Tout sélectionner"
-    const checkboxes = window.MM.findElementsInShadows('input[type="checkbox"], [role="checkbox"]', list);
+    const checkboxes = window.MM.findElementsInShadows(
+      'input[type="checkbox"], [role="checkbox"], mat-pseudo-checkbox, .mat-pseudo-checkbox, [class*="checkbox"]', 
+      list
+    );
     return checkboxes.filter(cb => {
-      const isChecked = cb.getAttribute('aria-checked') === 'true' || cb.checked === true;
-      const isGlobal = (cb.id && cb.id.includes('select-all')) || (cb.getAttribute('aria-label') && cb.getAttribute('aria-label').includes('Tout sélectionner'));
+      const isChecked = 
+        cb.getAttribute('aria-checked') === 'true' || 
+        cb.checked === true || 
+        cb.classList.contains('mat-pseudo-checkbox-checked') || 
+        cb.getAttribute('state') === 'checked' ||
+        cb.className.includes('checked') ||
+        cb.getAttribute('aria-selected') === 'true';
+
+      const isGlobal = 
+        (cb.id && cb.id.includes('select-all')) || 
+        (cb.getAttribute('aria-label') && cb.getAttribute('aria-label').includes('Tout sélectionner')) ||
+        window.MM.isInsideSelector(cb, '[class*="select-all"]');
+
       return isChecked && !isGlobal;
     });
   }
@@ -568,38 +582,13 @@
     }
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // Cycle de vie
-  // ═══════════════════════════════════════════════════════════════════════
-
   function initExport() {
     checkAndInjectIndividualExport();
     updateBatchExportButtonState();
-
-    // Observer léger sur la liste de sources (uniquement pour les cases à cocher)
-    // Le sourceObserver (body) est géré de manière centralisée dans panel-observer.js
-    const listContainer = findSourcesListContainer();
-    if (listContainer && !selectionObserver) {
-      selectionObserver = new MutationObserver(debounce(function () {
-        updateBatchExportButtonState();
-      }, 150));
-      selectionObserver.observe(listContainer, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['class', 'aria-checked', 'checked']
-      });
-    }
-
     console.log('[MM] Module export initialisé');
   }
 
   function cleanupExport() {
-    if (selectionObserver) {
-      selectionObserver.disconnect();
-      selectionObserver = null;
-    }
-    // Note : sourceObserver supprimé — géré par panel-observer.js
     if (batchExportButton) {
       batchExportButton.remove();
       batchExportButton = null;
@@ -612,6 +601,6 @@
 
   window.MM.initExport = initExport;
   window.MM.cleanupExport = cleanupExport;
-  // Exposé pour panel-observer.js
+  window.MM.updateBatchExportButtonState = updateBatchExportButtonState;
   window.MM.checkAndInjectIndividualExport = checkAndInjectIndividualExport;
 })();
