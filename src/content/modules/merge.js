@@ -163,8 +163,8 @@
     
     const divs = window.MM.findElementsInShadows('div, span, button', list);
     for (let el of divs) {
-      const txt = (el.textContent || '').trim().toLowerCase();
-      if (txt === 'tout sélectionner' || txt === 'select all' || txt === 'seleccionar todo' || txt === 'alle auswählen') {
+      const txt = (el.textContent || '').trim().toLowerCase().replace(/\s+/g, ' ');
+      if (txt.includes('tout sélectionner') || txt.includes('select all') || txt.includes('seleccionar todo') || txt.includes('alle auswählen')) {
         let row = el.parentNode;
         while (row && row !== list && row.tagName !== 'DIV') {
           row = row.parentNode;
@@ -182,9 +182,8 @@
     const checkboxes = window.MM.findElementsInShadows('input[type="checkbox"], [role="checkbox"]', list);
     return checkboxes.filter(cb => {
       const isChecked = cb.getAttribute('aria-checked') === 'true' || cb.checked === true;
-      const isGlobal = cb.id && cb.id.includes('select-all');
-      const hasLabel = cb.getAttribute('aria-label') && cb.getAttribute('aria-label') !== 'Tout sélectionner';
-      return isChecked && !isGlobal && hasLabel;
+      const isGlobal = (cb.id && cb.id.includes('select-all')) || (cb.getAttribute('aria-label') && cb.getAttribute('aria-label').includes('Tout sélectionner'));
+      return isChecked && !isGlobal;
     });
   }
 
@@ -538,17 +537,26 @@
 
   function updateBatchMergeButtonState() {
     const checked = getCheckedSourceCheckboxes();
-    const selectAllRow = findSelectAllRow();
-    if (!selectAllRow) return;
+    
+    let anchor = document.querySelector('.mm-search-bar');
+    let isSearchBar = true;
+    if (!anchor) {
+      anchor = findSelectAllRow();
+      isSearchBar = false;
+    }
+    
+    if (!anchor) return;
 
     if (checked.length >= 2) {
-      if (!batchMergeButton || !selectAllRow.contains(batchMergeButton)) {
+      if (!batchMergeButton || !anchor.contains(batchMergeButton)) {
         if (batchMergeButton) batchMergeButton.remove();
 
         batchMergeButton = createElement('button', {
           className: 'mm-batch-merge-btn',
           title: `${t('mergeButton') || 'Fusionner'} (${checked.length})`,
-          style: 'background: transparent; border: none; color: #34A853; cursor: pointer; margin-left: 8px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--mm-radius-sm); padding: 4px; transition: color var(--mm-transition-fast);',
+          style: isSearchBar 
+            ? 'background: transparent; border: none; color: #34A853; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--mm-radius-sm); padding: 6px; transition: color var(--mm-transition-fast); margin-left: 6px;'
+            : 'background: transparent; border: none; color: #34A853; cursor: pointer; margin-left: 8px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--mm-radius-sm); padding: 4px; transition: color var(--mm-transition-fast);',
           onClick: () => showMergeDialog(checked)
         }, [
           createMergeIcon(),
@@ -558,11 +566,15 @@
           })
         ]);
 
-        const exportBtn = selectAllRow.querySelector('.mm-batch-export-btn');
-        if (exportBtn) {
-          exportBtn.parentNode.insertBefore(batchMergeButton, exportBtn.nextSibling);
+        if (isSearchBar) {
+          anchor.appendChild(batchMergeButton);
         } else {
-          selectAllRow.appendChild(batchMergeButton);
+          const exportBtn = anchor.querySelector('.mm-batch-export-btn');
+          if (exportBtn) {
+            exportBtn.parentNode.insertBefore(batchMergeButton, exportBtn.nextSibling);
+          } else {
+            anchor.appendChild(batchMergeButton);
+          }
         }
       } else {
         const span = batchMergeButton.querySelector('span');

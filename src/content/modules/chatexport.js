@@ -50,18 +50,20 @@
     }
   }
 
-  /**
-   * Scanne le chat pour injecter notre bouton sous chaque réponse de l'IA.
-   */
   const injectExportButtons = debounce(function () {
-    // Repérer les boutons thumbs-up ou thumbs-down pour identifier les conteneurs d'actions des messages de l'IA
-    const thumbsButtons = window.MM.findElementsInShadows(
-      'button[aria-label*="Bonne"], button[aria-label*="Good"], button[aria-label*="thumb"], button[aria-label*="Thumb"]'
+    // Cibler les boutons natifs de Google (enregistrement de note ou copie) qui sont très stables
+    const nativeButtons = window.MM.findElementsInShadows(
+      'button[aria-label*="note"], button[aria-label*="Note"], button[aria-label*="sauveg"], button[aria-label*="Enregistr"], button[aria-label*="pin"], button[aria-label*="Pin"], button[aria-label*="copi"], button[aria-label*="Copi"], button[aria-label*="copy"], button[aria-label*="Copy"]'
     );
 
-    thumbsButtons.forEach(btn => {
+    nativeButtons.forEach(btn => {
       const actionsContainer = btn.parentElement;
       if (!actionsContainer || actionsContainer.querySelector('.mm-chat-export-btn')) return;
+
+      // S'assurer qu'il s'agit bien d'un conteneur d'actions de message (flex ou inline-flex)
+      // et qu'il contient au moins un bouton de pouce ou de copie/note
+      const hasMultipleButtons = window.MM.findElementsInShadows('button, [role="button"]', actionsContainer).length >= 2;
+      if (!hasMultipleButtons) return;
 
       // Bouton personnalisé stylisé
       const exportBtn = createElement('button', {
