@@ -6,7 +6,7 @@
 //  - Injecte UN SEUL bouton dans l'en-tête du panneau Discussion
 //  - En cliquant, scrape l'intégralité du thread (toutes les questions & réponses)
 //  - Formate le contenu en Markdown lisible
-//  - Crée une nouvelle source dans NotebookLM via RPC addTextSource
+//  - Crée une véritable NOTE dans le Studio NotebookLM via le DOM natif
 
 'use strict';
 
@@ -19,20 +19,7 @@
   let chatHeaderObserver = null;
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 1. RÉCUPÉRATION DE L'ID DU NOTEBOOK (identique à merge.js)
-  // ═══════════════════════════════════════════════════════════════════════
-
-  /**
-   * Extrait l'identifiant du notebook depuis l'URL courante.
-   * @returns {string|null} L'ID du notebook ou null si introuvable.
-   */
-  function getActiveNotebookId() {
-    const m = window.location.pathname.match(/\/notebook\/([a-zA-Z0-9_-]+)/);
-    return m ? m[1] : null;
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // 2. SCRAPER DU THREAD DE CONVERSATION
+  // 1. SCRAPER DU THREAD DE CONVERSATION — Approche robuste
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
@@ -48,146 +35,140 @@
     // Supprimer les éléments interactifs et nos propres injections
     const toRemove = clone.querySelectorAll(
       'button, svg, [class*="action"], [class*="feedback"], ' +
-      '[class*="copy"], [class*="thumb"], [aria-label], ' +
-      '.mm-code-block-header, .mm-code-block-copy-btn'
+      '[class*="copy-btn"], [class*="thumb"], ' +
+      '.mm-code-block-header, .mm-code-block-copy-btn, .mm-chat-export-btn'
     );
     toRemove.forEach(function (node) { node.remove(); });
 
     // Récupérer le texte en préservant les sauts de ligne naturels
-    return clone.innerText || clone.textContent || '';
+    const text = clone.innerText || clone.textContent || '';
+    // Nettoyer les lignes vides excessives (max 2 sauts consécutifs)
+    return text.replace(/\n{3,}/g, '\n\n').trim();
   }
 
   /**
-   * Tente de trouver le conteneur principal du thread de chat.
-   * NotebookLM utilise une architecture SPA — on teste plusieurs sélecteurs.
-   * @returns {Element|null} Le conteneur des messages ou null.
+   * Stratégie de détection du rôle d'un tour de chat.
+   * NotebookLM alterne systématiquement : user → model → user → model…
+   * On s'appuie d'abord sur les attributs, puis sur l'alternance.
+   *
+   * @param {Element} el - Élément représentant un tour de conversation.
+   * @param {number} index - Position du tour dans la liste (0-indexé).
+   * @returns {'user'|'ai'} Le rôle estimé de ce tour.
    */
-  function findChatScrollContainer() {
-    // Ordre de priorité : du plus spécifique au plus générique
-    const candidates = [
-      'chat-scroll-container',
-      '[class*="chat-scroll"]',
-      '[class*="conversation-container"]',
-      '[class*="messages-container"]',
-      '[class*="chat-messages"]',
-      'section.chat-panel [class*="scroll"]',
-      'section.chat-panel'
-    ];
-
-    for (const sel of candidates) {
-      const el = document.querySelector(sel);
-      if (el) {
-        console.log(`[MM] ChatExport : conteneur trouvé avec "${sel}"`);
-        return el;
-      }
+  function detectRole(el, index) {
+    // 1. Vérifier les attributs data-* (les plus fiables)
+    const dataRole = el.getAttribute('data-turn-role') ||
+                     el.getAttribute('data-role') ||
+                     el.getAttribute('data-sender');
+    if (dataRole) {
+      const r = dataRole.toLowerCase();
+      if (r === 'user' || r === 'human') return 'user';
+      if (r === 'model' || r === 'assistant' || r === 'ai') return 'ai';
     }
 
-    // Fallback via Shadow DOM
-    const shadowResults = window.MM.findElementsInShadows(
-      '[class*="chat-scroll"], [class*="chat-messages"], [class*="conversation"]'
-    );
-    if (shadowResults.length > 0) {
-      console.log('[MM] ChatExport : conteneur trouvé via Shadow DOM');
-      return shadowResults[0];
-    }
+    // 2. Vérifier les classes CSS contenant des mots-clés de rôle
+    const cls = el.className || '';
+    if (/user.?turn|human.?turn|user.?message/i.test(cls)) return 'user';
+    if (/model.?turn|ai.?turn|assistant.?turn|response/i.test(cls)) return 'ai';
 
-    console.warn('[MM] ChatExport : aucun conteneur de chat trouvé.');
-    return null;
+    // 3. Vérifier le tagName (NotebookLM utilise parfois des web components)
+    const tag = el.tagName.toLowerCase();
+    if (tag.includes('user') || tag.includes('human')) return 'user';
+    if (tag.includes('model') || tag.includes('ai') || tag.includes('assistant')) return 'ai';
+
+    // 4. Fallback : alternance (le chat commence toujours par l'utilisateur)
+    return index % 2 === 0 ? 'user' : 'ai';
   }
 
   /**
-   * Sélecteurs pour distinguer les tours utilisateur des tours IA.
-   * On teste plusieurs attributs car les classes de NotebookLM sont obfusquées.
-   */
-  const USER_TURN_SELECTORS = [
-    '[class*="user-turn"]',
-    '[class*="human-turn"]',
-    '[class*="user-message"]',
-    '[class*="human-message"]',
-    '[data-turn-role="user"]',
-    '[aria-label*="Vous"]',
-    '[aria-label*="You"]'
-  ].join(', ');
-
-  const AI_TURN_SELECTORS = [
-    '[class*="model-turn"]',
-    '[class*="ai-turn"]',
-    '[class*="assistant-turn"]',
-    '[class*="ai-message"]',
-    '[class*="model-message"]',
-    '[class*="response-container"]',
-    '[data-turn-role="model"]',
-    '[data-turn-role="assistant"]'
-  ].join(', ');
-
-  /**
-   * Collecte tous les tours de conversation (utilisateur + IA) dans l'ordre.
-   * @returns {Array<{role: string, text: string}>} Liste ordonnée des tours.
+   * Collecte tous les tours de conversation dans l'ordre DOM.
+   * Stratégie : on cherche les éléments "racines" de chaque tour,
+   * en évitant de retourner à la fois un parent et son enfant.
+   *
+   * @returns {Array<{role: string, text: string}>} Tours ordonnés.
    */
   function collectConversationTurns() {
-    const container = findChatScrollContainer();
-    if (!container) return [];
+    // Liste des sélecteurs de "conteneurs de tour" — du plus précis au plus générique.
+    // On veut des éléments FRÈRES (siblings) au même niveau, pas parent+enfant.
+    const TURN_CONTAINER_SELECTORS = [
+      // Web components natifs NotebookLM (les plus stables)
+      'chat-message',
+      'conversation-turn',
+      'model-response',
+      // Sélecteurs structurels par classes
+      '[class*="user-turn"]',
+      '[class*="model-turn"]',
+      '[class*="human-turn"]',
+      '[class*="ai-turn"]',
+      '[class*="chat-turn"]',
+      '[class*="message-bubble"]',
+      '[class*="chat-scroll-card"]'
+    ];
 
-    // Récupérer tous les éléments — on va les différencier par leurs attributs
-    const allPossibleTurns = window.MM.findElementsInShadows(
-      USER_TURN_SELECTORS + ', ' + AI_TURN_SELECTORS,
-      container
-    );
+    let turns = [];
 
-    // Si les sélecteurs précis ne donnent rien, on tente une approche alternative :
-    // chercher tous les éléments de niveau "tour" (chat-message, etc.)
-    if (allPossibleTurns.length === 0) {
-      console.warn('[MM] ChatExport : sélecteurs de tours précis infructueux. Tentative générique...');
-      const genericTurns = window.MM.findElementsInShadows(
-        'chat-message, [class*="chat-turn"], [class*="message-bubble"]',
-        container
-      );
-      if (genericTurns.length === 0) {
-        console.warn('[MM] ChatExport : aucun tour trouvé dans le chat.');
-        return [];
+    // Essayer chaque sélecteur et garder le premier qui donne des résultats
+    for (const sel of TURN_CONTAINER_SELECTORS) {
+      const found = Array.from(document.querySelectorAll(sel));
+      if (found.length > 0) {
+        console.log(`[MM] ChatExport : ${found.length} tour(s) trouvé(s) avec "${sel}"`);
+        turns = found;
+        break;
       }
-      // Mode dégradé : on ne peut pas distinguer les rôles
-      return genericTurns.map(function (el) {
-        return { role: 'message', text: extractCleanText(el).trim() };
-      }).filter(function (turn) { return turn.text.length > 0; });
     }
 
-    // Filtrer les doublons (un enfant peut correspondre à plusieurs sélecteurs)
-    const seenEls = new Set();
-    const turns = [];
+    // Si aucun sélecteur direct ne fonctionne, tenter via Shadow DOM
+    if (turns.length === 0) {
+      for (const sel of TURN_CONTAINER_SELECTORS) {
+        const found = window.MM.findElementsInShadows(sel);
+        if (found.length > 0) {
+          console.log(`[MM] ChatExport : ${found.length} tour(s) trouvé(s) via Shadow DOM avec "${sel}"`);
+          turns = found;
+          break;
+        }
+      }
+    }
 
-    allPossibleTurns.forEach(function (el) {
-      if (seenEls.has(el)) return;
-      seenEls.add(el);
+    if (turns.length === 0) {
+      console.warn('[MM] ChatExport : aucun tour de conversation trouvé.');
+      return [];
+    }
 
-      // Déterminer le rôle de ce tour
-      const isUser = el.matches ? el.matches(USER_TURN_SELECTORS) : false;
-      const text = extractCleanText(el).trim();
-      if (!text) return;
-
-      turns.push({
-        role: isUser ? 'user' : 'ai',
-        el: el
-      });
+    // ── Déduplication : éliminer les éléments dont un ANCÊTRE est aussi dans la liste ──
+    // Cela évite de retourner à la fois le parent et l'enfant.
+    const turnSet = new Set(turns);
+    const deduped = turns.filter(function (el) {
+      let node = el.parentElement;
+      while (node) {
+        if (turnSet.has(node)) return false; // Un ancêtre est déjà dans la liste → doublon
+        node = node.parentElement;
+      }
+      return true;
     });
 
-    // Trier dans l'ordre d'apparition dans le DOM
-    turns.sort(function (a, b) {
-      const pos = a.el.compareDocumentPosition(b.el);
-      return (pos & Node.DOCUMENT_POSITION_FOLLOWING) ? -1 : 1;
+    console.log(`[MM] ChatExport : ${deduped.length} tour(s) uniques après déduplication.`);
+
+    // ── Trier dans l'ordre d'apparition dans le document ──
+    deduped.sort(function (a, b) {
+      const pos = a.compareDocumentPosition(b);
+      if (pos & Node.DOCUMENT_POSITION_FOLLOWING) return -1;
+      if (pos & Node.DOCUMENT_POSITION_PRECEDING) return 1;
+      return 0;
     });
 
-    // Extraire le texte final
-    return turns.map(function (turn) {
+    // ── Extraire le texte et attribuer les rôles ──
+    return deduped.map(function (el, index) {
       return {
-        role: turn.role,
-        text: extractCleanText(turn.el).trim()
+        role: detectRole(el, index),
+        text: extractCleanText(el)
       };
-    }).filter(function (turn) { return turn.text.length > 0; });
+    }).filter(function (turn) {
+      return turn.text.length > 0;
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // 3. FORMATEUR MARKDOWN
+  // 2. FORMATEUR MARKDOWN
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
@@ -211,14 +192,12 @@
       ``
     ];
 
-    turns.forEach(function (turn, index) {
+    turns.forEach(function (turn) {
       let roleLabel;
       if (turn.role === 'user') {
         roleLabel = '## 🙋 Vous';
-      } else if (turn.role === 'ai') {
-        roleLabel = '## 🤖 NotebookLM';
       } else {
-        roleLabel = `## 💬 Message ${index + 1}`;
+        roleLabel = '## 🤖 NotebookLM';
       }
 
       lines.push(roleLabel);
@@ -233,22 +212,194 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // 3. CRÉATION DE NOTE via le DOM natif (Studio)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Injecte du texte dans un textarea en passant par React/Angular setter
+   * (car NotebookLM utilise un framework qui ignore la modification directe de .value).
+   * @param {HTMLTextAreaElement|HTMLElement} input - L'élément de saisie.
+   * @param {string} text - Le texte à injecter.
+   */
+  function setNativeValue(input, text) {
+    // Utilisation du setter natif pour contourner le framework
+    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(
+      window.HTMLTextAreaElement.prototype, 'value'
+    );
+    if (nativeInputValueSetter && nativeInputValueSetter.set) {
+      nativeInputValueSetter.set.call(input, text);
+    } else {
+      input.value = text;
+    }
+    // Déclencher les événements pour notifier le framework
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+
+  /**
+   * Sélecteurs candidats pour le bouton "Ajouter une note" natif de NotebookLM.
+   * Ce bouton est dans le panneau Studio (à droite).
+   */
+  const ADD_NOTE_BUTTON_SELECTORS = [
+    'button[aria-label*="note" i]',
+    'button[aria-label*="Note" i]',
+    'button[aria-label*="Ajouter" i]',
+    'button[aria-label*="Add note" i]',
+    'button[data-action*="note"]',
+    '[class*="add-note"]',
+    '[class*="create-note"]',
+    // Le bouton visible "Ajouter une note" avec son icône en bas à droite du Studio
+    '.studio-panel button[aria-label]',
+    '[class*="studio"] button[aria-label]'
+  ];
+
+  /**
+   * Sélecteurs candidats pour le textarea de saisie de note une fois ouvert.
+   */
+  const NOTE_TEXTAREA_SELECTORS = [
+    'textarea[aria-label*="note" i]',
+    'textarea[placeholder*="note" i]',
+    'textarea[placeholder*="Note" i]',
+    '[contenteditable="true"][class*="note"]',
+    '[contenteditable="true"][aria-label*="note" i]',
+    // Textarea le plus récemment apparu (fallback générique)
+    'textarea:not([class*="search"]):not([class*="query"])'
+  ];
+
+  /**
+   * Crée une note dans le Studio NotebookLM via le DOM natif.
+   * Séquence : clic sur "Ajouter une note" → attente du textarea → injection du texte → validation.
+   * @param {string} content - Contenu Markdown à injecter dans la note.
+   * @returns {Promise<void>}
+   */
+  async function createNoteViaDom(content) {
+    // 1. Trouver le bouton "Ajouter une note"
+    let addNoteBtn = null;
+    for (const sel of ADD_NOTE_BUTTON_SELECTORS) {
+      const candidates = Array.from(document.querySelectorAll(sel));
+      // Filtrer pour n'avoir que les boutons dans le panneau Studio
+      const studioBtn = candidates.find(function (btn) {
+        return window.MM.isInsideSelector(
+          btn,
+          '.studio-panel, [class*="studio-panel"], [class*="studio"]'
+        );
+      });
+      if (studioBtn) {
+        addNoteBtn = studioBtn;
+        break;
+      }
+      // Si on n'a pas trouvé dans le Studio, prendre le premier disponible
+      if (candidates.length > 0 && !addNoteBtn) {
+        addNoteBtn = candidates[0];
+      }
+    }
+
+    // Fallback Shadow DOM
+    if (!addNoteBtn) {
+      const shadowCandidates = window.MM.findElementsInShadows(
+        'button[aria-label*="note" i], button[aria-label*="Note" i]'
+      );
+      addNoteBtn = shadowCandidates[0] || null;
+    }
+
+    if (!addNoteBtn) {
+      throw new Error('[MM] ChatExport : bouton "Ajouter une note" introuvable dans le Studio.');
+    }
+
+    console.log('[MM] ChatExport : clic sur le bouton "Ajouter une note".');
+    addNoteBtn.click();
+
+    // 2. Attendre que le textarea de saisie apparaisse (max 3 secondes)
+    const textarea = await waitForElement(NOTE_TEXTAREA_SELECTORS, 3000);
+    if (!textarea) {
+      throw new Error('[MM] ChatExport : le textarea de note n\'est pas apparu après le clic.');
+    }
+
+    console.log('[MM] ChatExport : textarea de note détecté, injection du contenu...');
+
+    // 3. Injecter le contenu via le setter natif (compatible React/Angular)
+    setNativeValue(textarea, content);
+
+    // 4. Donner le focus et laisser le framework traiter l'input
+    textarea.focus();
+
+    // 5. Enregistrer la note — chercher le bouton de validation
+    await new Promise(function (resolve) { setTimeout(resolve, 200); });
+
+    const SAVE_SELECTORS = [
+      'button[aria-label*="Enregistr" i]',
+      'button[aria-label*="Sauvegarder" i]',
+      'button[aria-label*="Save" i]',
+      'button[aria-label*="Confirmer" i]',
+      'button[type="submit"]'
+    ];
+
+    let saveBtn = null;
+    for (const sel of SAVE_SELECTORS) {
+      // Chercher le bouton de validation dans les éléments récemment apparus
+      const found = Array.from(document.querySelectorAll(sel)).filter(function (btn) {
+        // Exclure les boutons déjà existants avant l'ouverture de la note
+        return !btn.closest('.mm-chat-export-btn');
+      });
+      if (found.length > 0) {
+        saveBtn = found[0];
+        break;
+      }
+    }
+
+    if (saveBtn) {
+      console.log('[MM] ChatExport : clic sur le bouton de validation de la note.');
+      saveBtn.click();
+    } else {
+      // Fallback : simuler Ctrl+Enter pour valider
+      console.log('[MM] ChatExport : bouton de validation introuvable, tentative Ctrl+Enter.');
+      textarea.dispatchEvent(new KeyboardEvent('keydown', {
+        key: 'Enter', ctrlKey: true, bubbles: true
+      }));
+    }
+
+    console.log('[MM] ChatExport : note créée avec succès.');
+  }
+
+  /**
+   * Attend l'apparition d'un élément correspondant à l'un des sélecteurs.
+   * @param {string[]} selectors - Liste de sélecteurs CSS à tester.
+   * @param {number} timeoutMs - Délai maximum en millisecondes.
+   * @returns {Promise<Element|null>} L'élément trouvé ou null si timeout.
+   */
+  function waitForElement(selectors, timeoutMs) {
+    return new Promise(function (resolve) {
+      const start = Date.now();
+
+      function check() {
+        for (const sel of selectors) {
+          const el = document.querySelector(sel);
+          if (el) {
+            resolve(el);
+            return;
+          }
+        }
+        if (Date.now() - start < timeoutMs) {
+          requestAnimationFrame(check);
+        } else {
+          resolve(null);
+        }
+      }
+
+      check();
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // 4. ACTION PRINCIPALE D'EXPORT
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
-   * Exporte toute la conversation en une note NotebookLM via RPC.
+   * Exporte toute la conversation en une note dans le Studio NotebookLM.
    * Gère les états du bouton (chargement, succès, erreur).
    */
   async function handleExportChat() {
     if (!exportChatBtn) return;
-
-    const notebookId = getActiveNotebookId();
-    if (!notebookId) {
-      console.error('[MM] ChatExport : impossible d\'identifier le notebook courant.');
-      showButtonFeedback('error');
-      return;
-    }
 
     // Empêcher les doubles-clics pendant l'export
     exportChatBtn.disabled = true;
@@ -269,14 +420,9 @@
       // Formater en Markdown
       const markdownContent = formatAsMarkdown(turns);
 
-      // Construire le titre de la note : "Chat — JJ/MM/AAAA HH:MM"
-      const now = new Date();
-      const noteTitle = `Chat — ${now.toLocaleDateString('fr-FR')} ${now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+      // Créer la note via le DOM natif du Studio
+      await createNoteViaDom(markdownContent);
 
-      // Envoyer via RPC addTextSource
-      await window.MM.rpc.addTextSource(notebookId, noteTitle, markdownContent);
-
-      console.log(`[MM] ChatExport : note "${noteTitle}" créée avec succès.`);
       showButtonFeedback('success');
 
     } catch (err) {
@@ -298,7 +444,7 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
-   * Crée l'icône SVG du bouton d'export (une conversation avec une flèche).
+   * Crée l'icône SVG du bouton d'export (bulle de chat avec flèche d'export).
    * @returns {SVGElement}
    */
   function createExportIcon() {
@@ -311,7 +457,7 @@
     svg.style.pointerEvents = 'none';
     svg.style.flexShrink = '0';
 
-    // Icône : bulle de chat avec flèche vers le bas (save/export)
+    // Icône : bulle de chat avec flèche vers le bas (sauvegarde)
     const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
     path.setAttribute('d',
       'M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z' +
@@ -328,11 +474,9 @@
   function showButtonFeedback(state) {
     if (!exportChatBtn) return;
 
-    // Vider l'icône courante
     exportChatBtn.innerHTML = '';
 
     if (state === 'loading') {
-      // Indicateur de chargement animé (cercle CSS)
       const spinner = document.createElement('span');
       spinner.style.cssText = [
         'width: 14px', 'height: 14px',
@@ -346,7 +490,6 @@
       exportChatBtn.title = 'Export en cours…';
 
     } else if (state === 'success') {
-      // Coche verte
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('viewBox', '0 0 24 24');
       svg.setAttribute('width', '18');
@@ -361,7 +504,6 @@
       exportChatBtn.title = 'Note créée !';
 
     } else if (state === 'error') {
-      // Croix orange
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       svg.setAttribute('viewBox', '0 0 24 24');
       svg.setAttribute('width', '18');
@@ -378,7 +520,7 @@
       svg.appendChild(l1);
       svg.appendChild(l2);
       exportChatBtn.appendChild(svg);
-      exportChatBtn.title = 'Erreur lors de l\'export';
+      exportChatBtn.title = 'Erreur — voir la console pour le détail';
     }
   }
 
@@ -409,7 +551,6 @@
 
   /**
    * Sélecteurs candidats pour l'en-tête du panneau Discussion.
-   * On cible la barre d'en-tête du panneau central qui contient les icônes natives.
    */
   const CHAT_HEADER_SELECTORS = [
     'section.chat-panel [class*="header"]',
@@ -428,7 +569,6 @@
       const el = document.querySelector(sel);
       if (el) return el;
     }
-    // Recherche dans le Shadow DOM
     return window.MM.findElementsInShadows(
       CHAT_HEADER_SELECTORS.join(', ')
     )[0] || null;
@@ -436,26 +576,19 @@
 
   /**
    * Injecte le bouton d'export dans l'en-tête du panneau Discussion.
-   * Vérifie qu'il n'est pas déjà présent avant d'injecter.
    */
   const tryInjectButton = debounce(function () {
-    // Bouton déjà présent et toujours dans le DOM → rien à faire
+    // Bouton déjà présent et dans le DOM → rien à faire
     if (exportChatBtn && document.contains(exportChatBtn)) return;
 
-    // Nettoyer une référence orpheline si le bouton a été supprimé par une navigation SPA
-    if (exportChatBtn) {
-      exportChatBtn = null;
-    }
+    // Nettoyer une référence orpheline
+    if (exportChatBtn) exportChatBtn = null;
 
     const header = findChatPanelHeader();
-    if (!header) {
-      console.log('[MM] ChatExport : en-tête du panneau Discussion pas encore disponible.');
-      return;
-    }
+    if (!header) return;
 
     ensureSpinnerCss();
 
-    // Créer le bouton
     exportChatBtn = createElement('button', {
       className: 'mm-chat-export-btn',
       title: t('chatExportButton') || 'Exporter toute la conversation en note',
@@ -481,7 +614,6 @@
       }
     }, [createExportIcon()]);
 
-    // Effets de survol
     exportChatBtn.addEventListener('mouseenter', function () {
       if (!exportChatBtn.disabled) {
         exportChatBtn.style.backgroundColor = 'rgba(197, 202, 233, 0.08)';
@@ -495,7 +627,6 @@
 
     // Insérer au début de l'en-tête (avant les icônes natives de Google)
     header.insertBefore(exportChatBtn, header.firstChild);
-
     console.log('[MM] ChatExport : bouton injecté dans l\'en-tête du panneau Discussion.');
   }, 300);
 
@@ -505,15 +636,12 @@
 
   /**
    * Initialise le module d'export chat.
-   * Lance un observer pour injecter le bouton dès que l'en-tête apparaît.
    */
   function initChatExport() {
-    if (chatHeaderObserver) return; // Déjà actif
+    if (chatHeaderObserver) return;
 
-    // Tentative immédiate
     tryInjectButton();
 
-    // Observer pour réinjecter le bouton si la SPA navigue
     chatHeaderObserver = new MutationObserver(function () {
       tryInjectButton();
     });
@@ -534,17 +662,13 @@
       chatHeaderObserver.disconnect();
       chatHeaderObserver = null;
     }
-
-    // Supprimer le bouton injecté
     document.querySelectorAll('.mm-chat-export-btn').forEach(function (btn) {
       btn.remove();
     });
     exportChatBtn = null;
-
     console.log('[MM] Module chatExport nettoyé');
   }
 
-  // Exposition publique
   window.MM.initChatExport = initChatExport;
   window.MM.cleanupChatExport = cleanupChatExport;
 })();
