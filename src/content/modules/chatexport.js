@@ -254,16 +254,22 @@
   ];
 
   /**
-   * Sélecteurs candidats pour le textarea de saisie de note une fois ouvert.
+   * Sélecteurs candidats pour l'éditeur de saisie de note une fois ouvert.
+   * NotebookLM peut utiliser un <textarea> OU un éditeur contenteditable (texte riche).
    */
-  const NOTE_TEXTAREA_SELECTORS = [
+  const NOTE_INPUT_SELECTORS = [
+    // Éditeurs contenteditable (format riche, probable dans NotebookLM)
+    '[contenteditable="true"][aria-label*="note" i]',
+    '[contenteditable="true"][aria-multiline="true"]',
+    '[contenteditable="true"][role="textbox"]',
+    '[role="textbox"][aria-label*="note" i]',
+    '[role="textbox"]',
+    '[contenteditable="true"]',
+    // <textarea> classique (fallback)
     'textarea[aria-label*="note" i]',
     'textarea[placeholder*="note" i]',
-    'textarea[placeholder*="Note" i]',
-    '[contenteditable="true"][class*="note"]',
-    '[contenteditable="true"][aria-label*="note" i]',
-    // Textarea le plus récemment apparu (fallback générique)
-    'textarea:not([class*="search"]):not([class*="query"])'
+    'textarea:not([class*="search"]):not([class*="query"])',
+    'textarea'
   ];
 
   /**
@@ -306,43 +312,68 @@
       throw new Error('[MM] ChatExport : bouton "Ajouter une note" introuvable dans le Studio.');
     }
 
-    console.log('[MM] ChatExport : clic sur le bouton "Ajouter une note".');
+    console.log('[MM] ChatExport : clic sur le bouton "Ajouter une note". Bouton :', addNoteBtn.outerHTML.slice(0, 120));
     addNoteBtn.click();
 
-    // 2. Attendre que le textarea de saisie apparaisse (max 3 secondes)
-    const textarea = await waitForElement(NOTE_TEXTAREA_SELECTORS, 3000);
-    if (!textarea) {
-      throw new Error('[MM] ChatExport : le textarea de note n\'est pas apparu après le clic.');
+    // 2. Attendre que l'éditeur de saisie apparaisse via MutationObserver (max 5 secondes)
+    // Délai minimal de 50ms pour laisser le framework déclencher l'animation d'ouverture
+    await new Promise(function (resolve) { setTimeout(resolve, 50); });
+
+    const noteInput = await waitForElement(NOTE_INPUT_SELECTORS, 5000);
+    if (!noteInput) {
+      // Log diagnostic : lister tous les éléments actifs dans le document pour aider au debug
+      const allEditable = document.querySelectorAll('[contenteditable], textarea, [role="textbox"]');
+      console.warn('[MM] ChatExport : éditeur de note introuvable. Éléments éditables présents :', allEditable.length);
+      allEditable.forEach(function (el) {
+        console.warn('[MM] ChatExport :  →', el.tagName, el.getAttribute('aria-label'), el.className.slice(0, 60));
+      });
+      throw new Error('[MM] ChatExport : l\'éditeur de note n\'est pas apparu après le clic.');
     }
 
-    console.log('[MM] ChatExport : textarea de note détecté, injection du contenu...');
+    console.log('[MM] ChatExport : éditeur de note détecté :', noteInput.tagName, noteInput.getAttribute('role'), noteInput.getAttribute('aria-label'));
 
-    // 3. Injecter le contenu via le setter natif (compatible React/Angular)
-    setNativeValue(textarea, content);
+    // 3. Injecter le contenu selon le type d'éditeur
+    if (noteInput.tagName === 'TEXTAREA' || noteInput.tagName === 'INPUT') {
+      // <textarea> standard : utiliser le setter natif React/Angular
+      setNativeValue(noteInput, content);
+    } else if (noteInput.isContentEditable) {
+      // Éditeur contenteditable : injecter via innerText + événement 'input'
+      noteInput.focus();
+      // Effacer le contenu existant (placeholder)
+      noteInput.innerHTML = '';
+      // Insérer le texte brut ligne par ligne via document.execCommand (compatible CSP)
+      // execCommand est déprécié mais reste le seul moyen fiable dans un contenteditable
+      document.execCommand('insertText', false, content);
+      // Fallback si execCommand ne fonctionne pas
+      if (!noteInput.textContent || noteInput.textContent.trim() === '') {
+        noteInput.textContent = content;
+        noteInput.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+    }
 
     // 4. Donner le focus et laisser le framework traiter l'input
-    textarea.focus();
+    noteInput.focus();
+    await new Promise(function (resolve) { setTimeout(resolve, 300); });
 
-    // 5. Enregistrer la note — chercher le bouton de validation
-    await new Promise(function (resolve) { setTimeout(resolve, 200); });
-
+    // 5. Enregistrer la note — chercher le bouton de validation qui est apparu
     const SAVE_SELECTORS = [
       'button[aria-label*="Enregistr" i]',
       'button[aria-label*="Sauvegarder" i]',
       'button[aria-label*="Save" i]',
       'button[aria-label*="Confirmer" i]',
+      'button[aria-label*="Done" i]',
+      'button[aria-label*="Terminer" i]',
       'button[type="submit"]'
     ];
 
     let saveBtn = null;
     for (const sel of SAVE_SELECTORS) {
-      // Chercher le bouton de validation dans les éléments récemment apparus
       const found = Array.from(document.querySelectorAll(sel)).filter(function (btn) {
-        // Exclure les boutons déjà existants avant l'ouverture de la note
-        return !btn.closest('.mm-chat-export-btn');
+        return !btn.classList.contains('mm-chat-export-btn');
       });
       if (found.length > 0) {
         saveBtn = found[0];
+        console.log('[MM] ChatExport : bouton de validation trouvé :', saveBtn.outerHTML.slice(0, 100));
         break;
       }
     }
@@ -351,11 +382,14 @@
       console.log('[MM] ChatExport : clic sur le bouton de validation de la note.');
       saveBtn.click();
     } else {
-      // Fallback : simuler Ctrl+Enter pour valider
+      // Fallback : Ctrl+Enter ou Échap selon le comportement de NotebookLM
       console.log('[MM] ChatExport : bouton de validation introuvable, tentative Ctrl+Enter.');
-      textarea.dispatchEvent(new KeyboardEvent('keydown', {
+      noteInput.dispatchEvent(new KeyboardEvent('keydown', {
         key: 'Enter', ctrlKey: true, bubbles: true
       }));
+      // Deuxième fallback : clic en dehors de l'éditeur pour déclencher l'auto-save
+      await new Promise(function (resolve) { setTimeout(resolve, 200); });
+      document.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     }
 
     console.log('[MM] ChatExport : note créée avec succès.');
@@ -363,30 +397,53 @@
 
   /**
    * Attend l'apparition d'un élément correspondant à l'un des sélecteurs.
+   * Utilise un MutationObserver (fiable pour les éléments apparus de façon asynchrone)
+   * plutôt que requestAnimationFrame.
    * @param {string[]} selectors - Liste de sélecteurs CSS à tester.
    * @param {number} timeoutMs - Délai maximum en millisecondes.
    * @returns {Promise<Element|null>} L'élément trouvé ou null si timeout.
    */
   function waitForElement(selectors, timeoutMs) {
     return new Promise(function (resolve) {
-      const start = Date.now();
 
-      function check() {
+      // Vérifier si un élément correspond déjà dans le DOM actuel
+      function findNow() {
         for (const sel of selectors) {
-          const el = document.querySelector(sel);
-          if (el) {
-            resolve(el);
-            return;
-          }
+          try {
+            const el = document.querySelector(sel);
+            if (el) return el;
+          } catch (e) { /* sélecteur invalide, on passe */ }
         }
-        if (Date.now() - start < timeoutMs) {
-          requestAnimationFrame(check);
-        } else {
-          resolve(null);
-        }
+        return null;
       }
 
-      check();
+      const existing = findNow();
+      if (existing) {
+        resolve(existing);
+        return;
+      }
+
+      // Sinon, observer les mutations du DOM jusqu'au timeout
+      const observer = new MutationObserver(function () {
+        const found = findNow();
+        if (found) {
+          observer.disconnect();
+          clearTimeout(timer);
+          resolve(found);
+        }
+      });
+
+      observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['contenteditable', 'role', 'aria-label']
+      });
+
+      const timer = setTimeout(function () {
+        observer.disconnect();
+        resolve(null);
+      }, timeoutMs);
     });
   }
 
