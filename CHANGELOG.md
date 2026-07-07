@@ -16,8 +16,21 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   - Parseur Regex et DOM 100% CSP-compliant sans `innerHTML` (DocumentFragment).
   - Bandeau avec indication du langage et bouton de copie rapide (avec retour visuel de succès).
 - 🗑️ **Bouton de suppression directe de source** :
-  - Intégration d'un bouton corbeille dans le `.panel-header` du panneau de lecture de source, placé à gauche du bouton de fermeture/réduction.
-  - Déclenchement automatique et direct du dialogue de confirmation natif de Google pour une suppression sécurisée et sans modale redondante.
+  - Intégration d'un bouton corbeille dans le `.panel-header` du panneau de lecture de source.
+  - Déclenchement du dialogue de confirmation natif de Google pour une suppression sécurisée.
+- 📤 **Export de sources individuelles** :
+  - Bouton d'export dans le `.panel-header` du panneau de lecture, à côté du bouton de suppression.
+  - Export au format **Markdown** (`.md`) avec nom de fichier propre (sans double extension).
+  - Export au format **PDF** via jsPDF, avec gestion des sauts de page et titre embarqué.
+  - Correction de la résolution jsPDF dans le sandbox XPCOM Firefox (`globalThis` → `self` → `window`).
+- ⚡ **Panel Observer centralisé** (`panel-observer.js`) :
+  - Observation unique sur `section.source-panel` pour l'injection et le nettoyage des boutons MM.
+  - Nettoyage automatique des boutons injectés à la fermeture du panneau (pas de boutons orphelins).
+
+### Corrigé
+- **Double extension de fichier** : les sources nommées `fichier.pdf` dans NotebookLM ne produisent plus `fichier.pdf.md` mais `fichier.md` (fonction `stripSourceExtension`).
+- **Warning AMO** : suppression de `JSZip` (usage de `Function` constructor). Le format ZIP est désormais généré en pur JS natif (format STORE, sans compression, sans `eval`).
+- **Export PDF muet** : la méthode `doc.save()` étant bloquée par Firefox en content script, passage à `doc.output('blob')` + lien `<a>` temporaire.
 
 ## [0.1.0] — 2026-07-06
 
