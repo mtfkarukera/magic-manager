@@ -47,16 +47,37 @@
   }
 
   /**
+   * Obtient le parent d'un élément, y compris à travers les Shadow Roots.
+   * @param {Element} el - Élément enfant.
+   * @returns {Element|null} Le parent ou l'hôte (host) du Shadow Root.
+   */
+  function getParent(el) {
+    if (!el) return null;
+    return el.parentElement || (el.parentNode && el.parentNode.host) || el.parentNode || null;
+  }
+
+  /**
    * Stratégie de détection du rôle d'un tour de chat.
    * NotebookLM alterne systématiquement : user → model → user → model…
-   * On s'appuie d'abord sur les attributs, puis sur l'alternance.
+   * Mais on renforce avec des indices forts (ex: présence de boutons de feedback ou d'épinglage AI).
    *
    * @param {Element} el - Élément représentant un tour de conversation.
    * @param {number} index - Position du tour dans la liste (0-indexé).
    * @returns {'user'|'ai'} Le rôle estimé de ce tour.
    */
   function detectRole(el, index) {
-    // 1. Vérifier les attributs data-* (les plus fiables)
+    // 1. Si le bloc contient des boutons spécifiques à l'IA (feedback, copier, épingler un message individuel)
+    // C'est un indicateur absolu d'un message IA.
+    const hasAiIndicators = window.MM.findElementsInShadows(
+      'button[aria-label*="épingl" i], button[aria-label*="note" i], button[aria-label*="Note" i], button[aria-label*="copi" i], button[aria-label*="copy" i], button[aria-label*="thumb" i], button[aria-label*="pouce" i]',
+      el
+    ).length > 0;
+
+    if (hasAiIndicators) {
+      return 'ai';
+    }
+
+    // 2. Vérifier les attributs data-*
     const dataRole = el.getAttribute('data-turn-role') ||
                      el.getAttribute('data-role') ||
                      el.getAttribute('data-sender');
@@ -66,17 +87,17 @@
       if (r === 'model' || r === 'assistant' || r === 'ai') return 'ai';
     }
 
-    // 2. Vérifier les classes CSS contenant des mots-clés de rôle
+    // 3. Vérifier les classes CSS
     const cls = el.className || '';
     if (/user.?turn|human.?turn|user.?message/i.test(cls)) return 'user';
     if (/model.?turn|ai.?turn|assistant.?turn|response/i.test(cls)) return 'ai';
 
-    // 3. Vérifier le tagName (NotebookLM utilise parfois des web components)
+    // 4. Vérifier le tagName
     const tag = el.tagName.toLowerCase();
     if (tag.includes('user') || tag.includes('human')) return 'user';
     if (tag.includes('model') || tag.includes('ai') || tag.includes('assistant')) return 'ai';
 
-    // 4. Fallback : alternance (le chat commence toujours par l'utilisateur)
+    // 5. Fallback : alternance
     return index % 2 === 0 ? 'user' : 'ai';
   }
 
@@ -134,14 +155,13 @@
       return [];
     }
 
-    // ── Déduplication : éliminer les éléments dont un ANCÊTRE est aussi dans la liste ──
-    // Cela évite de retourner à la fois le parent et l'enfant.
+    // ── Déduplication robuste traversant le Shadow DOM ──
     const turnSet = new Set(turns);
     const deduped = turns.filter(function (el) {
-      let node = el.parentElement;
+      let node = getParent(el);
       while (node) {
-        if (turnSet.has(node)) return false; // Un ancêtre est déjà dans la liste → doublon
-        node = node.parentElement;
+        if (turnSet.has(node)) return false; // Un ancêtre est dans la liste → doublon parent/enfant
+        node = getParent(node);
       }
       return true;
     });
@@ -246,64 +266,48 @@
     'button[aria-label*="Ajouter" i]',
     'button[aria-label*="Add note" i]',
     'button[data-action*="note"]',
-    '[class*="add-note"]',
-    '[class*="create-note"]',
+    'button[class*="add-note"]',
+    'button[class*="create-note"]',
+    '.add-note-button-container button',
     // Le bouton visible "Ajouter une note" avec son icône en bas à droite du Studio
     '.studio-panel button[aria-label]',
-    '[class*="studio"] button[aria-label]'
+    '[class*="studio"] button[aria-label]',
+    '.studio-panel button',
+    '[class*="studio"] button'
   ];
 
   /**
    * Sélecteurs candidats pour l'éditeur de saisie de note une fois ouvert.
-   * NotebookLM peut utiliser un <textarea> OU un éditeur contenteditable (texte riche).
+   * On veut cibler spécifiquement les éléments modifiables du Studio.
    */
   const NOTE_INPUT_SELECTORS = [
-    // Éditeurs contenteditable (format riche, probable dans NotebookLM)
-    '[contenteditable="true"][aria-label*="note" i]',
-    '[contenteditable="true"][aria-multiline="true"]',
-    '[contenteditable="true"][role="textbox"]',
-    '[role="textbox"][aria-label*="note" i]',
-    '[role="textbox"]',
     '[contenteditable="true"]',
-    // <textarea> classique (fallback)
-    'textarea[aria-label*="note" i]',
-    'textarea[placeholder*="note" i]',
-    'textarea:not([class*="search"]):not([class*="query"])',
+    '[role="textbox"]',
     'textarea'
   ];
 
-  /**
-   * Crée une note dans le Studio NotebookLM via le DOM natif.
-   * Séquence : clic sur "Ajouter une note" → attente du textarea → injection du texte → validation.
-   * @param {string} content - Contenu Markdown à injecter dans la note.
-   * @returns {Promise<void>}
-   */
   async function createNoteViaDom(content) {
-    // 1. Trouver le bouton "Ajouter une note"
+    // Trouver le conteneur du panneau Studio pour restreindre toutes nos recherches suivantes
+    const studioPanel = document.querySelector('.studio-panel, [class*="studio-panel"], [class*="studio"]');
+    if (!studioPanel) {
+      throw new Error('[MM] ChatExport : panneau de droite (Studio) introuvable dans la page.');
+    }
+
+    // 1. Trouver le bouton "Ajouter une note" uniquement dans le Studio
     let addNoteBtn = null;
     for (const sel of ADD_NOTE_BUTTON_SELECTORS) {
-      const candidates = Array.from(document.querySelectorAll(sel));
-      // Filtrer pour n'avoir que les boutons dans le panneau Studio
-      const studioBtn = candidates.find(function (btn) {
-        return window.MM.isInsideSelector(
-          btn,
-          '.studio-panel, [class*="studio-panel"], [class*="studio"]'
-        );
-      });
-      if (studioBtn) {
-        addNoteBtn = studioBtn;
+      const btn = studioPanel.querySelector(sel);
+      if (btn) {
+        addNoteBtn = btn;
         break;
-      }
-      // Si on n'a pas trouvé dans le Studio, prendre le premier disponible
-      if (candidates.length > 0 && !addNoteBtn) {
-        addNoteBtn = candidates[0];
       }
     }
 
-    // Fallback Shadow DOM
+    // Fallback Shadow DOM dans le Studio
     if (!addNoteBtn) {
       const shadowCandidates = window.MM.findElementsInShadows(
-        'button[aria-label*="note" i], button[aria-label*="Note" i]'
+        'button[aria-label*="note" i], button[aria-label*="Note" i]',
+        studioPanel
       );
       addNoteBtn = shadowCandidates[0] || null;
     }
@@ -312,41 +316,69 @@
       throw new Error('[MM] ChatExport : bouton "Ajouter une note" introuvable dans le Studio.');
     }
 
-    console.log('[MM] ChatExport : clic sur le bouton "Ajouter une note". Bouton :', addNoteBtn.outerHTML.slice(0, 120));
-    addNoteBtn.click();
-
-    // 2. Attendre que l'éditeur de saisie apparaisse via MutationObserver (max 5 secondes)
-    // Délai minimal de 50ms pour laisser le framework déclencher l'animation d'ouverture
-    await new Promise(function (resolve) { setTimeout(resolve, 50); });
-
-    const noteInput = await waitForElement(NOTE_INPUT_SELECTORS, 5000);
-    if (!noteInput) {
-      // Log diagnostic : lister tous les éléments actifs dans le document pour aider au debug
-      const allEditable = document.querySelectorAll('[contenteditable], textarea, [role="textbox"]');
-      console.warn('[MM] ChatExport : éditeur de note introuvable. Éléments éditables présents :', allEditable.length);
-      allEditable.forEach(function (el) {
-        console.warn('[MM] ChatExport :  →', el.tagName, el.getAttribute('aria-label'), el.className.slice(0, 60));
-      });
-      throw new Error('[MM] ChatExport : l\'éditeur de note n\'est pas apparu après le clic.');
+    // Si on a attrapé un conteneur (div) au lieu du bouton réel, chercher le bouton à l'intérieur
+    if (addNoteBtn.tagName !== 'BUTTON') {
+      const actualBtn = addNoteBtn.querySelector('button');
+      if (actualBtn) {
+        addNoteBtn = actualBtn;
+      }
     }
 
-    console.log('[MM] ChatExport : éditeur de note détecté :', noteInput.tagName, noteInput.getAttribute('role'), noteInput.getAttribute('aria-label'));
+    console.log('[MM] ChatExport : clic sur le bouton "Ajouter une note". Bouton :', addNoteBtn.tagName, addNoteBtn.outerHTML.slice(0, 120));
+    addNoteBtn.click();
+
+    // 2. Attendre que l'éditeur de saisie apparaisse dans le Studio (max 5 secondes)
+    await new Promise(function (resolve) { setTimeout(resolve, 150); });
+
+    const noteInput = await waitForElement(NOTE_INPUT_SELECTORS, 5000, studioPanel);
+    if (!noteInput) {
+      throw new Error('[MM] ChatExport : l\'éditeur de note n\'est pas apparu dans le Studio.');
+    }
+
+    console.log('[MM] ChatExport : éditeur de note détecté dans le Studio :', noteInput.tagName, noteInput.getAttribute('role'));
 
     // 3. Injecter le contenu selon le type d'éditeur
     if (noteInput.tagName === 'TEXTAREA' || noteInput.tagName === 'INPUT') {
-      // <textarea> standard : utiliser le setter natif React/Angular
       setNativeValue(noteInput, content);
     } else if (noteInput.isContentEditable) {
-      // Éditeur contenteditable : injecter via innerText + événement 'input'
       noteInput.focus();
-      // Effacer le contenu existant (placeholder)
       noteInput.innerHTML = '';
-      // Insérer le texte brut ligne par ligne via document.execCommand (compatible CSP)
-      // execCommand est déprécié mais reste le seul moyen fiable dans un contenteditable
-      document.execCommand('insertText', false, content);
-      // Fallback si execCommand ne fonctionne pas
+      
+      // Conversion minimaliste Markdown vers HTML pour que le contenteditable interprète les sauts de ligne
+      const htmlContent = content
+        .split('\n')
+        .map(function (line) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('# ')) {
+            return '<h1>' + trimmed.slice(2) + '</h1>';
+          }
+          if (trimmed.startsWith('## ')) {
+            return '<h2>' + trimmed.slice(3) + '</h2>';
+          }
+          if (trimmed.startsWith('> ')) {
+            return '<blockquote>' + trimmed.slice(2) + '</blockquote>';
+          }
+          if (trimmed === '---') {
+            return '<hr>';
+          }
+          if (trimmed === '') {
+            return '<p>&nbsp;</p>'; // Permet de préserver le saut de paragraphe dans l'éditeur riche
+          }
+          // Échapper les caractères HTML de base pour éviter de briser la structure
+          const escaped = trimmed
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;');
+          return '<p>' + escaped + '</p>';
+        })
+        .join('');
+
+      console.log('[MM] ChatExport : injection du HTML dans l\'éditeur contenteditable.');
+      document.execCommand('insertHTML', false, htmlContent);
+
+      // Si insertHTML échoue, injecter via innerHTML avec un événement de notification
       if (!noteInput.textContent || noteInput.textContent.trim() === '') {
-        noteInput.textContent = content;
+        noteInput.innerHTML = htmlContent;
         noteInput.dispatchEvent(new Event('input', { bubbles: true }));
       }
     }
@@ -355,7 +387,7 @@
     noteInput.focus();
     await new Promise(function (resolve) { setTimeout(resolve, 300); });
 
-    // 5. Enregistrer la note — chercher le bouton de validation qui est apparu
+    // 5. Enregistrer la note — chercher le bouton de validation qui est apparu dans le Studio
     const SAVE_SELECTORS = [
       'button[aria-label*="Enregistr" i]',
       'button[aria-label*="Sauvegarder" i]',
@@ -363,31 +395,35 @@
       'button[aria-label*="Confirmer" i]',
       'button[aria-label*="Done" i]',
       'button[aria-label*="Terminer" i]',
-      'button[type="submit"]'
+      'button[type="submit"]',
+      'button' // Fallback sur le premier bouton de validation trouvé dans la note
     ];
 
     let saveBtn = null;
+    // Trouver le conteneur de la note en cours d'édition pour restreindre le bouton de validation
+    const noteCard = noteInput.closest('[class*="note-card"], [class*="note-editor"], [class*="editor"]');
+    const searchScope = noteCard || studioPanel;
+
     for (const sel of SAVE_SELECTORS) {
-      const found = Array.from(document.querySelectorAll(sel)).filter(function (btn) {
-        return !btn.classList.contains('mm-chat-export-btn');
+      const found = Array.from(searchScope.querySelectorAll(sel)).filter(function (btn) {
+        return !btn.classList.contains('mm-chat-export-btn') && 
+               !btn.getAttribute('aria-label')?.includes('épingl'); // Éviter d'épingler d'autres messages
       });
       if (found.length > 0) {
         saveBtn = found[0];
-        console.log('[MM] ChatExport : bouton de validation trouvé :', saveBtn.outerHTML.slice(0, 100));
+        console.log('[MM] ChatExport : bouton de validation trouvé dans le Studio :', saveBtn.outerHTML.slice(0, 100));
         break;
       }
     }
 
     if (saveBtn) {
-      console.log('[MM] ChatExport : clic sur le bouton de validation de la note.');
+      console.log('[MM] ChatExport : clic sur le bouton de validation.');
       saveBtn.click();
     } else {
-      // Fallback : Ctrl+Enter ou Échap selon le comportement de NotebookLM
       console.log('[MM] ChatExport : bouton de validation introuvable, tentative Ctrl+Enter.');
       noteInput.dispatchEvent(new KeyboardEvent('keydown', {
         key: 'Enter', ctrlKey: true, bubbles: true
       }));
-      // Deuxième fallback : clic en dehors de l'éditeur pour déclencher l'auto-save
       await new Promise(function (resolve) { setTimeout(resolve, 200); });
       document.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
     }
@@ -397,22 +433,21 @@
 
   /**
    * Attend l'apparition d'un élément correspondant à l'un des sélecteurs.
-   * Utilise un MutationObserver (fiable pour les éléments apparus de façon asynchrone)
-   * plutôt que requestAnimationFrame.
+   * Utilise un MutationObserver limité au container si fourni.
    * @param {string[]} selectors - Liste de sélecteurs CSS à tester.
    * @param {number} timeoutMs - Délai maximum en millisecondes.
+   * @param {Element|Document} [container=document] - Le conteneur dans lequel chercher.
    * @returns {Promise<Element|null>} L'élément trouvé ou null si timeout.
    */
-  function waitForElement(selectors, timeoutMs) {
+  function waitForElement(selectors, timeoutMs, container = document) {
     return new Promise(function (resolve) {
 
-      // Vérifier si un élément correspond déjà dans le DOM actuel
       function findNow() {
         for (const sel of selectors) {
           try {
-            const el = document.querySelector(sel);
+            const el = container.querySelector(sel);
             if (el) return el;
-          } catch (e) { /* sélecteur invalide, on passe */ }
+          } catch (e) { /* sélecteur invalide */ }
         }
         return null;
       }
@@ -423,7 +458,6 @@
         return;
       }
 
-      // Sinon, observer les mutations du DOM jusqu'au timeout
       const observer = new MutationObserver(function () {
         const found = findNow();
         if (found) {
@@ -433,7 +467,7 @@
         }
       });
 
-      observer.observe(document.body, {
+      observer.observe(container === document ? document.body : container, {
         childList: true,
         subtree: true,
         attributes: true,
