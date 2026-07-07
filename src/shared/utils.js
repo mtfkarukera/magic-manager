@@ -118,8 +118,30 @@ function debounce(fn, delay) {
   };
 }
 
+/**
+ * Recherche récursivement des éléments correspondant au sélecteur,
+ * y compris à l'intérieur de tous les Shadow Roots.
+ * @param {string} selector - Sélecteur CSS.
+ * @param {Element|Document} [root=document] - Point de départ de la recherche.
+ * @returns {Array<Element>}
+ */
+function findElementsInShadows(selector, root = document) {
+  let elements = Array.from(root.querySelectorAll(selector));
+  const children = root.querySelectorAll('*');
+
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    if (child.shadowRoot) {
+      elements = elements.concat(findElementsInShadows(selector, child.shadowRoot));
+    }
+  }
+
+  return elements;
+}
+
 // Exposition dans le namespace global MM
 window.MM.t = t;
 window.MM.applyI18n = applyI18n;
 window.MM.createElement = createElement;
 window.MM.debounce = debounce;
+window.MM.findElementsInShadows = findElementsInShadows;

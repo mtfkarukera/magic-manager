@@ -161,7 +161,7 @@
     const list = findSourcesListContainer();
     if (!list) return null;
     
-    const divs = Array.from(list.querySelectorAll('div, span, button'));
+    const divs = window.MM.findElementsInShadows('div, span, button', list);
     for (let el of divs) {
       const txt = (el.textContent || '').trim().toLowerCase();
       if (txt === 'tout sélectionner' || txt === 'select all' || txt === 'seleccionar todo' || txt === 'alle auswählen') {
@@ -179,7 +179,7 @@
     const list = findSourcesListContainer();
     if (!list) return [];
     
-    const checkboxes = Array.from(list.querySelectorAll('input[type="checkbox"], [role="checkbox"]'));
+    const checkboxes = window.MM.findElementsInShadows('input[type="checkbox"], [role="checkbox"]', list);
     return checkboxes.filter(cb => {
       const isChecked = cb.getAttribute('aria-checked') === 'true' || cb.checked === true;
       const isGlobal = cb.id && cb.id.includes('select-all');
@@ -191,9 +191,9 @@
   function findSourceContainerByTitle(sourceTitle) {
     const list = findSourcesListContainer();
     if (!list) return null;
-    const containers = list.querySelectorAll('.source-card, [class*="source-card"], [class*="source-item"]');
+    const containers = window.MM.findElementsInShadows('.source-card, [class*="source-card"], [class*="source-item"]', list);
     for (let ctr of containers) {
-      const stretchedBtn = ctr.querySelector('button.source-stretched-button');
+      const stretchedBtn = window.MM.findElementsInShadows('button.source-stretched-button', ctr)[0];
       if (stretchedBtn) {
         const label = stretchedBtn.getAttribute('aria-label') || '';
         if (label.includes(sourceTitle) || sourceTitle.includes(label)) {

@@ -35,9 +35,10 @@
    */
   function handleSaveToNote(actionsContainer) {
     // Liste des sélecteurs possibles pour le bouton d'épinglage/sauvegarde de note natif de Google
-    const nativeSaveBtn = actionsContainer.querySelector(
-      'button[aria-label*="note"], button[aria-label*="Note"], button[aria-label*="sauveg"], button[aria-label*="Enregistr"], button[aria-label*="pin"], button[aria-label*="Pin"]'
-    );
+    const nativeSaveBtn = window.MM.findElementsInShadows(
+      'button[aria-label*="note"], button[aria-label*="Note"], button[aria-label*="sauveg"], button[aria-label*="Enregistr"], button[aria-label*="pin"], button[aria-label*="Pin"]',
+      actionsContainer
+    )[0];
 
     if (nativeSaveBtn) {
       console.log('[MM] Clic sur le bouton d\'enregistrement de note natif de Google');
@@ -54,7 +55,7 @@
    */
   const injectExportButtons = debounce(function () {
     // Repérer les boutons thumbs-up ou thumbs-down pour identifier les conteneurs d'actions des messages de l'IA
-    const thumbsButtons = document.querySelectorAll(
+    const thumbsButtons = window.MM.findElementsInShadows(
       'button[aria-label*="Bonne"], button[aria-label*="Good"], button[aria-label*="thumb"], button[aria-label*="Thumb"]'
     );
 
