@@ -54,12 +54,21 @@
     const list = findSourcesListContainer();
     if (!list) return [];
     
-    // 1. Trouver toutes les cartes/lignes de sources physiques
-    const sourceCards = window.MM.findElementsInShadows(
-      'div[class*="source-card"], div[class*="source-item"], div[class*="sourceItem"], [class*="source-row"], [data-source-id]',
+    // Sélecteurs précis : exclure [class*="checkbox"] qui capture les wrappers Angular
+    const checkboxes = window.MM.findElementsInShadows(
+      'input[type="checkbox"], [role="checkbox"], mat-pseudo-checkbox, .mat-pseudo-checkbox',
       list
     );
+    return checkboxes.filter(cb => {
+      const isChecked = 
+        cb.getAttribute('aria-checked') === 'true' || 
+        cb.checked === true || 
+        cb.classList.contains('mat-pseudo-checkbox-checked') || 
+        cb.getAttribute('state') === 'checked' ||
+        (typeof cb.className === 'string' && cb.className.includes('checked')) ||
+        cb.getAttribute('aria-selected') === 'true';
 
+      // Exclure la case globale "Tout sélectionner"
       const isGlobal = 
         (cb.id && cb.id.includes('select-all')) || 
         (cb.getAttribute('aria-label') && cb.getAttribute('aria-label').includes('Tout sélectionner')) ||
@@ -107,6 +116,26 @@
         if (label.includes(sourceTitle) || sourceTitle.includes(label)) {
           return ctr;
         }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Remonte depuis une checkbox jusqu'à la carte source parente.
+   * Retourne { card, title, stretchedBtn } ou null.
+   */
+  function findSourceCardFromCheckbox(cb) {
+    let el = cb;
+    // Remonter au plus 15 niveaux jusqu'à trouver un conteneur de source
+    for (let i = 0; i < 15 && el; i++) {
+      el = el.parentElement || (el.parentNode && el.parentNode.host) || null;
+      if (!el) break;
+      // Chercher un bouton source-stretched-button dans ce conteneur
+      const stretchedBtn = el.querySelector('button.source-stretched-button');
+      if (stretchedBtn) {
+        const title = stretchedBtn.getAttribute('aria-label') || el.textContent.trim().split('\n')[0].slice(0, 80);
+        return { card: el, title: title, stretchedBtn: stretchedBtn };
       }
     }
     return null;
@@ -369,201 +398,68 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Actions d'exportation
+  // Actions d'exportation par lot
   // ═══════════════════════════════════════════════════════════════════════
 
   async function triggerBatchExport() {
     const checked = getCheckedSourceCheckboxes();
     if (checked.length === 0) return;
 
-    // Fermer le dialogue global de paramétrage s'il est ouvert pour voir la modale
+    // Fermer le dialogue global de paramétrage s'il est ouvert
     const settings = document.getElementById('mm-settings-menu');
     if (settings) settings.style.display = 'none';
 
-    showBatchExportDialog(checked);
+    // showConfirmDialog(titleKey, messageKey, substitutions, onConfirm, onCancel)
+    window.MM.showConfirmDialog(
+      'exportButton',
+      'batchExportDescription',
+      [],
+      () => startBatchProcess(checked, 'ZIP'),
+      null
+    );
   }
 
-  function showBatchExportDialog(checkboxes) {
-    const overlay = createElement('div', { className: 'mm-merge-overlay' });
-    const dialog = createElement('div', { className: 'mm-merge-dialog' });
-    
-    const titleEl = createElement('div', { 
-      className: 'mm-merge-title', 
-      textContent: t('exportButton') || 'Exporter les sources' 
-    });
-    
-    const descEl = createElement('div', {
-      style: 'margin-bottom: 20px; font-size: 14px; color: #ccc; font-family: var(--mm-font-family, sans-serif);',
-      textContent: `Sélectionnez le format d'exportation pour les ${checkboxes.length} sources sélectionnées :`
-    });
-
-    let selectedFormat = 'ZIP';
-    
-    const zipBtn = createElement('button', {
-      className: 'mm-merge-format-btn active',
-      style: 'margin-bottom: 8px; width: 100%; text-align: left; justify-content: flex-start;',
-      textContent: 'Archive ZIP (.zip) — Recommandé'
-    });
-    const mdBtn = createElement('button', {
-      className: 'mm-merge-format-btn',
-      style: 'margin-bottom: 8px; width: 100%; text-align: left; justify-content: flex-start;',
-      textContent: 'Fichiers Markdown (.txt)'
-    });
-    const pdfBtn = createElement('button', {
-      className: 'mm-merge-format-btn',
-      style: 'margin-bottom: 8px; width: 100%; text-align: left; justify-content: flex-start;',
-      textContent: 'Fichiers PDF (.pdf)'
-    });
-
-    zipBtn.onclick = () => {
-      zipBtn.classList.add('active');
-      mdBtn.classList.remove('active');
-      pdfBtn.classList.remove('active');
-      selectedFormat = 'ZIP';
-    };
-    mdBtn.onclick = () => {
-      mdBtn.classList.add('active');
-      zipBtn.classList.remove('active');
-      pdfBtn.classList.remove('active');
-      selectedFormat = 'Markdown';
-    };
-    pdfBtn.onclick = () => {
-      pdfBtn.classList.add('active');
-      zipBtn.classList.remove('active');
-      mdBtn.classList.remove('active');
-      selectedFormat = 'PDF';
-    };
-
-    const formatField = createElement('div', { className: 'mm-merge-field' }, [
-      createElement('div', { className: 'mm-merge-formats', style: 'flex-direction: column; gap: 8px;' }, [zipBtn, mdBtn, pdfBtn])
-    ]);
-
-    const btnCancel = createElement('button', {
-      className: 'mm-merge-btn-cancel',
-      textContent: 'Annuler',
-      onClick: () => overlay.remove()
-    });
-    
-    const btnConfirm = createElement('button', {
-      className: 'mm-merge-btn-confirm',
-      textContent: 'Exporter',
-      onClick: async () => {
-        dialog.innerHTML = '';
-        const progressContainer = createElement('div', { className: 'mm-merge-progress-container' }, [
-          createElement('div', { className: 'mm-merge-spinner' }),
-          createElement('div', {
-            id: 'mm-export-status',
-            style: 'font-weight: 500; font-family: var(--mm-font-family, sans-serif); margin-bottom: 8px; color: #fff;',
-            textContent: 'Exportation en cours...'
-          }),
-          createElement('div', {
-            id: 'mm-export-substatus',
-            style: 'font-size: 12px; color: #aaa; font-family: var(--mm-font-family, sans-serif);',
-            textContent: `0 / ${checkboxes.length} sources traitées`
-          })
-        ]);
-        dialog.appendChild(progressContainer);
-
-        const statusEl = progressContainer.querySelector('#mm-export-status');
-        const substatusEl = progressContainer.querySelector('#mm-export-substatus');
-
-        try {
-          await startBatchProcess(checkboxes, selectedFormat, (current, total, title) => {
-            statusEl.textContent = `Exportation de : ${title}`;
-            substatusEl.textContent = `${current} / ${total} sources traitées`;
-          });
-          
-          statusEl.textContent = 'Exportation terminée !';
-          statusEl.style.color = '#34A853';
-          substatusEl.textContent = 'Tous les fichiers ont été téléchargés.';
-          
-          const btnClose = createElement('button', {
-            className: 'mm-merge-btn-confirm',
-            style: 'margin-top: 16px; background-color: #34A853;',
-            textContent: 'Fermer',
-            onClick: () => overlay.remove()
-          });
-          progressContainer.appendChild(btnClose);
-        } catch (err) {
-          console.error('[MM] Erreur lors de l\'exportation :', err);
-          statusEl.textContent = 'Une erreur est survenue';
-          statusEl.style.color = '#EA4335';
-          substatusEl.textContent = err.message || err;
-          
-          const btnClose = createElement('button', {
-            className: 'mm-merge-btn-cancel',
-            style: 'margin-top: 16px;',
-            textContent: 'Fermer',
-            onClick: () => overlay.remove()
-          });
-          progressContainer.appendChild(btnClose);
-        }
-      }
-    });
-
-    const buttonsContainer = createElement('div', { className: 'mm-merge-buttons' }, [
-      btnCancel,
-      btnConfirm
-    ]);
-
-    dialog.appendChild(titleEl);
-    dialog.appendChild(descEl);
-    dialog.appendChild(formatField);
-    dialog.appendChild(buttonsContainer);
-    
-    overlay.appendChild(dialog);
-    document.body.appendChild(overlay);
-  }
-
-  async function startBatchProcess(checkboxes, format, progressCallback) {
+  async function startBatchProcess(checkboxes, format) {
     console.log(`[MM] Lancement de l'exportation par lot au format ${format} pour ${checkboxes.length} sources...`);
 
+    // Collecte des fichiers pour l'export ZIP (format STORE natif, sans JSZip)
     const zipFiles = [];
     const activeNotebookName = getActiveNotebookName();
 
     for (let i = 0; i < checkboxes.length; i++) {
       const cb = checkboxes[i];
-      const sourceTitle = cb.getAttribute('aria-label') || `Source_${i+1}`;
 
-      if (typeof progressCallback === 'function') {
-        progressCallback(i, checkboxes.length, sourceTitle);
+      // Remonter depuis la checkbox vers la carte source parente
+      const sourceInfo = findSourceCardFromCheckbox(cb);
+      if (!sourceInfo) {
+        console.warn(`[MM] Export batch : impossible de remonter au conteneur pour la checkbox ${i}`);
+        continue;
       }
 
-      const container = findSourceContainerByTitle(sourceTitle);
-      if (container) {
-        const stretchedBtn = container.querySelector('button.source-stretched-button');
-        if (stretchedBtn) {
-          stretchedBtn.click();
-          
-          // Attendre que la visionneuse apparaisse et se charge
-          const viewer = await waitForSourceViewer(3500);
-          if (viewer) {
-            const data = findIndividualSourceData();
-            if (data && data.content) {
-              if (format === 'Markdown') {
-                downloadMarkdown(data.title, data.content);
-              } else if (format === 'PDF') {
-                downloadPDF(data.title, data.content);
-              } else if (format === 'ZIP') {
-                const cleanTitle = (data.title || `Source_${i+1}`).replace(/[\/\\?%*:|"<>\s]/g, '_') + '.md';
-                zipFiles.push({ name: cleanTitle, data: data.content });
-              }
-            }
-          } else {
-            console.warn(`[MM] Impossible de charger le contenu de la source : ${sourceTitle}`);
-          }
+      console.log(`[MM] Export batch : traitement de "${sourceInfo.title.slice(0, 50)}"`);
+      sourceInfo.stretchedBtn.click();
+
+      // Attendre le rendu dynamique du source-viewer
+      await new Promise(r => setTimeout(r, 800));
+
+      const data = findIndividualSourceData();
+      if (data && data.content) {
+        if (format === 'Markdown') {
+          downloadMarkdown(data.title, data.content);
+        } else if (format === 'PDF') {
+          downloadPDF(data.title, data.content);
+        } else if (format === 'ZIP') {
+          const cleanTitle = (data.title || `Source_${i+1}`).replace(/[\/\\?%*:|"<>\s]/g, '_') + '.md';
+          zipFiles.push({ name: cleanTitle, data: data.content });
         }
+      } else {
+        console.warn(`[MM] Export batch : aucun contenu extractible pour "${sourceInfo.title.slice(0, 50)}"`);
       }
     }
 
-    // Fermer la visionneuse de source à la fin du traitement
-    closeSourceViewer();
-
     if (format === 'ZIP' && zipFiles.length > 0) {
-      if (typeof progressCallback === 'function') {
-        progressCallback(checkboxes.length, checkboxes.length, 'Génération du package ZIP...');
-      }
       const zipName = (activeNotebookName || 'Notebook_Sources').replace(/[\/\\?%*:|"<>\s]/g, '_') + '.zip';
+      // buildZipBlob : implémentation ZIP native sans JSZip (format STORE)
       const zipBlob = buildZipBlob(zipFiles);
 
       const url = URL.createObjectURL(zipBlob);
@@ -577,9 +473,6 @@
       console.log(`[MM] Package ZIP téléchargé : ${zipName} (${zipFiles.length} fichiers)`);
     }
 
-    if (typeof progressCallback === 'function') {
-      progressCallback(checkboxes.length, checkboxes.length, 'Terminé');
-    }
     console.log('[MM] Exportation par lot terminée');
   }
 
