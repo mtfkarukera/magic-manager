@@ -4,6 +4,19 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.3.0] — 2026-07-07
+
+### Ajouté
+- 🔌 **Client RPC NotebookLM** (`rpcclient.js`) :
+  - Client RPC batchexecute robuste pour communiquer directement avec les APIs internes de Google.
+  - Décodeur résilient basé sur le format chunked officiel et la protection anti-XSSI.
+  - Extraction transparente du token CSRF `SNlM0e` dans le DOM actif.
+- 🗑️ **Suppression en arrière-plan intégrée** (`delete.js`) :
+  - Extraction de l'ID de source résiliente (regex de recherche UUID et format `s:...`).
+  - Suppression de source en un clic avec confirmation utilisateur, sans ouverture de menu de simulation.
+  - Retrait dynamique et animé (fondu CSS) de la source supprimée dans la liste.
+  - Fallback vers la modale native en cas d'erreur réseau ou d'expiration de session.
+
 ## [0.2.1] — 2026-07-07
 
 ### Changé / Corrigé (Hotfix AMO)

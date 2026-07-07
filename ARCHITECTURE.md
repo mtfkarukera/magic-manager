@@ -10,6 +10,8 @@ Magic Manager est une extension Firefox (Manifest V3) de type **content-script-o
 magic-manager/
 ├── manifest.json              # Manifeste MV3 de l'extension
 ├── src/
+│   ├── api/
+│   │   └── rpcclient.js       # Client RPC pour l'API NotebookLM (batchexecute)
 │   ├── content/
 │   │   ├── main.js            # Point d'entrée — orchestrateur des modules
 │   │   ├── search.js          # Module de recherche globale

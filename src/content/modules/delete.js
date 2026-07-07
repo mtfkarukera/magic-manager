@@ -100,6 +100,67 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // Extraction de l'ID de source (Heuristiques robustes)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Extrait de façon robuste l'identifiant de source à partir de son conteneur DOM.
+   * Scanne les attributs du conteneur et de tous ses descendants à la recherche d'UUIDs
+   * ou du préfixe spécifique s:... de Google.
+   *
+   * @param {Element} container - Conteneur DOM de la source.
+   * @returns {string|null} - ID de la source trouvé, ou null.
+   */
+  function extractSourceId(container) {
+    if (!container) return null;
+
+    // 1. Recherche d'attributs de données explicites
+    const dataAttrs = ['data-id', 'data-source-id', 'data-sourceid', 'data-doc-id'];
+    for (const attr of dataAttrs) {
+      let val = container.getAttribute(attr);
+      if (val) return val;
+
+      const childWithAttr = container.querySelector(`[${attr}]`);
+      if (childWithAttr) {
+        val = childWithAttr.getAttribute(attr);
+        if (val) return val;
+      }
+    }
+
+    // 2. Analyse de motifs (regex) dans tous les attributs textuels
+    const uuidPattern = /[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}/i;
+    const googleSourcePattern = /s:[a-zA-Z0-9_-]+/i;
+
+    function searchPattern(str) {
+      if (!str) return null;
+      let match = str.match(uuidPattern);
+      if (match) return match[0];
+      match = str.match(googleSourcePattern);
+      if (match) return match[0];
+      return null;
+    }
+
+    // Tester les attributs communs sur le conteneur lui-même
+    const containerAttrs = ['id', 'jslog', 'jsdata', 'jsaction', 'aria-describedby'];
+    for (const attr of containerAttrs) {
+      const id = searchPattern(container.getAttribute(attr));
+      if (id) return id;
+    }
+
+    // Tester les attributs sur tous les descendants (checkboxes, boutons, etc.)
+    const children = container.querySelectorAll('*');
+    for (const child of children) {
+      const childAttrs = ['id', 'name', 'jslog', 'jsdata', 'jsaction', 'aria-describedby', 'aria-label', 'value'];
+      for (const attr of childAttrs) {
+        const id = searchPattern(child.getAttribute(attr));
+        if (id) return id;
+      }
+    }
+
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // Routine de suppression native (Virtual Flow Deletion)
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -236,9 +297,46 @@
       }
 
       if (targetContainer) {
-        // Déclencher directement la suppression native SANS fermer le panneau
-        // (le navigateur gère la fermeture après la suppression)
-        triggerNativeDeleteDialog(targetContainer);
+        // Tenter la suppression via RPC en arrière-plan
+        const match = window.location.pathname.match(/\/notebook\/([a-zA-Z0-9_-]+)/);
+        const notebookId = match ? match[1] : null;
+        const sourceId = extractSourceId(targetContainer);
+
+        if (notebookId && sourceId) {
+          const isConfirmed = confirm(`${t('deleteConfirmTitle')} "${sourceTitle}" ?`);
+          if (!isConfirmed) return;
+
+          deleteBtn.disabled = true;
+          console.log(`[MM] Suppression par RPC de la source ${sourceId} dans le notebook ${notebookId}`);
+
+          window.MM.rpc.deleteSource(sourceId, notebookId)
+            .then(function () {
+              console.log('[MM] Suppression RPC réussie. Nettoyage de l\'interface.');
+
+              // Retirer visuellement la source du DOM avec effet fondu
+              if (targetContainer) {
+                targetContainer.style.transition = 'opacity 0.4s ease';
+                targetContainer.style.opacity = '0';
+                setTimeout(function () {
+                  targetContainer.remove();
+                }, 400);
+              }
+
+              // Fermer le panneau individuel (collapse)
+              simulateClick(collapseBtn);
+            })
+            .catch(function (err) {
+              console.error('[MM] Échec de la suppression RPC, repli sur le flux natif :', err);
+              // Fallback en cas d'erreur de communication ou d'expiration de session
+              triggerNativeDeleteDialog(targetContainer);
+            })
+            .finally(function () {
+              deleteBtn.disabled = false;
+            });
+        } else {
+          console.warn('[MM] Informations de source ou de notebook manquantes pour RPC, utilisation du flux natif.');
+          triggerNativeDeleteDialog(targetContainer);
+        }
       } else {
         // Dernier recours : fermer le panneau et réessayer
         simulateClick(collapseBtn);
