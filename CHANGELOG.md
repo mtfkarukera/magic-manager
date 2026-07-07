@@ -4,7 +4,10 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
-## [0.2.0] — 2026-07-07
+## [0.2.1] — 2026-07-07
+
+### Changé / Corrigé (Hotfix AMO)
+- Incrément de version de 0.2.0 à 0.2.1 en raison d'une collision de version sur le store AMO (la v0.2.0 étant déjà déclarée).
 
 ### Ajouté
 - 🔍 **Recherche globale fonctionnelle** :
