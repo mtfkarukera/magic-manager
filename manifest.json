@@ -21,7 +21,6 @@
       "matches": ["*://notebooklm.google.com/*"],
       "js": [
         "lib/jspdf.umd.min.js",
-        "lib/jszip.min.js",
         "src/shared/utils.js",
         "src/content/ui/dialogs.js",
         "src/content/ui/settings.js",

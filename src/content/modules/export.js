@@ -3,7 +3,7 @@
 // Dépendances :
 // - window.MM (t, createElement, debounce)
 // - lib/jspdf.umd.min.js (window.jspdf)
-// - lib/jszip.min.js (window.JSZip)
+// Note : JSZip supprimé — ZIP généré en pur JS via buildZipBlob (format STORE, sans eval)
 
 'use strict';
 
@@ -111,6 +111,113 @@
 
   // ═══════════════════════════════════════════════════════════════════════
   // Générateurs de format (PDF / Markdown / ZIP)
+  // Implémentation ZIP en pur JS sans librairie externe (format STORE, non compressé)
+  // afin d'éviter l'avertissement AMO lié au constructeur Function de JSZip.
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Calcule le CRC-32 d'un Uint8Array (algorithme standard ZIP).
+   * @param {Uint8Array} data
+   * @returns {number}
+   */
+  function crc32(data) {
+    // Table CRC-32 précalculée (IEEE 802.3)
+    const table = new Int32Array(256);
+    for (let i = 0; i < 256; i++) {
+      let c = i;
+      for (let j = 0; j < 8; j++) {
+        c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      }
+      table[i] = c;
+    }
+    let crc = -1;
+    for (let i = 0; i < data.length; i++) {
+      crc = table[(crc ^ data[i]) & 0xFF] ^ (crc >>> 8);
+    }
+    return (crc ^ -1) >>> 0;
+  }
+
+  /**
+   * Construit un fichier ZIP (format STORE — sans compression) en pur JS.
+   * Élimine toute dépendance à JSZip et son usage de Function constructor.
+   *
+   * @param {Array<{name: string, data: string}>} files - Liste {name, data} de fichiers texte
+   * @returns {Blob} Fichier ZIP prêt à télécharger
+   */
+  function buildZipBlob(files) {
+    const enc = new TextEncoder();
+    const parts = [];
+    const centralDir = [];
+    let offset = 0;
+
+    for (const file of files) {
+      const nameBytes = enc.encode(file.name);
+      const dataBytes = enc.encode(file.data);
+      const crc      = crc32(dataBytes);
+      const size     = dataBytes.length;
+      const now      = new Date();
+
+      // Date/heure DOS
+      const dosDate = ((now.getFullYear() - 1980) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
+      const dosTime = (now.getHours() << 11) | (now.getMinutes() << 5) | (now.getSeconds() >> 1);
+
+      // En-tête local (30 octets + nom)
+      const local = new Uint8Array(30 + nameBytes.length);
+      const lv = new DataView(local.buffer);
+      lv.setUint32(0,  0x04034B50, true);  // Signature PK
+      lv.setUint16(4,  20,         true);  // Version minimum
+      lv.setUint16(6,  0,          true);  // Flags
+      lv.setUint16(8,  0,          true);  // Compression : STORE
+      lv.setUint16(10, dosTime,    true);
+      lv.setUint16(12, dosDate,    true);
+      lv.setUint32(14, crc,        true);
+      lv.setUint32(18, size,       true);  // Taille compressée
+      lv.setUint32(22, size,       true);  // Taille non-compressée
+      lv.setUint16(26, nameBytes.length, true);
+      lv.setUint16(28, 0,          true);  // Extra length
+      local.set(nameBytes, 30);
+
+      // Enregistrement dans le répertoire central
+      const central = new Uint8Array(46 + nameBytes.length);
+      const cv = new DataView(central.buffer);
+      cv.setUint32(0,  0x02014B50, true); // Signature
+      cv.setUint16(4,  20,         true); // Version auteur
+      cv.setUint16(6,  20,         true); // Version minimum
+      cv.setUint16(8,  0,          true); // Flags
+      cv.setUint16(10, 0,          true); // Compression : STORE
+      cv.setUint16(12, dosTime,    true);
+      cv.setUint16(14, dosDate,    true);
+      cv.setUint32(16, crc,        true);
+      cv.setUint32(20, size,       true);
+      cv.setUint32(24, size,       true);
+      cv.setUint16(28, nameBytes.length, true);
+      cv.setUint16(30, 0,  true); // Extra
+      cv.setUint16(32, 0,  true); // Comment
+      cv.setUint16(34, 0,  true); // Disk start
+      cv.setUint16(36, 0,  true); // Internal attr
+      cv.setUint32(38, 0,  true); // External attr
+      cv.setUint32(42, offset, true); // Offset
+      central.set(nameBytes, 46);
+
+      parts.push(local, dataBytes);
+      centralDir.push(central);
+      offset += local.length + size;
+    }
+
+    // Enregistrement de fin (End of Central Directory)
+    const cdSize = centralDir.reduce((s, c) => s + c.length, 0);
+    const eocd   = new Uint8Array(22);
+    const ev     = new DataView(eocd.buffer);
+    ev.setUint32(0, 0x06054B50, true); // Signature
+    ev.setUint16(4, 0, true); ev.setUint16(6, 0, true);
+    ev.setUint16(8, files.length, true);
+    ev.setUint16(10, files.length, true);
+    ev.setUint32(12, cdSize, true);
+    ev.setUint32(16, offset, true);
+    ev.setUint16(20, 0, true);
+
+    return new Blob([...parts, ...centralDir, eocd], { type: 'application/zip' });
+  }
   // ═══════════════════════════════════════════════════════════════════════
 
   function downloadMarkdown(filename, content) {
@@ -129,71 +236,76 @@
   }
 
   function downloadPDF(filename, content) {
+    // Sécurité : vérifier que jsPDF est disponible dans l'environnement
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      console.error('[MM] jsPDF non disponible (window.jspdf manquant). Export PDF annulé.');
+      return;
+    }
+
     const cleanFilename = (filename || 'source').replace(/[\/\\?%*:|"<>\s]/g, '_') + '.pdf';
-    
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
 
-    // Configuration police et marges
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const maxLineWidth = pageWidth - (margin * 2);
-
-    // Titre du document dans le PDF
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(16);
-    const titleLines = doc.splitTextToSize(filename, maxLineWidth);
-    let y = 25;
-    
-    titleLines.forEach(line => {
-      if (y > pageHeight - margin) {
-        doc.addPage();
-        y = 20;
-      }
-      doc.text(line, margin, y);
-      y += 8;
-    });
-
-    y += 4; // Espace après le titre
-
-    // Contenu texte
-    doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(11);
-    
-    const paragraphs = content.split('\n\n');
-    paragraphs.forEach(p => {
-      const pText = p.replace(/\s+/g, ' ').trim();
-      if (!pText) return;
-
-      const lines = doc.splitTextToSize(pText, maxLineWidth);
-      lines.forEach(line => {
-        if (y > pageHeight - margin) {
-          doc.addPage();
-          y = 20;
-        }
-        doc.text(line, margin, y);
-        y += 6;
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
       });
-      y += 4; // Espace inter-paragraphe
-    });
 
-    // Téléchargement via blob URL (même méthode fiable que downloadMarkdown)
-    // doc.save() peut être bloqué en content script Firefox — on passe par un lien <a>
-    const pdfBlob = new Blob([doc.output('arraybuffer')], { type: 'application/pdf' });
-    const pdfUrl = URL.createObjectURL(pdfBlob);
-    const a = document.createElement('a');
-    a.href = pdfUrl;
-    a.download = cleanFilename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(pdfUrl);
-    console.log(`[MM] Fichier PDF téléchargé : ${cleanFilename}`);
+      // Configuration police et marges
+      const margin = 20;
+      const pageWidth = doc.internal.pageSize.getWidth();
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const maxLineWidth = pageWidth - (margin * 2);
+
+      // Titre du document dans le PDF
+      doc.setFont('Helvetica', 'bold');
+      doc.setFontSize(16);
+      const titleLines = doc.splitTextToSize(filename || 'Document', maxLineWidth);
+      let y = 25;
+
+      titleLines.forEach(function (line) {
+        if (y > pageHeight - margin) { doc.addPage(); y = 20; }
+        doc.text(line, margin, y);
+        y += 8;
+      });
+
+      y += 4; // Espace après le titre
+
+      // Contenu texte
+      doc.setFont('Helvetica', 'normal');
+      doc.setFontSize(11);
+
+      const paragraphs = content.split('\n\n');
+      paragraphs.forEach(function (p) {
+        const pText = p.replace(/\s+/g, ' ').trim();
+        if (!pText) return;
+        const lines = doc.splitTextToSize(pText, maxLineWidth);
+        lines.forEach(function (line) {
+          if (y > pageHeight - margin) { doc.addPage(); y = 20; }
+          doc.text(line, margin, y);
+          y += 6;
+        });
+        y += 4; // Espace inter-paragraphe
+      });
+
+      // Téléchargement via blob (méthode fiable en content script Firefox)
+      // doc.output('blob') retourne un vrai Blob PDF sans étape intermédiaire
+      const pdfBlob = doc.output('blob');
+      const pdfUrl  = URL.createObjectURL(pdfBlob);
+      const a = document.createElement('a');
+      a.href     = pdfUrl;
+      a.download = cleanFilename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      // Libérer l'URL après un délai (le clic est asynchrone)
+      setTimeout(function () { URL.revokeObjectURL(pdfUrl); }, 1000);
+      console.log('[MM] Fichier PDF téléchargé :', cleanFilename);
+
+    } catch (err) {
+      console.error('[MM] Erreur lors de la génération PDF :', err);
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -242,14 +354,15 @@
 
   async function startBatchProcess(checkboxes, format) {
     console.log(`[MM] Lancement de l'exportation par lot au format ${format} pour ${checkboxes.length} sources...`);
-    
-    const zip = (format === 'ZIP') ? new window.JSZip() : null;
+
+    // Collecte des fichiers pour l'export ZIP (format STORE natif, sans JSZip)
+    const zipFiles = [];
     const activeNotebookName = getActiveNotebookName();
-    
+
     for (let i = 0; i < checkboxes.length; i++) {
       const cb = checkboxes[i];
       const sourceTitle = cb.getAttribute('aria-label') || `Source_${i+1}`;
-      
+
       // Simuler le clic pour ouvrir la source et charger son texte
       const container = findSourceContainerByTitle(sourceTitle);
       if (container) {
@@ -258,7 +371,7 @@
           stretchedBtn.click();
           // Attendre le rendu dynamique du source-viewer
           await new Promise(r => setTimeout(r, 600));
-          
+
           const data = findIndividualSourceData();
           if (data && data.content) {
             if (format === 'Markdown') {
@@ -267,26 +380,27 @@
               downloadPDF(data.title, data.content);
             } else if (format === 'ZIP') {
               const cleanTitle = (data.title || `Source_${i+1}`).replace(/[\/\\?%*:|"<>\s]/g, '_') + '.md';
-              zip.file(cleanTitle, data.content);
+              zipFiles.push({ name: cleanTitle, data: data.content });
             }
           }
         }
       }
     }
 
-    if (format === 'ZIP') {
+    if (format === 'ZIP' && zipFiles.length > 0) {
       const zipName = (activeNotebookName || 'Notebook_Sources').replace(/[\/\\?%*:|"<>\s]/g, '_') + '.zip';
-      const content = await zip.generateAsync({ type: 'blob' });
-      
-      const url = URL.createObjectURL(content);
-      const a = document.createElement('a');
-      a.href = url;
+      // buildZipBlob : implémentation ZIP native sans JSZip (format STORE)
+      const zipBlob = buildZipBlob(zipFiles);
+
+      const url = URL.createObjectURL(zipBlob);
+      const a   = document.createElement('a');
+      a.href     = url;
       a.download = zipName;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      console.log(`[MM] Package ZIP téléchargé : ${zipName}`);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      console.log(`[MM] Package ZIP téléchargé : ${zipName} (${zipFiles.length} fichiers)`);
     }
 
     console.log('[MM] Exportation par lot terminée');
