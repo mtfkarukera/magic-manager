@@ -189,7 +189,7 @@
         cb.checked === true || 
         cb.classList.contains('mat-pseudo-checkbox-checked') || 
         cb.getAttribute('state') === 'checked' ||
-        cb.className.includes('checked') ||
+        (typeof cb.className === 'string' && cb.className.includes('checked')) ||
         cb.getAttribute('aria-selected') === 'true';
 
       const isGlobal = 
@@ -550,8 +550,26 @@
   }
 
   function updateBatchMergeButtonState() {
+    const list = findSourcesListContainer();
+    if (!list) {
+      console.log('[MM] updateBatchMergeButtonState : aucun conteneur de sources trouvé.');
+      return;
+    }
+
+    // Diagnostic : lister TOUTES les checkboxes trouvées et leur état
+    const allCheckboxes = window.MM.findElementsInShadows(
+      'input[type="checkbox"], [role="checkbox"], mat-pseudo-checkbox, .mat-pseudo-checkbox, [class*="checkbox"]',
+      list
+    );
+    if (allCheckboxes.length > 0 && allCheckboxes.length <= 30) {
+      console.log(`[MM] updateBatchMergeButtonState : ${allCheckboxes.length} checkbox(es) trouvée(s). Diagnostic des 5 premières :`);
+      allCheckboxes.slice(0, 5).forEach(function (cb, idx) {
+        console.log(`  → [${idx}] tag=${cb.tagName} role=${cb.getAttribute('role')} aria-checked=${cb.getAttribute('aria-checked')} checked=${cb.checked} class=${typeof cb.className === 'string' ? cb.className.slice(0, 80) : 'SVG'} state=${cb.getAttribute('state')}`);
+      });
+    }
+
     const checked = getCheckedSourceCheckboxes();
-    console.log(`[MM] updateBatchMergeButtonState : ${checked.length} source(s) cochée(s) détectée(s).`);
+    console.log(`[MM] updateBatchMergeButtonState : ${checked.length} source(s) cochée(s) détectée(s) (sur ${allCheckboxes.length} checkboxes au total).`);
     
     // Ancre prioritaire : le panel-header du panneau des sources de NotebookLM
     const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');

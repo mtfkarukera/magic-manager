@@ -66,7 +66,7 @@
         cb.checked === true || 
         cb.classList.contains('mat-pseudo-checkbox-checked') || 
         cb.getAttribute('state') === 'checked' ||
-        cb.className.includes('checked') ||
+        (typeof cb.className === 'string' && cb.className.includes('checked')) ||
         cb.getAttribute('aria-selected') === 'true';
 
       const isGlobal = 
