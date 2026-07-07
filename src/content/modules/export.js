@@ -28,7 +28,7 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   function findSourcesListContainer() {
-    return document.querySelector('.sources-panel, [class*="sources-panel"], [class*="source-list"]');
+    return document.querySelector('section.source-panel, .source-panel, .sources-panel, [class*="source-panel"], [class*="sources-panel"], [class*="source-list"]');
   }
 
   function findSelectAllRow() {
@@ -528,39 +528,68 @@
 
   function updateBatchExportButtonState() {
     const checked = getCheckedSourceCheckboxes();
+    console.log(`[MM] updateBatchExportButtonState : ${checked.length} source(s) cochée(s) détectée(s).`);
     
-    let anchor = document.querySelector('.mm-search-bar');
-    let isSearchBar = true;
+    // Ancre prioritaire : le panel-header du panneau des sources de NotebookLM
+    const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
+    const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header, [class*="header"]') : null;
+    
+    let anchor = panelHeader;
+    let isHeader = true;
+    
     if (!anchor) {
-      anchor = findSelectAllRow();
-      isSearchBar = false;
+      anchor = document.querySelector('.mm-search-bar') || findSelectAllRow();
+      isHeader = false;
+      console.log('[MM] updateBatchExportButtonState : pas de panel-header trouvé, utilisation fallback :', anchor ? anchor.tagName : 'non trouvé');
     }
     
-    if (!anchor) return;
+    if (!anchor) {
+      console.warn('[MM] updateBatchExportButtonState : aucune ancre trouvée pour injecter le bouton d\'export par lot.');
+      return;
+    }
 
     if (checked.length > 0) {
       if (!batchExportButton || !anchor.contains(batchExportButton)) {
         if (batchExportButton) batchExportButton.remove();
 
+        console.log('[MM] updateBatchExportButtonState : création du bouton d\'export par lot.');
+
         batchExportButton = createElement('button', {
           className: 'mm-batch-export-btn',
           title: `${t('exportButton')} (${checked.length})`,
-          style: isSearchBar 
-            ? 'background: transparent; border: none; color: var(--mm-primary, #4285F4); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--mm-radius-sm); padding: 6px; transition: color var(--mm-transition-fast); margin-left: 6px;'
+          style: isHeader
+            ? 'background: transparent; border: none; color: var(--mm-primary, #4285F4); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; width: 32px; height: 32px; transition: background-color var(--mm-transition-fast), color var(--mm-transition-fast); margin-right: 4px; padding: 0;'
             : 'background: transparent; border: none; color: var(--mm-primary, #4285F4); cursor: pointer; margin-left: 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--mm-radius-sm); padding: 4px; transition: color var(--mm-transition-fast);',
           onClick: triggerBatchExport
         }, [
           createDownloadIcon(),
           createElement('span', {
-            style: 'font-size: 11px; font-weight: bold; margin-left: 4px; font-family: var(--mm-font-family);',
+            style: 'font-size: 10px; font-weight: bold; margin-left: 2px; font-family: var(--mm-font-family);',
             textContent: `(${checked.length})`
           })
         ]);
 
-        if (isSearchBar) {
-          const mergeBtn = anchor.querySelector('.mm-batch-merge-btn');
-          if (mergeBtn) {
-            anchor.insertBefore(batchExportButton, mergeBtn);
+        // Effets de survol si injecté dans le header
+        if (isHeader) {
+          batchExportButton.addEventListener('mouseenter', function () {
+            batchExportButton.style.backgroundColor = 'rgba(66, 133, 244, 0.08)';
+          });
+          batchExportButton.addEventListener('mouseleave', function () {
+            batchExportButton.style.backgroundColor = 'transparent';
+          });
+        }
+
+        if (isHeader) {
+          // Trouver le bouton collapse natif
+          const nativeButtons = Array.from(anchor.querySelectorAll(
+            'button:not(.mm-batch-merge-btn):not(.mm-batch-export-btn):not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
+          ));
+          const collapseBtn = nativeButtons[nativeButtons.length - 1];
+          if (collapseBtn) {
+            // Insérer à gauche du bouton de fusion s'il existe déjà
+            const mergeBtn = anchor.querySelector('.mm-batch-merge-btn');
+            const targetBefore = mergeBtn || collapseBtn;
+            targetBefore.parentNode.insertBefore(batchExportButton, targetBefore);
           } else {
             anchor.appendChild(batchExportButton);
           }
@@ -576,6 +605,7 @@
       }
     } else {
       if (batchExportButton) {
+        console.log('[MM] updateBatchExportButtonState : retrait du bouton d\'export par lot (0 source cochée).');
         batchExportButton.remove();
         batchExportButton = null;
       }

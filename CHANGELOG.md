@@ -4,7 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
-## [0.4.0] — 2026-07-07
+## [0.4.1] — 2026-07-08 (En cours)
+
+### Corrigé
+- 📑 **Fusion de sources** : Correction du sélecteur du panneau de gauche (singulier vs pluriel) empêchant l'affichage du bouton de fusion.
+
+## [0.4.0] — 2026-07-08
 
 ### Ajouté
 - 📑 **Fusion intelligente des sources** (`merge.js`) :
@@ -13,8 +18,10 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   - Extracteur séquentiel DOM robuste avec boucle d'attente asynchrone et nettoyage des résidus visuels.
   - Importation automatique en tant que nouvelle source via RPC (Markdown via `addTextSource`, PDF via `uploadBlob`).
 - 📌 **Export du chat IA** (`chatexport.js`) :
-  - Bouton "Sauvegarder en note" injecté sous chaque réponse IA de la zone de chat.
-  - Synchronisation instantanée de la note de carnet par simulation du clic sur l'actionneur natif.
+  - Bouton unique "Exporter toute la conversation" injecté élégamment dans la barre d'en-tête du panneau Discussion.
+  - Déduplication robuste des messages en naviguant à travers le Shadow DOM.
+  - Détection fiable des rôles AI et Utilisateur via les éléments de retour interactifs de l'IA.
+  - Création de véritables notes dans le Studio via l'injection DOM HTML pour conserver la mise en page aérée et les sauts de ligne.
 
 ## [0.3.0] — 2026-07-07
 

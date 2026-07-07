@@ -154,7 +154,7 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   function findSourcesListContainer() {
-    return document.querySelector('.sources-panel, [class*="sources-panel"], [class*="source-list"]');
+    return document.querySelector('section.source-panel, .source-panel, .sources-panel, [class*="source-panel"], [class*="sources-panel"], [class*="source-list"]');
   }
 
   function findSelectAllRow() {
@@ -551,37 +551,67 @@
 
   function updateBatchMergeButtonState() {
     const checked = getCheckedSourceCheckboxes();
+    console.log(`[MM] updateBatchMergeButtonState : ${checked.length} source(s) cochée(s) détectée(s).`);
     
-    let anchor = document.querySelector('.mm-search-bar');
-    let isSearchBar = true;
+    // Ancre prioritaire : le panel-header du panneau des sources de NotebookLM
+    const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
+    const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header, [class*="header"]') : null;
+    
+    let anchor = panelHeader;
+    let isHeader = true;
+    
     if (!anchor) {
-      anchor = findSelectAllRow();
-      isSearchBar = false;
+      anchor = document.querySelector('.mm-search-bar') || findSelectAllRow();
+      isHeader = false;
+      console.log('[MM] updateBatchMergeButtonState : pas de panel-header trouvé, utilisation fallback :', anchor ? anchor.tagName : 'non trouvé');
     }
     
-    if (!anchor) return;
+    if (!anchor) {
+      console.warn('[MM] updateBatchMergeButtonState : aucune ancre trouvée pour injecter le bouton de fusion.');
+      return;
+    }
 
     if (checked.length >= 2) {
       if (!batchMergeButton || !anchor.contains(batchMergeButton)) {
         if (batchMergeButton) batchMergeButton.remove();
 
+        console.log('[MM] updateBatchMergeButtonState : création du bouton de fusion.');
         batchMergeButton = createElement('button', {
           className: 'mm-batch-merge-btn',
           title: `${t('mergeButton') || 'Fusionner'} (${checked.length})`,
-          style: isSearchBar 
-            ? 'background: transparent; border: none; color: #34A853; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--mm-radius-sm); padding: 6px; transition: color var(--mm-transition-fast); margin-left: 6px;'
+          style: isHeader
+            ? 'background: transparent; border: none; color: #34A853; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; width: 32px; height: 32px; transition: background-color var(--mm-transition-fast), color var(--mm-transition-fast); margin-right: 4px; padding: 0;'
             : 'background: transparent; border: none; color: #34A853; cursor: pointer; margin-left: 8px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--mm-radius-sm); padding: 4px; transition: color var(--mm-transition-fast);',
           onClick: () => showMergeDialog(checked)
         }, [
           createMergeIcon(),
           createElement('span', {
-            style: 'font-size: 11px; font-weight: bold; margin-left: 4px; font-family: var(--mm-font-family);',
+            style: 'font-size: 10px; font-weight: bold; margin-left: 2px; font-family: var(--mm-font-family);',
             textContent: `(${checked.length})`
           })
         ]);
 
-        if (isSearchBar) {
-          anchor.appendChild(batchMergeButton);
+        // Effets de survol si injecté dans le header
+        if (isHeader) {
+          batchMergeButton.addEventListener('mouseenter', function () {
+            batchMergeButton.style.backgroundColor = 'rgba(52, 168, 83, 0.08)';
+          });
+          batchMergeButton.addEventListener('mouseleave', function () {
+            batchMergeButton.style.backgroundColor = 'transparent';
+          });
+        }
+
+        if (isHeader) {
+          // Trouver le bouton collapse natif (dernier bouton natif du header)
+          const nativeButtons = Array.from(anchor.querySelectorAll(
+            'button:not(.mm-batch-merge-btn):not(.mm-batch-export-btn):not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
+          ));
+          const collapseBtn = nativeButtons[nativeButtons.length - 1];
+          if (collapseBtn) {
+            collapseBtn.parentNode.insertBefore(batchMergeButton, collapseBtn);
+          } else {
+            anchor.appendChild(batchMergeButton);
+          }
         } else {
           const exportBtn = anchor.querySelector('.mm-batch-export-btn');
           if (exportBtn) {
@@ -599,6 +629,7 @@
       }
     } else {
       if (batchMergeButton) {
+        console.log('[MM] updateBatchMergeButtonState : retrait du bouton de fusion (moins de 2 sources cochées).');
         batchMergeButton.remove();
         batchMergeButton = null;
       }
