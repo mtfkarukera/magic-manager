@@ -51,6 +51,14 @@
     "message": "Lỗi khi hợp nhất",
     "description": "Message d'erreur lors de la fusion"
   },
+  "mergedSourcesTitle": {
+    "message": "Nguồn được trộn",
+    "description": "Titre par défaut de la source issue de la fusion"
+  },
+  "mergedTitleLabel": {
+    "message": "Tiêu đề nguồn mới",
+    "description": "Libellé du champ de saisie du titre fusionné"
+  },
   "exportButton": {
     "message": "Xuất",
     "description": "Libellé du bouton d'export"

@@ -4,6 +4,18 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.4.0] — 2026-07-07
+
+### Ajouté
+- 📑 **Fusion intelligente des sources** (`merge.js`) :
+  - Sélection multiple de sources dans la liste latérale et bouton "Fusionner" dynamique.
+  - Modale de configuration moderne et premium pour saisir le titre et choisir le format (Markdown ou PDF).
+  - Extracteur séquentiel DOM robuste avec boucle d'attente asynchrone et nettoyage des résidus visuels.
+  - Importation automatique en tant que nouvelle source via RPC (Markdown via `addTextSource`, PDF via `uploadBlob`).
+- 📌 **Export du chat IA** (`chatexport.js`) :
+  - Bouton "Sauvegarder en note" injecté sous chaque réponse IA de la zone de chat.
+  - Synchronisation instantanée de la note de carnet par simulation du clic sur l'actionneur natif.
+
 ## [0.3.0] — 2026-07-07
 
 ### Ajouté

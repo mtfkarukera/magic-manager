@@ -279,12 +279,125 @@
     return true;
   }
 
+  /**
+   * Extraie la première string d'une structure imbriquée de tableaux.
+   */
+  function extractFirstString(data) {
+    if (typeof data === 'string') return data;
+    if (Array.isArray(data) && data.length > 0) {
+      return extractFirstString(data[0]);
+    }
+    return null;
+  }
+
+  /**
+   * Ajoute une source de texte brute (Markdown) au notebook.
+   */
+  async function addTextSource(notebookId, title, content) {
+    if (!notebookId || !title || content === undefined) {
+      throw new Error('[MM] addTextSource : notebookId, title ou content manquant.');
+    }
+    const rpcId = 'izAoDd';
+    const params = [
+      [[null, [title, content], null, null, null, null, null, null]],
+      notebookId,
+      [2],
+      null,
+      null
+    ];
+    console.log(`[MM] Appel RPC addTextSource (notebook: ${notebookId}, titre: ${title})`);
+    await sendBatchExecute(rpcId, params);
+    console.log(`[MM] RPC addTextSource exécuté avec succès.`);
+    return true;
+  }
+
+  /**
+   * Upload un fichier binaire (Blob) via resumable upload 3 étapes.
+   */
+  async function uploadBlob(notebookId, blob, filename) {
+    if (!notebookId || !blob || !filename) {
+      throw new Error('[MM] uploadBlob : notebookId, blob ou filename manquant.');
+    }
+    const authuser = getAuthuserIndex();
+
+    // Étape 1 : Enregistrer la source (RPC o4cbdc)
+    const registerRpcId = 'o4cbdc';
+    const registerParams = [
+      [[filename]],
+      notebookId,
+      [2],
+      [1, null, null, null, null, null, null, null, null, null, [1]]
+    ];
+    console.log(`[MM] Étape 1 : Enregistrement de la source fichier ${filename} via RPC o4cbdc`);
+    const registerResult = await sendBatchExecute(registerRpcId, registerParams);
+
+    const sourceId = extractFirstString(registerResult);
+    if (!sourceId) {
+      throw new Error('[MM] Impossible de récupérer le SOURCE_ID depuis la réponse d\'enregistrement.');
+    }
+    console.log(`[MM] Source enregistrée avec ID : ${sourceId}`);
+
+    // Étape 2 : Démarrer la session d'upload (POST resumable)
+    const uploadStartUrl = `https://notebooklm.google.com/upload/_/?authuser=${authuser}`;
+    const startBody = JSON.stringify({
+      PROJECT_ID: notebookId,
+      SOURCE_NAME: filename,
+      SOURCE_ID: sourceId
+    });
+
+    console.log(`[MM] Étape 2 : Initialisation de la session d'upload resumable`);
+    const startResponse = await fetch(uploadStartUrl, {
+      method: 'POST',
+      headers: {
+        'Accept': '*/*',
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        'x-goog-authuser': String(authuser),
+        'x-goog-upload-command': 'start',
+        'x-goog-upload-header-content-length': String(blob.size),
+        'x-goog-upload-protocol': 'resumable'
+      },
+      body: startBody
+    });
+
+    if (!startResponse.ok) {
+      throw new Error(`[MM] Impossible d'initialiser la session d'upload (HTTP ${startResponse.status})`);
+    }
+
+    const uploadUrl = startResponse.headers.get('x-goog-upload-url');
+    if (!uploadUrl) {
+      throw new Error('[MM] En-tête x-goog-upload-url manquant dans la réponse d\'initialisation.');
+    }
+
+    // Étape 3 : Envoyer le contenu binaire (POST finalize)
+    console.log(`[MM] Étape 3 : Envoi du Blob binaire (${blob.size} octets)`);
+    const finalizeResponse = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: {
+        'Accept': '*/*',
+        'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8',
+        'x-goog-authuser': String(authuser),
+        'x-goog-upload-command': 'upload, finalize',
+        'x-goog-upload-offset': '0'
+      },
+      body: blob
+    });
+
+    if (!finalizeResponse.ok) {
+      throw new Error(`[MM] Échec de l'envoi final du Blob (HTTP ${finalizeResponse.status})`);
+    }
+
+    console.log(`[MM] Fichier ${filename} uploadé avec succès.`);
+    return true;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // EXPOSITION PUBLIQUE
   // ═══════════════════════════════════════════════════════════════════════
 
   window.MM.rpc = {
-    deleteSource: deleteSource
+    deleteSource: deleteSource,
+    addTextSource: addTextSource,
+    uploadBlob: uploadBlob
   };
 
   // Exposition des classes d'erreurs pour diagnostics

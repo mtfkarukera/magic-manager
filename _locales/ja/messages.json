@@ -51,6 +51,14 @@
     "message": "マージ中にエラーが発生しました",
     "description": "Message d'erreur lors de la fusion"
   },
+  "mergedSourcesTitle": {
+    "message": "マージされたソース",
+    "description": "Titre par défaut de la source issue de la fusion"
+  },
+  "mergedTitleLabel": {
+    "message": "新しいソースのタイトル",
+    "description": "Libellé du champ de saisie du titre fusionné"
+  },
   "exportButton": {
     "message": "エクスポート",
     "description": "Libellé du bouton d'export"
