@@ -236,6 +236,13 @@
   }
 
   function downloadPDF(filename, content) {
+    // Log de diagnostic — visible dans la console de notebooklm.google.com (F12)
+    console.log('[MM] downloadPDF() appelé —', {
+      filename: filename,
+      contentLength: content ? content.length : 0,
+      jspdfDispo: !!(window.jspdf && window.jspdf.jsPDF)
+    });
+
     // Sécurité : vérifier que jsPDF est disponible dans l'environnement
     if (!window.jspdf || !window.jspdf.jsPDF) {
       console.error('[MM] jsPDF non disponible (window.jspdf manquant). Export PDF annulé.');
