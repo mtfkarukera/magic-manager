@@ -67,13 +67,14 @@
   /**
    * Construit les paramètres de recherche de l'URL batchexecute.
    */
-  function buildQueryParams(rpcId) {
-    return new URLSearchParams({
+  function buildQueryParams(rpcId, notebookId) {
+    const params = {
       rpcids: rpcId,
-      'source-path': '/',
+      'source-path': notebookId ? `/notebook/${notebookId}` : '/',
       hl: 'fr',
       rt: 'c' // Mode réponse chunked
-    }).toString();
+    };
+    return new URLSearchParams(params).toString();
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -222,7 +223,7 @@
   /**
    * Envoie une requête batchexecute et renvoie le payload extrait.
    */
-  async function sendBatchExecute(rpcId, jsonArgs) {
+  async function sendBatchExecute(rpcId, jsonArgs, notebookId) {
     const csrfToken = getCsrfToken();
     if (!csrfToken) {
       throw new Error('[MM] Impossible de récupérer le jeton CSRF SNlM0e. L\'utilisateur n\'est peut-être pas authentifié.');
@@ -231,7 +232,7 @@
     const authuser = getAuthuserIndex();
     const rpcRequest = encodeRpcRequest(rpcId, jsonArgs);
     const body = buildRequestBody(rpcRequest, csrfToken);
-    const queryString = buildQueryParams(rpcId);
+    const queryString = buildQueryParams(rpcId, notebookId);
     const endpoint = `https://notebooklm.google.com/_/LabsTailwindUi/data/batchexecute?${queryString}&authuser=${authuser}`;
 
     console.log(`[MM] Envoi de la requête RPC ${rpcId} (authuser: ${authuser})`);
@@ -270,11 +271,11 @@
     }
 
     const rpcId = 'tGMBJ';
-    // Params attendus pour tGMBJ : [notebookId, sourceId]
-    const params = [notebookId, sourceId];
+    // Params attendus pour tGMBJ : [[[sourceId]]] (triple-nested)
+    const params = [[[sourceId]]];
 
     console.log(`[MM] Appel RPC deleteSource (notebook: ${notebookId}, source: ${sourceId})`);
-    await sendBatchExecute(rpcId, params);
+    await sendBatchExecute(rpcId, params, notebookId);
     console.log(`[MM] RPC deleteSource exécuté avec succès pour ${sourceId}`);
     return true;
   }
@@ -298,15 +299,14 @@
       throw new Error('[MM] addTextSource : notebookId, title ou content manquant.');
     }
     const rpcId = 'izAoDd';
+    // Format teng-lin golden test : 11 éléments dans le bloc template, type 2 (texte collé)
     const params = [
-      [[null, [title, content], null, null, null, null, null, null]],
+      [[null, [title, content], null, 2, null, null, null, null, null, null, 1]],
       notebookId,
-      [2],
-      null,
-      null
+      [2, null, null, [1, null, null, null, null, null, null, null, null, null, [1]]]
     ];
     console.log(`[MM] Appel RPC addTextSource (notebook: ${notebookId}, titre: ${title})`);
-    await sendBatchExecute(rpcId, params);
+    await sendBatchExecute(rpcId, params, notebookId);
     console.log(`[MM] RPC addTextSource exécuté avec succès.`);
     return true;
   }
@@ -325,11 +325,10 @@
     const registerParams = [
       [[filename]],
       notebookId,
-      [2],
-      [1, null, null, null, null, null, null, null, null, null, [1]]
+      [2, null, null, [1, null, null, null, null, null, null, null, null, null, [1]]]
     ];
     console.log(`[MM] Étape 1 : Enregistrement de la source fichier ${filename} via RPC o4cbdc`);
-    const registerResult = await sendBatchExecute(registerRpcId, registerParams);
+    const registerResult = await sendBatchExecute(registerRpcId, registerParams, notebookId);
 
     const sourceId = extractFirstString(registerResult);
     if (!sourceId) {
@@ -390,6 +389,159 @@
     return true;
   }
 
+  /**
+   * Extrait le texte d'une réponse GET_SOURCE (hizoJc).
+   * Structure de la réponse Google :
+   *   result[0] : descripteur (titre, métadonnées avec les URLs d'origine et de Drive)
+   *   result[3] : bloc de texte brut. Le contenu texte est à result[3][0].
+   *   result[4] : bloc HTML. L'HTML brut est à result[4][1].
+   *
+   * ⚠️ Ne jamais parcourir récursivement l'ensemble de la réponse sans cibler
+   * les index, car cela capture en premier les URLs de Drive Viewer du descripteur.
+   */
+  function extractTextFromGetSourceResult(result) {
+    if (!Array.isArray(result)) return null;
+
+    // 1. Tenter en priorité de récupérer le HTML brut (result[4][1]) et le convertir en Markdown
+    if (result.length > 4 && Array.isArray(result[4]) && result[4].length > 1) {
+      const htmlCandidate = result[4][1];
+      if (typeof htmlCandidate === 'string' && htmlCandidate.length > 0) {
+        try {
+          const markdown = window.MM.htmlToMarkdown(htmlCandidate);
+          if (markdown && markdown.trim().length > 0) {
+            console.log('[MM] Texte extrait et structuré avec succès depuis le HTML (RPC hizoJc).');
+            return markdown;
+          }
+        } catch (htmlErr) {
+          console.error('[MM] Échec de la conversion HTML vers Markdown :', htmlErr);
+        }
+      }
+    }
+
+    // 2. Repli (Fallback) : Extraction ciblée dans le bloc de texte brut (result[3][0])
+    if (result.length > 3 && Array.isArray(result[3]) && result[3].length > 0) {
+      const textBlocks = result[3][0];
+      if (Array.isArray(textBlocks)) {
+        const texts = [];
+        
+        function walkText(node) {
+          if (typeof node === 'string' && node.length > 0) {
+            texts.push(node);
+          } else if (Array.isArray(node)) {
+            for (const child of node) {
+              walkText(child);
+            }
+          }
+        }
+        
+        walkText(textBlocks);
+        if (texts.length > 0) {
+          console.log('[MM] Texte brut extrait depuis le fallback text (RPC hizoJc).');
+          return texts.join('\n');
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Récupère le texte complet d'une source via son ID et notebookId (RPC hizoJc).
+   */
+  async function getSourceContent(sourceId, notebookId) {
+    if (!sourceId || !notebookId) {
+      throw new Error('[MM] getSourceContent : sourceId ou notebookId manquant.');
+    }
+    const rpcId = 'hizoJc';
+    const params = [[sourceId], [2], [2]];
+    console.log(`[MM] Appel RPC getSourceContent (notebook: ${notebookId}, source: ${sourceId})`);
+    const result = await sendBatchExecute(rpcId, params, notebookId);
+
+    const text = extractTextFromGetSourceResult(result);
+    if (!text) {
+      console.error(`[MM] getSourceContent : texte introuvable dans la réponse pour ${sourceId}`);
+      throw new Error(`Texte introuvable pour la source ${sourceId}`);
+    }
+
+    console.log(`[MM] Texte récupéré pour ${sourceId} : ${text.length} caractères`);
+    return text;
+  }
+
+  /**
+   * Récupère toutes les sources d'un carnet avec leurs IDs et titres (RPC rLM1Ne).
+   */
+  async function getNotebookSources(notebookId) {
+    if (!notebookId) {
+      throw new Error('[MM] getNotebookSources : notebookId manquant.');
+    }
+    const rpcId = 'rLM1Ne';
+    const params = [
+      notebookId,
+      null,
+      [2, null, null, [1, null, null, null, null, null, null, null, null, null, [1]]],
+      null,
+      0
+    ];
+    console.log(`[MM] Appel RPC getNotebookSources (notebook: ${notebookId})`);
+    // Pas de source_path pour GET_NOTEBOOK
+    const result = await sendBatchExecute(rpcId, params, null);
+    if (!Array.isArray(result) || !Array.isArray(result[0])) {
+      return [];
+    }
+    // Chaque source : [sourceId, title, ..., typeCode(slot[16])]
+    return result[0].map(src => ({
+      id: src[0],
+      title: src[1],
+      kind: src[16]
+    }));
+  }
+
+  /**
+   * Crée une note utilisateur en 2 étapes via RPC :
+   * 1. Kickoff via CREATE_NOTE (CYK0Xb) avec contenu vide pour obtenir le noteId.
+   * 2. Mutation via UPDATE_NOTE (cYAfTb) pour définir le titre et le contenu final.
+   */
+  async function createNoteRpc(notebookId, title, content) {
+    if (!notebookId || !title || content === undefined) {
+      throw new Error('[MM] createNoteRpc : notebookId, title ou content manquant.');
+    }
+
+    // Étape 1 : Création de la note (CYK0Xb)
+    const createRpcId = 'CYK0Xb';
+    const createParams = [
+      notebookId,
+      "",
+      [1],
+      null,
+      title
+    ];
+
+    console.log(`[MM] Étape 1 : Création de la note "${title}" via RPC CYK0Xb`);
+    const createResult = await sendBatchExecute(createRpcId, createParams, notebookId);
+    
+    // Le noteId se trouve à l'index [0] ou [0][0] du résultat
+    const noteId = extractFirstString(createResult);
+    if (!noteId) {
+      throw new Error('[MM] Impossible de récupérer le noteId de la note créée.');
+    }
+    console.log(`[MM] Note créée avec ID : ${noteId}`);
+
+    // Étape 2 : Remplissage et mutation de la note (cYAfTb)
+    const updateRpcId = 'cYAfTb';
+    const updateParams = [
+      notebookId,
+      noteId,
+      [
+        [[content, title, [], 0]]
+      ]
+    ];
+
+    console.log(`[MM] Étape 2 : Finalisation de la note ${noteId} via RPC cYAfTb`);
+    await sendBatchExecute(updateRpcId, updateParams, notebookId);
+    console.log(`[MM] Note ${noteId} finalisée avec succès.`);
+    return noteId;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // EXPOSITION PUBLIQUE
   // ═══════════════════════════════════════════════════════════════════════
@@ -397,7 +549,10 @@
   window.MM.rpc = {
     deleteSource: deleteSource,
     addTextSource: addTextSource,
-    uploadBlob: uploadBlob
+    uploadBlob: uploadBlob,
+    getSourceContent: getSourceContent,
+    getNotebookSources: getNotebookSources,
+    createNoteRpc: createNoteRpc
   };
 
   // Exposition des classes d'erreurs pour diagnostics

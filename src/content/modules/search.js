@@ -20,6 +20,9 @@
   /** Observer permanent surveillant les mutations de la page pour ré-injecter si la SPA reconstruit le DOM */
   let pageObserver = null;
 
+  /** Requête de recherche courante pour assurer la persistance lors des transitions SPA */
+  let currentQuery = '';
+
   // ═══════════════════════════════════════════════════════════════════════
   // Sélecteurs et Heuristiques DOM
   // ═══════════════════════════════════════════════════════════════════════
@@ -120,15 +123,10 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
-   * Filtre les sources selon la valeur de recherche.
+   * Applique le filtre de recherche sur les cartes de sources.
+   * @param {string} query - Requête nettoyée en minuscules.
    */
-  const performSearch = debounce(function () {
-    if (!searchBarContainer) return;
-
-    const input = searchBarContainer.querySelector('.mm-search-input');
-    if (!input) return;
-
-    const query = input.value.trim().toLowerCase();
+  function applyFilter(query) {
     const cards = findSourceCards();
     let visibleCount = 0;
 
@@ -148,6 +146,19 @@
     } else {
       hideNoResultsMessage();
     }
+  }
+
+  /**
+   * Filtre les sources selon la valeur de recherche (debouncé).
+   */
+  const performSearch = debounce(function () {
+    if (!searchBarContainer) return;
+
+    const input = searchBarContainer.querySelector('.mm-search-input');
+    if (!input) return;
+
+    currentQuery = input.value.trim().toLowerCase();
+    applyFilter(currentQuery);
   }, 150);
 
   /**
@@ -211,13 +222,36 @@
    * 2. Fallback  : prepend dans la liste scrollable avec position:sticky
    */
   function checkAndInjectSearch() {
-    // Si la barre est déjà dans le DOM et visible → rien à faire
+    // 1. Détecter si l'utilisateur consulte une source active (mode lecture)
+    const isViewingSource = document.querySelector('source-viewer, [class*="source-viewer"]') !== null;
+
+    if (isViewingSource) {
+      // Masquer la barre de recherche si elle est présente pour économiser de l'espace
+      if (searchBarContainer) {
+        searchBarContainer.style.display = 'none';
+      }
+      return;
+    }
+
+    // Si on n'est plus en train de lire et que la barre était masquée, on la réaffiche
+    if (searchBarContainer && searchBarContainer.style.display === 'none') {
+      searchBarContainer.style.display = '';
+      // Ré-appliquer le filtrage persistant
+      applyFilter(currentQuery);
+      return;
+    }
+
+    // Si la barre est déjà dans le DOM et visible → on s'assure d'appliquer le filtre courant
     if (searchBarContainer && document.contains(searchBarContainer)) {
+      applyFilter(currentQuery);
       return;
     }
 
     // Nettoyer une référence orpheline éventuelle
-    if (searchBarContainer) searchBarContainer = null;
+    if (searchBarContainer) {
+      searchBarContainer.remove();
+      searchBarContainer = null;
+    }
 
     // Chercher le conteneur de la liste scrollable
     const container = findSourcesListContainer();
@@ -228,11 +262,13 @@
       type: 'text',
       className: 'mm-search-input',
       placeholder: t('searchPlaceholder'),
+      value: currentQuery, // Pré-remplir avec la requête courante (persistance)
       onInput: performSearch,
       onKeydown: function (e) {
         if (e.key === 'Escape') {
           input.value = '';
-          performSearch();
+          currentQuery = '';
+          applyFilter('');
           input.blur();
         }
       }
@@ -242,14 +278,29 @@
       className: 'mm-search-bar'
     }, [input]);
 
-    // Injecter en tête de la liste scrollable avec position:sticky
-    container.prepend(searchBarContainer);
-    searchBarContainer.style.position = 'sticky';
-    searchBarContainer.style.top = '0';
-    searchBarContainer.style.zIndex = '99';
-    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    searchBarContainer.style.backgroundColor = isDark ? '#1e1f22' : '#ffffff';
-    console.log('[MM] Barre de recherche injectée (sticky dans la liste)');
+    const header = findSourcePanelHeader();
+    const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
+
+    if (sourcePanel && header) {
+      // Injecter juste après le header (hors zone scrollable, fixe dans le flux flexbox)
+      header.parentNode.insertBefore(searchBarContainer, header.nextSibling);
+      searchBarContainer.style.position = 'relative';
+      searchBarContainer.style.margin = '8px 16px';
+      searchBarContainer.style.zIndex = '99';
+      console.log('[MM] Barre de recherche injectée de façon fixe après le header');
+    } else {
+      // Fallback : prepend dans la liste scrollable avec position:sticky
+      container.prepend(searchBarContainer);
+      searchBarContainer.style.position = 'sticky';
+      searchBarContainer.style.top = '0';
+      searchBarContainer.style.zIndex = '99';
+      const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      searchBarContainer.style.backgroundColor = isDark ? '#1e1f22' : '#ffffff';
+      console.log('[MM] Barre de recherche injectée en fallback (sticky)');
+    }
+
+    // Ré-appliquer le filtrage s'il y a une recherche active
+    applyFilter(currentQuery);
   }
 
   /**
@@ -259,7 +310,7 @@
     // 1. Effectuer une détection et injection immédiate
     checkAndInjectSearch();
 
-    // 2. Installer un observer permanent pour surveiller les transitions SPA
+    // 2. Installer un observer permanent pour surveiller les transitions SPA et lecture de source
     if (!pageObserver) {
       pageObserver = new MutationObserver(debounce(function () {
         checkAndInjectSearch();
@@ -288,6 +339,9 @@
     }
 
     window.removeEventListener('keydown', handleGlobalShortcut);
+
+    // Réinitialiser la requête de recherche courante
+    currentQuery = '';
 
     // Restaurer le style d'affichage de toutes les cartes masquées
     const cards = findSourceCards();

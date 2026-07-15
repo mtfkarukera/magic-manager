@@ -17,6 +17,8 @@
   const DEBOUNCE_DELAY = 200;
 
   let panelObserver = null;
+  let globalPageObserver = null;
+  let currentObservedPanel = null;
   let debounceTimer = null;
 
   /**
@@ -60,27 +62,19 @@
     }, DEBOUNCE_DELAY);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // Cycle de vie
-  // ═══════════════════════════════════════════════════════════════════════
+  /**
+   * Tente de connecter le MutationObserver de panneau sur l'élément actif du DOM.
+   */
+  function tryObservePanel() {
+    const sourcePanel = document.querySelector('section.source-panel');
 
-  function initPanelObserver() {
-    if (panelObserver) return;
-
-    // Attendre que section.source-panel soit dans le DOM
-    // (il apparaît quelques instants après document_idle sur les SPA)
-    function tryObserve() {
-      const sourcePanel = document.querySelector('section.source-panel');
-      if (!sourcePanel) {
-        // Réessayer après un court délai si le panel n'est pas encore là
-        setTimeout(tryObserve, 500);
-        return;
+    // Cas 1 : Nouveau panneau détecté
+    if (sourcePanel && sourcePanel !== currentObservedPanel) {
+      if (panelObserver) {
+        panelObserver.disconnect();
       }
 
       panelObserver = new MutationObserver(onPanelMutation);
-
-      // Scope restreint : uniquement section.source-panel (pas document.body)
-      // On observe aussi les attributs pour capturer le cochage/décochage des cases
       panelObserver.observe(sourcePanel, {
         childList: true,
         subtree: true,
@@ -88,23 +82,57 @@
         attributeFilter: ['class', 'aria-checked', 'checked', 'state', 'aria-selected']
       });
 
-      // Vérification initiale au démarrage
+      currentObservedPanel = sourcePanel;
+      console.log('[MM] Panel observer connecté à la nouvelle instance de section.source-panel');
       onPanelMutation();
-
-      console.log('[MM] Panel observer initialisé sur section.source-panel');
     }
+    // Cas 2 : Le panneau a été détruit/retiré du DOM actif
+    else if (!sourcePanel && currentObservedPanel) {
+      if (panelObserver) {
+        panelObserver.disconnect();
+        panelObserver = null;
+      }
+      currentObservedPanel = null;
+      cleanupPanelButtons();
+      console.log('[MM] Panel observer déconnecté (panneau absent du DOM)');
+    }
+  }
 
-    tryObserve();
+  // ═══════════════════════════════════════════════════════════════════════
+  // Cycle de vie
+  // ═══════════════════════════════════════════════════════════════════════
+
+  function initPanelObserver() {
+    if (globalPageObserver) return;
+
+    // MutationObserver global sur document.body pour détecter les changements de carnet
+    globalPageObserver = new MutationObserver(window.MM.debounce(function () {
+      tryObservePanel();
+    }, 200));
+
+    globalPageObserver.observe(document.body, {
+      childList: true,
+      subtree: true
+    });
+
+    // Lancer une première détection immédiate
+    tryObservePanel();
+    console.log('[MM] Observer global de page initialisé dans panel-observer.js');
   }
 
   function cleanupPanelObserver() {
     clearTimeout(debounceTimer);
+    if (globalPageObserver) {
+      globalPageObserver.disconnect();
+      globalPageObserver = null;
+    }
     if (panelObserver) {
       panelObserver.disconnect();
       panelObserver = null;
     }
+    currentObservedPanel = null;
     cleanupPanelButtons();
-    console.log('[MM] Panel observer nettoyé');
+    console.log('[MM] Panel observer nettoyé complet');
   }
 
   window.MM.initPanelObserver = initPanelObserver;

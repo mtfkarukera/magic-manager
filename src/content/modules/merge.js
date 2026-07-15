@@ -492,8 +492,44 @@
   // Processus de Fusion synchrone via DOM + RPC
   // ═══════════════════════════════════════════════════════════════════════
 
+  /**
+   * Nettoie le titre brut récupéré d'une source pour éliminer les préfixes de l'aria-label.
+   */
+  function cleanSourceTitle(rawTitle) {
+    if (!rawTitle) return '';
+    let title = rawTitle.trim();
+    const prefixes = [
+      /^(Ouvrir la source|Ouvrir|Ouvrir le document)\s+/i,
+      /^(Open source|Open|Open document)\s+/i,
+      /^(Abrir la fuente|Abrir)\s+/i,
+      /^(Quelle öffnen|Öffnen)\s+/i
+    ];
+    for (const regex of prefixes) {
+      title = title.replace(regex, '');
+    }
+    return title.trim();
+  }
+
+  /**
+   * Trouve l'identifiant de source correspondant au titre par matching dans la liste RPC.
+   */
+  function findSourceIdByTitle(cleanedTitle, allSources) {
+    if (!cleanedTitle || !allSources) return null;
+    const titleLower = cleanedTitle.toLowerCase();
+    
+    // Essai 1 : match exact
+    let match = allSources.find(s => s.title && s.title.toLowerCase() === titleLower);
+    if (match) return match.id;
+    
+    // Essai 2 : match de sous-chaîne ou d'inclusion
+    match = allSources.find(s => s.title && (titleLower.includes(s.title.toLowerCase()) || s.title.toLowerCase().includes(titleLower)));
+    if (match) return match.id;
+    
+    return null;
+  }
+
   async function runMergeProcess(checkboxes, title, format, dialog, overlay) {
-    const notebookId = getActiveNotebookId();
+    const notebookId = window.MM.getActiveNotebookId();
     if (!notebookId) {
       alert('[MM] Impossible de détecter l\'identifiant du notebook dans l\'URL.');
       overlay.remove();
@@ -520,16 +556,16 @@
     const substatusEl = progressContainer.querySelector('#mm-merge-substatus');
 
     let mergedContent = '';
-    // Mémoriser le titre du viewer actuellement affiché (si un viewer est ouvert)
-    let previousViewerTitle = '';
-    // Capturer le titre actuel avec le même sélecteur robuste que waitForViewerToChange
-    const TITLE_SELECTOR = '.source-title, [class*="source-title"], .title, [class*="viewer-title"]';
-    const initialTitleEl = document.querySelector(`source-viewer ${TITLE_SELECTOR}`);
-    if (initialTitleEl) previousViewerTitle = initialTitleEl.textContent.trim();
-    console.log(`[MM] Fusion : titre initial du viewer = "${previousViewerTitle.slice(0, 50) || '(vide)'}"`);
-    const TITLE_SEL = 'source-viewer ' + TITLE_SELECTOR;
 
     try {
+      // Récupérer toutes les sources du carnet via RPC pour le fallback de matching
+      let allSources = [];
+      try {
+        allSources = await window.MM.rpc.getNotebookSources(notebookId);
+      } catch (e) {
+        console.warn('[MM] Impossible de lister les sources du notebook via RPC.', e);
+      }
+
       for (let i = 0; i < checkboxes.length; i++) {
         const cb = checkboxes[i];
 
@@ -540,34 +576,40 @@
           continue;
         }
 
-        statusEl.textContent = `Extraction de : ${sourceInfo.title.slice(0, 60)}`;
+        const sourceTitle = cleanSourceTitle(sourceInfo.title);
+        statusEl.textContent = `Extraction de : ${sourceTitle.slice(0, 60)}`;
         substatusEl.textContent = `${i} / ${checkboxes.length} sources traitées`;
 
-        console.log(`[MM] Fusion : traitement de "${sourceInfo.title.slice(0, 50)}" (${i+1}/${checkboxes.length})`);
-        sourceInfo.stretchedBtn.click();
+        console.log(`[MM] Fusion : traitement de "${sourceTitle.slice(0, 50)}" (${i+1}/${checkboxes.length})`);
 
-        // Attendre que le viewer affiche la NOUVELLE source (titre différent du précédent)
-        const viewer = await waitForViewerToChange(previousViewerTitle, 4000);
-        if (viewer) {
-          const data = findIndividualSourceData();
-          if (data && data.content) {
-            previousViewerTitle = data.title; // Mémoriser pour la prochaine itération
-            mergedContent += `# ${data.title}\n\n${data.content}\n\n---\n\n`;
+        // 1. Extraire l'ID de la source (DOM puis RPC fallback)
+        let sourceId = window.MM.extractSourceId(sourceInfo.card);
+        if (!sourceId && allSources.length > 0) {
+          sourceId = findSourceIdByTitle(sourceTitle, allSources);
+        }
+
+        if (!sourceId) {
+          console.error(`[MM] Impossible de trouver l'identifiant de la source pour "${sourceTitle}"`);
+          continue;
+        }
+
+        // 2. Récupérer le contenu brut via RPC
+        try {
+          const content = await window.MM.rpc.getSourceContent(sourceId, notebookId);
+          if (content) {
+            mergedContent += `# ${sourceTitle}\n\n${content}\n\n---\n\n`;
           } else {
-            console.warn(`[MM] Fusion : aucun contenu extractible pour "${sourceInfo.title.slice(0, 50)}"`);
-            // En cas d'échec d'extraction, mettre à jour quand même pour éviter une boucle infinie
-            const currentTitleEl = document.querySelector(TITLE_SEL);
-            if (currentTitleEl) previousViewerTitle = currentTitleEl.textContent.trim();
+            console.warn(`[MM] Contenu vide reçu pour "${sourceTitle}"`);
           }
-        } else {
-          console.warn(`[MM] Fusion : timeout pour la source "${sourceInfo.title.slice(0, 50)}". Source ignorée.`);
-          // Mettre à jour le titre de référence pour ne pas bloquer la suivante
-          const currentTitleEl = document.querySelector(TITLE_SEL);
-          if (currentTitleEl) previousViewerTitle = currentTitleEl.textContent.trim();
+        } catch (err) {
+          console.error(`[MM] Échec de la récupération du contenu pour "${sourceTitle}" :`, err);
+        }
+
+        // Espacement temporel de sécurité pour éviter le rate limiting (429)
+        if (i < checkboxes.length - 1) {
+          await new Promise(r => setTimeout(r, 200));
         }
       }
-
-      closeSourceViewer();
 
       if (!mergedContent) {
         throw new Error('Aucun contenu textuel n\'a pu être extrait des sources sélectionnées.');
@@ -583,20 +625,39 @@
         await window.MM.rpc.uploadBlob(notebookId, pdfBlob, `${title}.pdf`);
       }
 
+      // Cacher le spinner
+      const spinner = dialog.querySelector('.mm-merge-spinner');
+      if (spinner) spinner.style.display = 'none';
+
       statusEl.textContent = 'Fusion terminée !';
       statusEl.style.color = '#34A853';
-      substatusEl.textContent = 'La nouvelle source a été ajoutée à votre carnet.';
+      substatusEl.textContent = 'La nouvelle source a été ajoutée à votre carnet. Actualisation en cours...';
       
       const btnClose = createElement('button', {
         className: 'mm-merge-btn-confirm',
         style: 'margin-top: 16px; background-color: #34A853;',
         textContent: 'Fermer',
-        onClick: () => overlay.remove()
+        onClick: () => {
+          overlay.remove();
+          window.location.reload();
+        }
       });
       progressContainer.appendChild(btnClose);
 
+      // Rechargement automatique de la page après 1.5s pour synchroniser l'affichage
+      setTimeout(() => {
+        if (overlay && overlay.parentNode) {
+          overlay.remove();
+          window.location.reload();
+        }
+      }, 1500);
+
     } catch (err) {
       console.error('[MM] Erreur lors de la fusion :', err);
+      // Cacher le spinner en cas d'erreur
+      const spinner = dialog.querySelector('.mm-merge-spinner');
+      if (spinner) spinner.style.display = 'none';
+
       statusEl.textContent = 'Une erreur est survenue';
       statusEl.style.color = '#EA4335';
       substatusEl.textContent = err.message || err;

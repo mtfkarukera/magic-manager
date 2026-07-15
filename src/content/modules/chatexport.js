@@ -286,161 +286,23 @@
     'textarea'
   ];
 
-  async function createNoteViaDom(content) {
-    // Trouver le conteneur du panneau Studio pour restreindre toutes nos recherches suivantes
-    const studioPanel = document.querySelector('.studio-panel, [class*="studio-panel"], [class*="studio"]');
-    if (!studioPanel) {
-      throw new Error('[MM] ChatExport : panneau de droite (Studio) introuvable dans la page.');
+  function getActiveNotebookName() {
+    const titleLabel = document.querySelector('.title-label-inner');
+    if (titleLabel) return titleLabel.textContent.trim();
+    const titleInput = document.querySelector('.title-input');
+    if (titleInput) return titleInput.value.trim();
+    return 'Notebook';
+  }
+
+  async function createNoteViaRpc(title, content) {
+    const notebookId = window.MM.getActiveNotebookId();
+    if (!notebookId) {
+      throw new Error('[MM] ChatExport : impossible de détecter l\'identifiant du notebook dans l\'URL.');
     }
 
-    // 1. Trouver le bouton "Ajouter une note" uniquement dans le Studio
-    let addNoteBtn = null;
-    for (const sel of ADD_NOTE_BUTTON_SELECTORS) {
-      const btn = studioPanel.querySelector(sel);
-      if (btn) {
-        addNoteBtn = btn;
-        break;
-      }
-    }
-
-    // Fallback Shadow DOM dans le Studio
-    if (!addNoteBtn) {
-      const shadowCandidates = window.MM.findElementsInShadows(
-        'button[aria-label*="note" i], button[aria-label*="Note" i]',
-        studioPanel
-      );
-      addNoteBtn = shadowCandidates[0] || null;
-    }
-
-    if (!addNoteBtn) {
-      throw new Error('[MM] ChatExport : bouton "Ajouter une note" introuvable dans le Studio.');
-    }
-
-    // Si on a attrapé un conteneur (div) au lieu du bouton réel, chercher le bouton à l'intérieur
-    if (addNoteBtn.tagName !== 'BUTTON') {
-      const actualBtn = addNoteBtn.querySelector('button');
-      if (actualBtn) {
-        addNoteBtn = actualBtn;
-      }
-    }
-
-    console.log('[MM] ChatExport : clic sur le bouton "Ajouter une note". Bouton :', addNoteBtn.tagName, addNoteBtn.outerHTML.slice(0, 120));
-    addNoteBtn.click();
-
-    // 2. Attendre que l'éditeur de saisie apparaisse dans le Studio (max 5 secondes)
-    await new Promise(function (resolve) { setTimeout(resolve, 150); });
-
-    const noteInput = await waitForElement(NOTE_INPUT_SELECTORS, 5000, studioPanel);
-    if (!noteInput) {
-      throw new Error('[MM] ChatExport : l\'éditeur de note n\'est pas apparu dans le Studio.');
-    }
-
-    console.log('[MM] ChatExport : éditeur de note détecté dans le Studio :', noteInput.tagName, noteInput.getAttribute('role'));
-
-    // 3. Injecter le contenu selon le type d'éditeur
-    if (noteInput.tagName === 'TEXTAREA' || noteInput.tagName === 'INPUT') {
-      setNativeValue(noteInput, content);
-    } else if (noteInput.isContentEditable) {
-      noteInput.focus();
-      noteInput.innerHTML = '';
-      
-      // Conversion minimaliste Markdown vers HTML pour que le contenteditable interprète les sauts de ligne
-      const htmlContent = content
-        .split('\n')
-        .map(function (line) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('# ')) {
-            return '<h1>' + trimmed.slice(2) + '</h1>';
-          }
-          if (trimmed.startsWith('## ')) {
-            return '<h2>' + trimmed.slice(3) + '</h2>';
-          }
-          if (trimmed.startsWith('> ')) {
-            return '<blockquote>' + trimmed.slice(2) + '</blockquote>';
-          }
-          if (trimmed === '---') {
-            return '<hr>';
-          }
-          if (trimmed === '') {
-            return '<p>&nbsp;</p>'; // Permet de préserver le saut de paragraphe dans l'éditeur riche
-          }
-          // Échapper les caractères HTML de base pour éviter de briser la structure
-          const escaped = trimmed
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
-          return '<p>' + escaped + '</p>';
-        })
-        .join('');
-
-      console.log('[MM] ChatExport : injection du HTML dans l\'éditeur contenteditable.');
-      document.execCommand('insertHTML', false, htmlContent);
-
-      // Si insertHTML échoue, injecter via innerHTML avec un événement de notification
-      if (!noteInput.textContent || noteInput.textContent.trim() === '') {
-        noteInput.innerHTML = htmlContent;
-        noteInput.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-    }
-
-    // 4. Donner le focus et laisser le framework traiter l'input
-    noteInput.focus();
-    await new Promise(function (resolve) { setTimeout(resolve, 300); });
-
-    // 5. Enregistrer la note — chercher le bouton de validation qui est apparu dans le Studio
-    const SAVE_SELECTORS = [
-      'button[aria-label*="Enregistr" i]',
-      'button[aria-label*="Sauvegarder" i]',
-      'button[aria-label*="Save" i]',
-      'button[aria-label*="Confirmer" i]',
-      'button[aria-label*="Done" i]',
-      'button[aria-label*="Terminer" i]',
-      'button[type="submit"]',
-      'button' // Fallback sur le premier bouton de validation trouvé dans la note
-    ];
-
-    let saveBtn = null;
-    // Trouver le conteneur de la note en cours d'édition pour restreindre le bouton de validation
-    const noteCard = noteInput.closest('[class*="note-card"], [class*="note-editor"], [class*="editor"]');
-    const searchScope = noteCard || studioPanel;
-
-    for (const sel of SAVE_SELECTORS) {
-      const found = Array.from(searchScope.querySelectorAll(sel)).filter(function (btn) {
-        return !btn.classList.contains('mm-chat-export-btn') && 
-               !btn.getAttribute('aria-label')?.includes('épingl'); // Éviter d'épingler d'autres messages
-      });
-      if (found.length > 0) {
-        saveBtn = found[0];
-        console.log('[MM] ChatExport : bouton de validation trouvé dans le Studio :', saveBtn.outerHTML.slice(0, 100));
-        break;
-      }
-    }
-
-    if (saveBtn) {
-      console.log('[MM] ChatExport : clic sur le bouton de validation.');
-      saveBtn.click();
-
-      // NotebookLM ouvre automatiquement la note après sauvegarde (comportement natif Angular).
-      // On simule un clic sur la zone de chat pour refermer ce focus indésirable.
-      await new Promise(function (resolve) { setTimeout(resolve, 400); });
-      const chatPanel = document.querySelector(
-        'section.chat-panel, [class*="chat-panel"], [class*="conversation-panel"]'
-      );
-      if (chatPanel) {
-        chatPanel.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-        chatPanel.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-        console.log('[MM] ChatExport : clic de défocalisation envoyé sur le panneau de conversation.');
-      }
-    } else {
-      console.log('[MM] ChatExport : bouton de validation introuvable, tentative Ctrl+Enter.');
-      noteInput.dispatchEvent(new KeyboardEvent('keydown', {
-        key: 'Enter', ctrlKey: true, bubbles: true
-      }));
-      await new Promise(function (resolve) { setTimeout(resolve, 200); });
-      document.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
-    }
-
-    console.log('[MM] ChatExport : note créée avec succès.');
+    console.log(`[MM] ChatExport : envoi de la création RPC direct pour "${title}"`);
+    await window.MM.rpc.createNoteRpc(notebookId, title, content);
+    console.log('[MM] ChatExport : note créée avec succès via RPC direct.');
   }
 
   /**
@@ -523,8 +385,15 @@
       // Formater en Markdown
       const markdownContent = formatAsMarkdown(turns);
 
-      // Créer la note via le DOM natif du Studio
-      await createNoteViaDom(markdownContent);
+      // Générer le titre de la note incluant le nom du carnet
+      const dateStr = new Date().toLocaleDateString('fr-FR', {
+        day: '2-digit', month: '2-digit', year: 'numeric'
+      });
+      const notebookName = getActiveNotebookName();
+      const noteTitle = `Discussion - ${notebookName} (${dateStr})`;
+
+      // Créer la note via le RPC direct en tâche de fond (sans toucher au DOM)
+      await createNoteViaRpc(noteTitle, markdownContent);
 
       showButtonFeedback('success');
 

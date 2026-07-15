@@ -13,13 +13,15 @@ magic-manager/
 │   ├── api/
 │   │   └── rpcclient.js       # Client RPC pour l'API NotebookLM (batchexecute)
 │   ├── content/
-│   │   ├── main.js            # Point d'entrée — orchestrateur des modules
-│   │   ├── search.js          # Module de recherche globale
-│   │   ├── merge.js           # Module de fusion intelligente
-│   │   ├── export.js          # Module d'exports simplifiés
-│   │   ├── delete.js          # Module de suppression en ligne
-│   │   ├── syntax.js          # Module de coloration syntaxique
-│   │   └── chat-export.js     # Module d'export du chat
+│   │   ├── orchestrator.js    # Point d'entrée — orchestrateur des modules
+│   │   ├── modules/           # Sous-modules de l'extension
+│   │   │   ├── search.js      # Module de recherche globale
+│   │   │   ├── merge.js       # Module de fusion intelligente
+│   │   │   ├── export.js      # Module d'exports simplifiés
+│   │   │   ├── delete.js      # Module de suppression en ligne
+│   │   │   ├── syntax.js      # Module de coloration syntaxique
+│   │   │   └── chatexport.js  # Module d'export du chat
+│   │   └── ui/                # Composants d'interface partagés
 │   ├── popup/
 │   │   ├── popup.html         # Interface de la popup de paramètres
 │   │   ├── popup.js           # Logique de la popup
@@ -52,7 +54,7 @@ magic-manager/
 
 ```mermaid
 graph TD
-    A["NotebookLM chargé"] -->|"content_scripts"| B["main.js"]
+    A["NotebookLM chargé"] -->|"content_scripts"| B["orchestrator.js"]
     B --> C["Vérification paramètres"]
     C -->|"browser.storage.local"| D["Chargement préférences"]
     D --> E["Initialisation modules actifs"]
@@ -61,7 +63,7 @@ graph TD
     E --> H["export.js"]
     E --> I["delete.js"]
     E --> J["syntax.js"]
-    E --> K["chat-export.js"]
+    E --> K["chatexport.js"]
     L["Popup"] -->|"browser.storage.local"| D
 ```
 
@@ -85,6 +87,13 @@ Chaque fonctionnalité peut être activée/désactivée individuellement via la 
 | `feature_delete` | `boolean` | `true` | Suppression en ligne |
 | `feature_syntax` | `boolean` | `true` | Coloration syntaxique |
 | `feature_chatExport` | `boolean` | `true` | Export du chat |
+
+## Couche de transport RPC
+
+L'extension s'affranchit des simulations d'interactions DOM (fragiles et sources d'effets visuels secondaires) pour les opérations lourdes en exploitant directement l'API interne `batchexecute` de Google NotebookLM :
+- **GET_SOURCE (`hizoJc`)** : Permet de récupérer le texte brut indexé d'une source à l'index `[3][0]` (ou l'HTML de rendu à `[4][1]`), sans charger le document dans le visualiseur DOM de la page.
+- **CREATE_NOTE (`CYK0Xb`) / UPDATE_NOTE (`cYAfTb`)** : Création séquentielle robuste en tâche de fond pour exporter les conversations de chat en notes sans focus automatique de l'interface Google.
+- **DELETE_SOURCE (`tGMBJ`) / ADD_SOURCE (`izAoDd`)** : Appels directs utilisant des structures de tableaux doublement et triplement enveloppées pour des mutations réseau résilientes.
 
 ## Conventions
 

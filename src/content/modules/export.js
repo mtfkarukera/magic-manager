@@ -493,19 +493,61 @@
     );
   }
 
+  /**
+   * Nettoie le titre brut récupéré d'une source pour éliminer les préfixes de l'aria-label.
+   */
+  function cleanSourceTitle(rawTitle) {
+    if (!rawTitle) return '';
+    let title = rawTitle.trim();
+    const prefixes = [
+      /^(Ouvrir la source|Ouvrir|Ouvrir le document)\s+/i,
+      /^(Open source|Open|Open document)\s+/i,
+      /^(Abrir la fuente|Abrir)\s+/i,
+      /^(Quelle öffnen|Öffnen)\s+/i
+    ];
+    for (const regex of prefixes) {
+      title = title.replace(regex, '');
+    }
+    return title.trim();
+  }
+
+  /**
+   * Trouve l'identifiant de source correspondant au titre par matching dans la liste RPC.
+   */
+  function findSourceIdByTitle(cleanedTitle, allSources) {
+    if (!cleanedTitle || !allSources) return null;
+    const titleLower = cleanedTitle.toLowerCase();
+    
+    // Essai 1 : match exact
+    let match = allSources.find(s => s.title && s.title.toLowerCase() === titleLower);
+    if (match) return match.id;
+    
+    // Essai 2 : match de sous-chaîne ou d'inclusion
+    match = allSources.find(s => s.title && (titleLower.includes(s.title.toLowerCase()) || s.title.toLowerCase().includes(titleLower)));
+    if (match) return match.id;
+    
+    return null;
+  }
+
   async function startBatchProcess(checkboxes, format) {
     console.log(`[MM] Lancement de l'exportation par lot au format ${format} pour ${checkboxes.length} sources...`);
 
-    // Collecte des fichiers pour l'export ZIP (format STORE natif, sans JSZip)
+    const notebookId = window.MM.getActiveNotebookId();
+    if (!notebookId) {
+      alert('[MM] Impossible de détecter l\'identifiant du notebook.');
+      return;
+    }
+
+    // Récupérer toutes les sources du carnet via RPC pour le fallback de matching
+    let allSources = [];
+    try {
+      allSources = await window.MM.rpc.getNotebookSources(notebookId);
+    } catch (e) {
+      console.warn('[MM] Impossible de lister les sources du notebook via RPC.', e);
+    }
+
     const zipFiles = [];
     const activeNotebookName = getActiveNotebookName();
-
-    // Mémoriser le titre actuellement affiché avant de démarrer la boucle
-    const TITLE_SELECTOR = '.source-title, [class*="source-title"], .title, [class*="viewer-title"]';
-    let previousViewerTitle = '';
-    const initialViewer = document.querySelector('source-viewer ' + TITLE_SELECTOR);
-    if (initialViewer) previousViewerTitle = initialViewer.textContent.trim();
-    console.log(`[MM] Export batch : titre initial = "${previousViewerTitle.slice(0, 50) || '(vide)'}"`);
 
     for (let i = 0; i < checkboxes.length; i++) {
       const cb = checkboxes[i];
@@ -517,34 +559,47 @@
         continue;
       }
 
-      console.log(`[MM] Export batch : traitement de "${sourceInfo.title.slice(0, 50)}" (${i+1}/${checkboxes.length})`);
-      sourceInfo.stretchedBtn.click();
+      const title = cleanSourceTitle(sourceInfo.title);
+      console.log(`[MM] Export batch : traitement de "${title.slice(0, 50)}" (${i+1}/${checkboxes.length})`);
 
-      // Attendre que le viewer affiche la nouvelle source (titre différent du précédent)
-      await waitForViewerToChange(previousViewerTitle, 3000);
+      // 1. Extraire l'ID de la source (DOM puis RPC fallback)
+      let sourceId = window.MM.extractSourceId(sourceInfo.card);
+      if (!sourceId && allSources.length > 0) {
+        sourceId = findSourceIdByTitle(title, allSources);
+      }
 
-      const data = findIndividualSourceData();
-      if (data && data.content) {
-        previousViewerTitle = data.title; // Mémoriser pour la prochaine itération
-        if (format === 'Markdown') {
-          downloadMarkdown(data.title, data.content);
-        } else if (format === 'PDF') {
-          downloadPDF(data.title, data.content);
-        } else if (format === 'ZIP') {
-          const cleanTitle = (data.title || `Source_${i+1}`).replace(/[\/\\?%*:|"<>\s]/g, '_') + '.md';
-          zipFiles.push({ name: cleanTitle, data: data.content });
+      if (!sourceId) {
+        console.error(`[MM] Impossible de trouver l'identifiant de la source pour "${title}"`);
+        continue;
+      }
+
+      // 2. Récupérer le contenu brut via RPC
+      try {
+        const content = await window.MM.rpc.getSourceContent(sourceId, notebookId);
+        if (content) {
+          if (format === 'Markdown') {
+            downloadMarkdown(title, content);
+          } else if (format === 'PDF') {
+            downloadPDF(title, content);
+          } else if (format === 'ZIP') {
+            const cleanTitle = (title || `Source_${i+1}`).replace(/[\/\\?%*:|"<>\s]/g, '_') + '.md';
+            zipFiles.push({ name: cleanTitle, data: content });
+          }
+        } else {
+          console.warn(`[MM] Contenu vide reçu pour "${title}"`);
         }
-      } else {
-        console.warn(`[MM] Export batch : aucun contenu extractible pour "${sourceInfo.title.slice(0, 50)}"`);
+      } catch (err) {
+        console.error(`[MM] Échec de la récupération du contenu pour "${title}" :`, err);
+      }
+
+      // Espacement temporel de sécurité pour éviter le rate limiting (429)
+      if (i < checkboxes.length - 1) {
+        await new Promise(r => setTimeout(r, 200));
       }
     }
 
-    // Fermer le viewer après l'export pour éviter la redirection inexpliquée
-    closeCurrentSourceViewer();
-
     if (format === 'ZIP' && zipFiles.length > 0) {
       const zipName = (activeNotebookName || 'Notebook_Sources').replace(/[\/\\?%*:|"<>\s]/g, '_') + '.zip';
-      // buildZipBlob : implémentation ZIP native sans JSZip (format STORE)
       const zipBlob = buildZipBlob(zipFiles);
 
       const url = URL.createObjectURL(zipBlob);

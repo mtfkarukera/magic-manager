@@ -157,6 +157,207 @@ function isInsideSelector(element, selector) {
   return false;
 }
 
+/**
+ * Extrait l'identifiant du notebook actif depuis l'URL courante.
+ * @returns {string|null} Identifiant du notebook ou null.
+ */
+function getActiveNotebookId() {
+  const m = window.location.pathname.match(/\/notebook\/([a-zA-Z0-9_-]+)/);
+  return m ? m[1] : null;
+}
+
+/**
+ * Extrait de façon robuste l'identifiant de source à partir de son conteneur DOM.
+ * Scanne les attributs du conteneur et de tous ses descendants à la recherche d'UUIDs
+ * ou du préfixe spécifique s:... de Google.
+ *
+ * @param {Element} container - Conteneur DOM de la source.
+ * @returns {string|null} - ID de la source trouvé, ou null.
+ */
+function extractSourceId(container) {
+  if (!container) return null;
+
+  // 1. Recherche d'attributs de données explicites
+  const dataAttrs = ['data-id', 'data-source-id', 'data-sourceid', 'data-doc-id'];
+  for (const attr of dataAttrs) {
+    let val = container.getAttribute(attr);
+    if (val) return val;
+
+    const childWithAttr = container.querySelector(`[${attr}]`);
+    if (childWithAttr) {
+      val = childWithAttr.getAttribute(attr);
+      if (val) return val;
+    }
+  }
+
+  // 2. Analyse de motifs (regex) dans tous les attributs textuels
+  const uuidPattern = /[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}/i;
+  const googleSourcePattern = /s:[a-zA-Z0-9_-]+/i;
+
+  function searchPattern(str) {
+    if (!str) return null;
+    let match = str.match(uuidPattern);
+    if (match) return match[0];
+    match = str.match(googleSourcePattern);
+    if (match) return match[0];
+    return null;
+  }
+
+  // Tester les attributs communs sur le conteneur lui-même
+  const containerAttrs = ['id', 'jslog', 'jsdata', 'jsaction', 'aria-describedby'];
+  for (const attr of containerAttrs) {
+    const id = searchPattern(container.getAttribute(attr));
+    if (id) return id;
+  }
+
+  // Tester les attributs sur tous les descendants (checkboxes, boutons, etc.)
+  const children = container.querySelectorAll('*');
+  for (const child of children) {
+    const childAttrs = ['id', 'name', 'jslog', 'jsdata', 'jsaction', 'aria-describedby', 'aria-label', 'value'];
+    for (const attr of childAttrs) {
+      const id = searchPattern(child.getAttribute(attr));
+      if (id) return id;
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Convertit une chaîne de caractères HTML en Markdown formaté de façon sémantique et propre.
+ * Utilise le DOMParser natif du navigateur pour une analyse robuste.
+ *
+ * @param {string} html - Chaîne HTML source.
+ * @returns {string} Chaîne Markdown résultante.
+ */
+function htmlToMarkdown(html) {
+  if (!html) return '';
+
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(html, 'text/html');
+
+  // Traiter récursivement chaque nœud HTML
+  function walk(node, listContext = null) {
+    if (node.nodeType === Node.TEXT_NODE) {
+      return node.nodeValue;
+    }
+
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return '';
+    }
+
+    const tagName = node.tagName.toUpperCase();
+    let childrenContent = '';
+
+    // Déterminer le type de liste
+    let newListContext = listContext;
+    if (tagName === 'UL') {
+      newListContext = { type: 'ul', index: 0 };
+    } else if (tagName === 'OL') {
+      newListContext = { type: 'ol', index: 0 };
+    }
+
+    for (const child of node.childNodes) {
+      childrenContent += walk(child, newListContext);
+    }
+
+    switch (tagName) {
+      case 'H1':
+        return `\n\n# ${childrenContent.trim()}\n\n`;
+      case 'H2':
+        return `\n\n## ${childrenContent.trim()}\n\n`;
+      case 'H3':
+        return `\n\n### ${childrenContent.trim()}\n\n`;
+      case 'H4':
+        return `\n\n#### ${childrenContent.trim()}\n\n`;
+      case 'H5':
+        return `\n\n##### ${childrenContent.trim()}\n\n`;
+      case 'H6':
+        return `\n\n###### ${childrenContent.trim()}\n\n`;
+      
+      case 'P':
+      case 'DIV': {
+        const trimmed = childrenContent.trim();
+        return trimmed ? `\n\n${trimmed}\n\n` : '';
+      }
+      
+      case 'BR':
+        return '\n';
+      
+      case 'STRONG':
+      case 'B': {
+        const strVal = childrenContent.trim();
+        return strVal ? `**${strVal}**` : '';
+      }
+      
+      case 'EM':
+      case 'I': {
+        const emVal = childrenContent.trim();
+        return emVal ? `*${emVal}*` : '';
+      }
+
+      case 'U': {
+        const uVal = childrenContent.trim();
+        return uVal ? `_${uVal}_` : '';
+      }
+
+      case 'CODE':
+        return `\`${childrenContent}\``;
+
+      case 'PRE':
+        return `\n\n\`\`\`\n${childrenContent}\n\`\`\`\n\n`;
+      
+      case 'A': {
+        const href = node.getAttribute('href');
+        const text = childrenContent.trim();
+        if (href && text) {
+          return `[${text}](${href})`;
+        }
+        return text || href || '';
+      }
+      
+      case 'IMG': {
+        const src = node.getAttribute('src') || '';
+        const alt = node.getAttribute('alt') || 'Image';
+        return `\n![${alt}](${src})\n`;
+      }
+
+      case 'LI': {
+        let prefix = '- ';
+        if (listContext && listContext.type === 'ol') {
+          listContext.index++;
+          prefix = `${listContext.index}. `;
+        }
+        const liContent = childrenContent.trim().replace(/\n+/g, ' ');
+        return `\n${prefix}${liContent}`;
+      }
+
+      case 'UL':
+      case 'OL':
+        return `\n${childrenContent}\n`;
+
+      case 'BLOCKQUOTE':
+        return `\n\n> ${childrenContent.trim().split('\n').join('\n> ')}\n\n`;
+
+      case 'HR':
+        return '\n\n---\n\n';
+
+      default:
+        return childrenContent;
+    }
+  }
+
+  let markdown = walk(doc.body);
+
+  // Nettoyage final du texte : sauts de lignes multiples, espaces etc.
+  markdown = markdown
+    .replace(/\n{3,}/g, '\n\n')
+    .replace(/\r/g, '')
+    .trim();
+
+  return markdown;
+}
+
 // Exposition dans le namespace global MM
 window.MM.t = t;
 window.MM.applyI18n = applyI18n;
@@ -164,3 +365,6 @@ window.MM.createElement = createElement;
 window.MM.debounce = debounce;
 window.MM.findElementsInShadows = findElementsInShadows;
 window.MM.isInsideSelector = isInsideSelector;
+window.MM.getActiveNotebookId = getActiveNotebookId;
+window.MM.extractSourceId = extractSourceId;
+window.MM.htmlToMarkdown = htmlToMarkdown;

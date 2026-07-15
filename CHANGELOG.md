@@ -4,6 +4,18 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.5.0] — 2026-07-16
+
+### Ajouté
+- 🔌 **Intégration RPC direct pour la capture** : Migration de l'extraction de texte de l'approche DOM fragile vers le RPC direct `getSourceContent` (`hizoJc`) pour la fusion et les exports par lot.
+- 📌 **Création de note en arrière-plan** : Ajout de la création et de la mutation de notes utilisateurs en 2 étapes via RPC direct (`CYK0Xb` + `cYAfTb`), évitant l'ouverture de l'éditeur riche de la note à l'écran.
+
+### Corrigé
+- 📑 **Exportation de fichiers complets (Zéro vide)** : Correction de l'extraction de texte dans `rpcclient.js` en ciblant spécifiquement l'index `result[3][0]` de la réponse RPC (texte brut indexé par Google), résolvant définitivement les exports vides ou contenant uniquement des URLs Google Drive Viewer.
+- 🔀 **Cycle de vie SPA et boutons persistants** : Refonte de `panel-observer.js` avec un observateur global sur `document.body` pour réattacher dynamiquement le MutationObserver sur les nouvelles instances de `section.source-panel` recréées par Angular. Les boutons d'export/fusion par lot s'affichent instantanément à l'ouverture d'un carnet de notes sans F5.
+- 🔍 **Barre de recherche fixe** : Positionnement de la barre de recherche après le header statique de `sourcePanel` pour la fixer en haut du panneau et empêcher qu'elle ne disparaisse avec le défilement vertical.
+- 🔄 **Actualisation de la fusion** : Rechargement automatique doux de la page 1,5s après la fin d'une fusion pour faire apparaître instantanément la source fusionnée dans le panneau de sources de l'utilisateur.
+
 ## [0.4.2] — 2026-07-15
 
 ### Corrigé

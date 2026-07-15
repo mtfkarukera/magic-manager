@@ -21,3 +21,4 @@ dist/
 artifacts/
 *.zip
 *.xpi
+notebooklm-py-ref/
