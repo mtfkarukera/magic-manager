@@ -294,21 +294,35 @@
    * @param {number} timeoutMs - Délai maximum en ms.
    * @returns {Promise<Element|null>} Le viewer chargé ou null si timeout.
    */
-  async function waitForViewerToChange(previousTitle, timeoutMs = 3500) {
+  async function waitForViewerToChange(previousTitle, timeoutMs = 4000) {
+    // Délai minimum incompressible : Angular/NotebookLM a besoin d'au moins ~300ms
+    // pour monter le nouveau composant dans le DOM après un clic sur stretchedBtn.
+    await new Promise(r => setTimeout(r, 400));
+
     const start = Date.now();
     while (Date.now() - start < timeoutMs) {
       const viewer = document.querySelector('source-viewer');
       if (viewer) {
-        const titleEl = viewer.querySelector('.source-title');
+        // Chercher le titre avec plusieurs sthégies (le sélecteur exact varie selon la version NLM)
+        const titleEl = viewer.querySelector(
+          '.source-title, [class*="source-title"], .title, [class*="viewer-title"]'
+        );
         const currentTitle = titleEl ? titleEl.textContent.trim() : '';
-        // La source est chargée si le titre a changé ET qu'il y a du contenu
+
+        // La source est bien chargée si :
+        // 1. Le titre a changé par rapport à l'itération précédente
+        // 2. Il y a du contenu textuel affiché
         if (currentTitle && currentTitle !== previousTitle) {
-          const hasContent = viewer.querySelector('p, li, [class*="paragraph"], [class*="text-segment"]');
-          if (hasContent) return viewer;
+          const hasContent = viewer.querySelector('p, li, [class*="paragraph"], [class*="text-segment"], [class*="content"]');
+          if (hasContent) {
+            console.log(`[MM] Viewer chargé : "${currentTitle.slice(0, 50)}" (attendu != "${previousTitle.slice(0, 30)}")`);
+            return viewer;
+          }
         }
       }
-      await new Promise(r => setTimeout(r, 80));
+      await new Promise(r => setTimeout(r, 100));
     }
+    console.warn(`[MM] waitForViewerToChange : timeout après ${timeoutMs + 400}ms (previousTitle="${previousTitle.slice(0, 40)}")`);
     return null;
   }
 
@@ -508,8 +522,12 @@
     let mergedContent = '';
     // Mémoriser le titre du viewer actuellement affiché (si un viewer est ouvert)
     let previousViewerTitle = '';
-    const initialTitleEl = document.querySelector('source-viewer .source-title');
+    // Capturer le titre actuel avec le même sélecteur robuste que waitForViewerToChange
+    const TITLE_SELECTOR = '.source-title, [class*="source-title"], .title, [class*="viewer-title"]';
+    const initialTitleEl = document.querySelector(`source-viewer ${TITLE_SELECTOR}`);
     if (initialTitleEl) previousViewerTitle = initialTitleEl.textContent.trim();
+    console.log(`[MM] Fusion : titre initial du viewer = "${previousViewerTitle.slice(0, 50) || '(vide)'}"`);
+    const TITLE_SEL = 'source-viewer ' + TITLE_SELECTOR;
 
     try {
       for (let i = 0; i < checkboxes.length; i++) {
@@ -538,13 +556,13 @@
           } else {
             console.warn(`[MM] Fusion : aucun contenu extractible pour "${sourceInfo.title.slice(0, 50)}"`);
             // En cas d'échec d'extraction, mettre à jour quand même pour éviter une boucle infinie
-            const currentTitleEl = document.querySelector('source-viewer .source-title');
+            const currentTitleEl = document.querySelector(TITLE_SEL);
             if (currentTitleEl) previousViewerTitle = currentTitleEl.textContent.trim();
           }
         } else {
           console.warn(`[MM] Fusion : timeout pour la source "${sourceInfo.title.slice(0, 50)}". Source ignorée.`);
           // Mettre à jour le titre de référence pour ne pas bloquer la suivante
-          const currentTitleEl = document.querySelector('source-viewer .source-title');
+          const currentTitleEl = document.querySelector(TITLE_SEL);
           if (currentTitleEl) previousViewerTitle = currentTitleEl.textContent.trim();
         }
       }

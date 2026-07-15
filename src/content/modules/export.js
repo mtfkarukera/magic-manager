@@ -150,48 +150,61 @@
    * @param {number} timeoutMs - Délai maximum d'attente en millisecondes.
    * @returns {Promise<string|null>} Le nouveau titre ou null si timeout.
    */
-  function waitForViewerToChange(previousTitle, timeoutMs) {
-    return new Promise(function (resolve) {
-      const start = Date.now();
+  async function waitForViewerToChange(previousTitle, timeoutMs) {
+    // Délai minimum incompressible : Angular a besoin de ~300ms pour monter le composant
+    await new Promise(r => setTimeout(r, 400));
 
-      function check() {
-        const viewer = document.querySelector('source-viewer');
-        if (viewer) {
-          const titleEl = viewer.querySelector('.source-title');
-          const currentTitle = titleEl ? titleEl.textContent.trim() : '';
-          // Résoudre si le titre a changé (nouvelle source chargée)
-          if (currentTitle && currentTitle !== previousTitle) {
-            resolve(currentTitle);
-            return;
-          }
+    const TITLE_SELECTOR = '.source-title, [class*="source-title"], .title, [class*="viewer-title"]';
+    const start = Date.now();
+
+    while (Date.now() - start < timeoutMs) {
+      const viewer = document.querySelector('source-viewer');
+      if (viewer) {
+        const titleEl = viewer.querySelector(TITLE_SELECTOR);
+        const currentTitle = titleEl ? titleEl.textContent.trim() : '';
+        // Résoudre si le titre a changé (nouvelle source chargée)
+        if (currentTitle && currentTitle !== previousTitle) {
+          return currentTitle;
         }
-        if (Date.now() - start > timeoutMs) {
-          resolve(null); // Timeout — on continue quand même
-          return;
-        }
-        setTimeout(check, 80);
       }
-
-      check();
-    });
+      await new Promise(r => setTimeout(r, 100));
+    }
+    return null; // Timeout — on continue quand même
   }
 
   /**
-   * Tente de fermer le source-viewer actif pour revenir à la liste.
-   * Cherche un bouton "retour" ou "fermer" dans le viewer.
+   * Ferme le source-viewer actif en cliquant sur le bouton de retour natif
+   * de NotebookLM, situé dans le panel-header (et non pas dans le viewer lui-même).
+   *
+   * NOTE : Ne jamais utiliser Escape comme fallback — cela provoque l'ouverture
+   * automatique de la première source de la liste (comportement Angular natif).
    */
   function closeCurrentSourceViewer() {
+    // Vérifier qu'un viewer est bien ouvert
     const viewer = document.querySelector('source-viewer');
     if (!viewer) return;
-    const backBtn = viewer.querySelector(
-      'button[aria-label*="fermer" i], button[aria-label*="back" i], button[aria-label*="retour" i], ' +
-      'button[aria-label*="close" i], .back-button, .close-button, [class*="back-btn"]'
-    );
-    if (backBtn) {
+
+    // La stratégie fiable : cliquer le bouton natif du panel-header.
+    // Quand le viewer est ouvert, le panel-header affiche un bouton "retour" (←)
+    // en tant que dernier bouton natif. C'est la même logique que closeSourceViewer dans merge.js.
+    const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
+    if (!sourcePanel) return;
+
+    const panelHeader = sourcePanel.querySelector('.panel-header, [class*="panel-header"]');
+    if (!panelHeader) return;
+
+    // Sélectionner les boutons natifs uniquement (exclure nos boutons MM injectés)
+    const nativeButtons = Array.from(panelHeader.querySelectorAll(
+      'button:not(.mm-batch-merge-btn):not(.mm-batch-export-btn):not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
+    ));
+
+    if (nativeButtons.length > 0) {
+      // Le bouton de retour est le dernier bouton natif quand le viewer est ouvert
+      const backBtn = nativeButtons[nativeButtons.length - 1];
+      console.log('[MM] Export batch : fermeture du viewer via bouton natif du header :', backBtn.getAttribute('aria-label') || backBtn.className);
       backBtn.click();
     } else {
-      // Fallback : appuyer sur Escape pour fermer le viewer
-      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      console.warn('[MM] Export batch : impossible de trouver le bouton de retour dans le panel-header. Viewer laissé ouvert.');
     }
   }
 
@@ -488,9 +501,11 @@
     const activeNotebookName = getActiveNotebookName();
 
     // Mémoriser le titre actuellement affiché avant de démarrer la boucle
+    const TITLE_SELECTOR = '.source-title, [class*="source-title"], .title, [class*="viewer-title"]';
     let previousViewerTitle = '';
-    const initialViewer = document.querySelector('source-viewer .source-title');
+    const initialViewer = document.querySelector('source-viewer ' + TITLE_SELECTOR);
     if (initialViewer) previousViewerTitle = initialViewer.textContent.trim();
+    console.log(`[MM] Export batch : titre initial = "${previousViewerTitle.slice(0, 50) || '(vide)'}"`);
 
     for (let i = 0; i < checkboxes.length; i++) {
       const cb = checkboxes[i];
