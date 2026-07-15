@@ -526,6 +526,10 @@
    */
   const CHAT_HEADER_SELECTORS = [
     'section.chat-panel [class*="header"]',
+    'section[class*="chat"] [class*="header"]',
+    'section[class*="conversation"] [class*="header"]',
+    '[class*="chat-panel"] [class*="header"]',
+    '[class*="conversation-panel"] [class*="header"]',
     '[class*="chat-header"]',
     '[class*="conversation-header"]',
     '[class*="chat-toolbar"]',
@@ -551,8 +555,12 @@
    */
   const tryInjectButton = debounce(function () {
     // Garde-fou préférence active
-    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('chatExport')) {
-      cleanupChatExport();
+    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('feature_chatExport')) {
+      // Si la feature est désactivée, s'assurer que le bouton est retiré sans couper l'observer
+      if (exportChatBtn) {
+        exportChatBtn.remove();
+        exportChatBtn = null;
+      }
       return;
     }
 

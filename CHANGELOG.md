@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.5.3] — 2026-07-16
+
+### Corrigé
+- 💬 **Restauration de l'export de discussion (chat)** : Correction de la garde-fou de préférence dans `chatexport.js` qui déconnectait par erreur le MutationObserver en cas de chargement asynchrone des préférences. Le garde-fou supprime désormais le bouton s'il existe sans détruire le cycle d'observation.
+- 🎯 **Sélecteurs de Discussion résilients** : Élargissement des sélecteurs de repli `CHAT_HEADER_SELECTORS` pour faire face aux variations structurelles de balises et de classes sur l'en-tête du panneau Discussion de NotebookLM.
+
 ## [0.5.2] — 2026-07-16
 
 ### Corrigé
