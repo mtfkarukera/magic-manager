@@ -419,6 +419,18 @@
     if (saveBtn) {
       console.log('[MM] ChatExport : clic sur le bouton de validation.');
       saveBtn.click();
+
+      // NotebookLM ouvre automatiquement la note après sauvegarde (comportement natif Angular).
+      // On simule un clic sur la zone de chat pour refermer ce focus indésirable.
+      await new Promise(function (resolve) { setTimeout(resolve, 400); });
+      const chatPanel = document.querySelector(
+        'section.chat-panel, [class*="chat-panel"], [class*="conversation-panel"]'
+      );
+      if (chatPanel) {
+        chatPanel.dispatchEvent(new MouseEvent('mousedown', { bubbles: true }));
+        chatPanel.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+        console.log('[MM] ChatExport : clic de défocalisation envoyé sur le panneau de conversation.');
+      }
     } else {
       console.log('[MM] ChatExport : bouton de validation introuvable, tentative Ctrl+Enter.');
       noteInput.dispatchEvent(new KeyboardEvent('keydown', {

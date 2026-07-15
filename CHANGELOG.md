@@ -4,13 +4,20 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.4.2] — 2026-07-15
+
+### Corrigé
+- 🔍 **Barre de recherche** : La barre disparaissait lors du défilement de la liste. Elle est maintenant injectée dans le `panel-header` (zone fixe, hors de la liste scrollable), ce qui la maintient toujours visible quelle que soit la position de défilement.
+- ⚡ **Export par lot (vitesse)** : Remplacement du délai fixe de 800ms par une détection dynamique du changement de titre dans le `source-viewer`. Le temps d'export est désormais adaptatif (typiquement 80–300ms par source au lieu de 800ms).
+- 🔀 **Export par lot (redirection)** : Après l'export, le `source-viewer` est maintenant fermé automatiquement pour éviter la redirection inexpliquée vers la dernière source exportée.
+- 📦 **Export 1 source** : Si une seule source est cochée, l'export se fait directement en Markdown sans passer par la modale de confirmation ni générer un ZIP superflu.
+- 📑 **Fusion de sources** : Correction d'une condition de course — le viewer de la source précédente était encore présent lors du chargement de la suivante, ce qui aboutissait à extraire toujours le même contenu. On attend maintenant que le titre du viewer change avant d'extraire.
+- 📝 **Export conversation** : La note créée dans le Studio ne s'ouvre plus automatiquement après la sauvegarde.
+
 ## [0.4.1] — 2026-07-08
 
 ### Corrigé
-- 📑 **Compteur exact de sources** : Correction de la détection des checkboxes en ciblant les cartes de sources physiques uniques. Résout le bug d'affichage de "+18" au lieu de "8".
-- 🐛 **Crash JavaScript** : Résolution du crash `TypeError: cb.className.includes is not a function` provoqué par des éléments SVG lors de la vérification de l'état coché.
-- 📦 **Modale d'exportation par lot** : Remplacement de l'ancien dialogue par une modale interactive proposant les trois formats de sortie (ZIP, Markdown, PDF) avec barre de progression de l'extraction et fermeture automatique de la visionneuse.
-- 🔗 **Fiabilité de fusion** : Association robuste des titres de sources aux cases à cocher en tant qu'attributs `aria-label` pour garantir la correspondance et l'extraction du contenu de chaque source.
+- 📑 **Fusion de sources** : Correction du sélecteur du panneau de gauche (singulier vs pluriel) empêchant l'affichage du bouton de fusion.
 
 ## [0.4.0] — 2026-07-08
 

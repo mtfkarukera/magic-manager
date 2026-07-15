@@ -285,6 +285,33 @@
     return null;
   }
 
+  /**
+   * Attend que le titre du source-viewer change par rapport à previousTitle.
+   * Indispensable pour la fusion : sans cela, le viewer de la source précédente
+   * est encore présent quand on clique sur la suivante, et on extrait le mauvais contenu.
+   *
+   * @param {string} previousTitle - Titre affiché avant le clic.
+   * @param {number} timeoutMs - Délai maximum en ms.
+   * @returns {Promise<Element|null>} Le viewer chargé ou null si timeout.
+   */
+  async function waitForViewerToChange(previousTitle, timeoutMs = 3500) {
+    const start = Date.now();
+    while (Date.now() - start < timeoutMs) {
+      const viewer = document.querySelector('source-viewer');
+      if (viewer) {
+        const titleEl = viewer.querySelector('.source-title');
+        const currentTitle = titleEl ? titleEl.textContent.trim() : '';
+        // La source est chargée si le titre a changé ET qu'il y a du contenu
+        if (currentTitle && currentTitle !== previousTitle) {
+          const hasContent = viewer.querySelector('p, li, [class*="paragraph"], [class*="text-segment"]');
+          if (hasContent) return viewer;
+        }
+      }
+      await new Promise(r => setTimeout(r, 80));
+    }
+    return null;
+  }
+
   function closeSourceViewer() {
     const sourcePanel = document.querySelector('section.source-panel');
     if (!sourcePanel) return;
@@ -479,6 +506,10 @@
     const substatusEl = progressContainer.querySelector('#mm-merge-substatus');
 
     let mergedContent = '';
+    // Mémoriser le titre du viewer actuellement affiché (si un viewer est ouvert)
+    let previousViewerTitle = '';
+    const initialTitleEl = document.querySelector('source-viewer .source-title');
+    if (initialTitleEl) previousViewerTitle = initialTitleEl.textContent.trim();
 
     try {
       for (let i = 0; i < checkboxes.length; i++) {
@@ -494,19 +525,27 @@
         statusEl.textContent = `Extraction de : ${sourceInfo.title.slice(0, 60)}`;
         substatusEl.textContent = `${i} / ${checkboxes.length} sources traitées`;
 
-        console.log(`[MM] Fusion : traitement de "${sourceInfo.title.slice(0, 50)}"`);
+        console.log(`[MM] Fusion : traitement de "${sourceInfo.title.slice(0, 50)}" (${i+1}/${checkboxes.length})`);
         sourceInfo.stretchedBtn.click();
 
-        const viewer = await waitForSourceViewer(3500);
+        // Attendre que le viewer affiche la NOUVELLE source (titre différent du précédent)
+        const viewer = await waitForViewerToChange(previousViewerTitle, 4000);
         if (viewer) {
           const data = findIndividualSourceData();
           if (data && data.content) {
+            previousViewerTitle = data.title; // Mémoriser pour la prochaine itération
             mergedContent += `# ${data.title}\n\n${data.content}\n\n---\n\n`;
           } else {
             console.warn(`[MM] Fusion : aucun contenu extractible pour "${sourceInfo.title.slice(0, 50)}"`);
+            // En cas d'échec d'extraction, mettre à jour quand même pour éviter une boucle infinie
+            const currentTitleEl = document.querySelector('source-viewer .source-title');
+            if (currentTitleEl) previousViewerTitle = currentTitleEl.textContent.trim();
           }
         } else {
-          console.warn(`[MM] Impossible de charger le contenu de la source : ${sourceInfo.title.slice(0, 50)}`);
+          console.warn(`[MM] Fusion : timeout pour la source "${sourceInfo.title.slice(0, 50)}". Source ignorée.`);
+          // Mettre à jour le titre de référence pour ne pas bloquer la suivante
+          const currentTitleEl = document.querySelector('source-viewer .source-title');
+          if (currentTitleEl) previousViewerTitle = currentTitleEl.textContent.trim();
         }
       }
 

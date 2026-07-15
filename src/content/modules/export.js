@@ -141,6 +141,60 @@
     return null;
   }
 
+  /**
+   * Attend que le titre du source-viewer change par rapport à previousTitle.
+   * Cela permet de détecter qu'une nouvelle source est chargée, même si
+   * le source-viewer était déjà visible (cas de la deuxième source et suivantes).
+   *
+   * @param {string} previousTitle - Titre affiché dans le viewer avant le clic.
+   * @param {number} timeoutMs - Délai maximum d'attente en millisecondes.
+   * @returns {Promise<string|null>} Le nouveau titre ou null si timeout.
+   */
+  function waitForViewerToChange(previousTitle, timeoutMs) {
+    return new Promise(function (resolve) {
+      const start = Date.now();
+
+      function check() {
+        const viewer = document.querySelector('source-viewer');
+        if (viewer) {
+          const titleEl = viewer.querySelector('.source-title');
+          const currentTitle = titleEl ? titleEl.textContent.trim() : '';
+          // Résoudre si le titre a changé (nouvelle source chargée)
+          if (currentTitle && currentTitle !== previousTitle) {
+            resolve(currentTitle);
+            return;
+          }
+        }
+        if (Date.now() - start > timeoutMs) {
+          resolve(null); // Timeout — on continue quand même
+          return;
+        }
+        setTimeout(check, 80);
+      }
+
+      check();
+    });
+  }
+
+  /**
+   * Tente de fermer le source-viewer actif pour revenir à la liste.
+   * Cherche un bouton "retour" ou "fermer" dans le viewer.
+   */
+  function closeCurrentSourceViewer() {
+    const viewer = document.querySelector('source-viewer');
+    if (!viewer) return;
+    const backBtn = viewer.querySelector(
+      'button[aria-label*="fermer" i], button[aria-label*="back" i], button[aria-label*="retour" i], ' +
+      'button[aria-label*="close" i], .back-button, .close-button, [class*="back-btn"]'
+    );
+    if (backBtn) {
+      backBtn.click();
+    } else {
+      // Fallback : appuyer sur Escape pour fermer le viewer
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // Générateurs de format (PDF / Markdown / ZIP)
   // Implémentation ZIP en pur JS sans librairie externe (format STORE, non compressé)
@@ -409,6 +463,13 @@
     const settings = document.getElementById('mm-settings-menu');
     if (settings) settings.style.display = 'none';
 
+    // Si une seule source est cochée : export direct en Markdown, pas de ZIP ni de modale
+    if (checked.length === 1) {
+      startBatchProcess(checked, 'Markdown');
+      return;
+    }
+
+    // Plusieurs sources : proposer un ZIP via la modale de confirmation
     // showConfirmDialog(titleKey, messageKey, substitutions, onConfirm, onCancel)
     window.MM.showConfirmDialog(
       'exportButton',
@@ -426,6 +487,11 @@
     const zipFiles = [];
     const activeNotebookName = getActiveNotebookName();
 
+    // Mémoriser le titre actuellement affiché avant de démarrer la boucle
+    let previousViewerTitle = '';
+    const initialViewer = document.querySelector('source-viewer .source-title');
+    if (initialViewer) previousViewerTitle = initialViewer.textContent.trim();
+
     for (let i = 0; i < checkboxes.length; i++) {
       const cb = checkboxes[i];
 
@@ -436,14 +502,15 @@
         continue;
       }
 
-      console.log(`[MM] Export batch : traitement de "${sourceInfo.title.slice(0, 50)}"`);
+      console.log(`[MM] Export batch : traitement de "${sourceInfo.title.slice(0, 50)}" (${i+1}/${checkboxes.length})`);
       sourceInfo.stretchedBtn.click();
 
-      // Attendre le rendu dynamique du source-viewer
-      await new Promise(r => setTimeout(r, 800));
+      // Attendre que le viewer affiche la nouvelle source (titre différent du précédent)
+      await waitForViewerToChange(previousViewerTitle, 3000);
 
       const data = findIndividualSourceData();
       if (data && data.content) {
+        previousViewerTitle = data.title; // Mémoriser pour la prochaine itération
         if (format === 'Markdown') {
           downloadMarkdown(data.title, data.content);
         } else if (format === 'PDF') {
@@ -456,6 +523,9 @@
         console.warn(`[MM] Export batch : aucun contenu extractible pour "${sourceInfo.title.slice(0, 50)}"`);
       }
     }
+
+    // Fermer le viewer après l'export pour éviter la redirection inexpliquée
+    closeCurrentSourceViewer();
 
     if (format === 'ZIP' && zipFiles.length > 0) {
       const zipName = (activeNotebookName || 'Notebook_Sources').replace(/[\/\\?%*:|"<>\s]/g, '_') + '.zip';

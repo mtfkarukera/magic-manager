@@ -51,6 +51,22 @@
   }
 
   /**
+   * Recherche le panel-header du panneau des sources.
+   * Cet élément est hors de la zone scrollable et reste toujours visible.
+   * @returns {Element|null}
+   */
+  function findSourcePanelHeader() {
+    const sourcePanel = document.querySelector(
+      'section.source-panel, .source-panel, [class*="source-panel"]'
+    );
+    if (sourcePanel) {
+      const header = sourcePanel.querySelector('.panel-header, [class*="panel-header"]');
+      if (header) return header;
+    }
+    return null;
+  }
+
+  /**
    * Identifie de manière robuste toutes les lignes de sources individuelles.
    * Se base sur la présence des checkboxes individuelles de sélection.
    * @returns {Array<Element>}
@@ -74,9 +90,11 @@
       while (line && line.parentNode && line.parentNode !== container && line.parentNode !== document.body) {
         if (line.classList && (
           line.classList.contains('source-card') ||
-          line.className.includes('source') ||
-          line.className.includes('item') ||
-          line.className.includes('card')
+          (typeof line.className === 'string' && (
+            line.className.includes('source') ||
+            line.className.includes('item') ||
+            line.className.includes('card')
+          ))
         )) {
           break;
         }
@@ -95,55 +113,6 @@
     }
 
     return cards;
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Rendre le header collant (Sticky)
-  // ═══════════════════════════════════════════════════════════════════════
-
-  /**
-   * Rend fixe (sticky) la partie supérieure entière du panneau des sources.
-   * Identifie tous les enfants directs du conteneur scrollable situés avant
-   * la première source et leur applique le comportement sticky avec décalages.
-   */
-  function makeHeaderSticky() {
-    const container = findSourcesListContainer();
-    if (!container) return;
-
-    const cards = findSourceCards();
-    if (cards.length === 0) return;
-
-    const firstCard = cards[0];
-    let firstCardDirectChild = firstCard;
-    while (firstCardDirectChild && firstCardDirectChild.parentNode !== container && firstCardDirectChild.parentNode !== document.body) {
-      firstCardDirectChild = firstCardDirectChild.parentNode;
-    }
-
-    if (!firstCardDirectChild || firstCardDirectChild.parentNode !== container) {
-      return;
-    }
-
-    const children = Array.from(container.children);
-    const firstCardIndex = children.indexOf(firstCardDirectChild);
-    if (firstCardIndex === -1) return;
-
-    const headerChildren = children.slice(0, firstCardIndex);
-
-    let currentTop = 0;
-    headerChildren.forEach(function (child) {
-      if (child === noResultsElement) return;
-
-      child.style.position = 'sticky';
-      child.style.top = currentTop + 'px';
-      child.style.zIndex = '99';
-      
-      const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      child.style.backgroundColor = isDark ? '#1e1f22' : '#ffffff';
-      
-      child.style.transition = 'top 0.2s ease';
-
-      currentTop += child.offsetHeight || 0;
-    });
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -236,40 +205,69 @@
 
   /**
    * Vérifie la présence du conteneur et y injecte la barre de recherche si absente.
-   * Cette méthode est rappelée à chaque mutation détectée sur la page.
+   *
+   * Stratégie d'injection :
+   * 1. Priorité : panel-header (hors zone scrollable) → la barre reste toujours visible
+   * 2. Fallback  : prepend dans la liste scrollable avec position:sticky
    */
   function checkAndInjectSearch() {
-    const container = findSourcesListContainer();
-    if (!container) return;
-
-    // Si la barre de recherche n'est pas déjà présente dans le DOM
-    if (!document.querySelector('.mm-search-bar')) {
-      const input = createElement('input', {
-        type: 'text',
-        className: 'mm-search-input',
-        placeholder: t('searchPlaceholder'),
-        onInput: performSearch,
-        onKeydown: function (e) {
-          if (e.key === 'Escape') {
-            input.value = '';
-            performSearch();
-            input.blur();
-          }
-        }
-      });
-
-      searchBarContainer = createElement('div', {
-        className: 'mm-search-bar'
-      }, [input]);
-
-      container.prepend(searchBarContainer);
-      console.log('[MM] Barre de recherche injectée');
-    } else {
-      searchBarContainer = document.querySelector('.mm-search-bar');
+    // Si la barre est déjà dans le DOM et visible → rien à faire
+    if (searchBarContainer && document.contains(searchBarContainer)) {
+      return;
     }
 
-    // Ré-appliquer le sticky à chaque passage
-    makeHeaderSticky();
+    // Nettoyer une référence orpheline éventuelle
+    if (searchBarContainer) searchBarContainer = null;
+
+    // Chercher les deux ancrages possibles
+    const header    = findSourcePanelHeader();
+    const container = findSourcesListContainer();
+
+    // Si aucun des deux n'est disponible, on abandonne (trop tôt dans le cycle SPA)
+    if (!header && !container) return;
+
+    // Construire la barre de recherche
+    const input = createElement('input', {
+      type: 'text',
+      className: 'mm-search-input',
+      placeholder: t('searchPlaceholder'),
+      onInput: performSearch,
+      onKeydown: function (e) {
+        if (e.key === 'Escape') {
+          input.value = '';
+          performSearch();
+          input.blur();
+        }
+      }
+    });
+
+    searchBarContainer = createElement('div', {
+      className: 'mm-search-bar'
+    }, [input]);
+
+    if (header) {
+      // Injection dans le panel-header : la barre est hors de la zone scrollable
+      // → elle reste visible quelle que soit la position de défilement.
+      // On l'insère avant les boutons natifs (mais après nos boutons MM s'ils existent).
+      const firstNativeBtn = Array.from(header.querySelectorAll(
+        'button:not(.mm-batch-merge-btn):not(.mm-batch-export-btn)'
+      ))[0];
+      if (firstNativeBtn) {
+        header.insertBefore(searchBarContainer, firstNativeBtn);
+      } else {
+        header.prepend(searchBarContainer);
+      }
+      console.log('[MM] Barre de recherche injectée dans le panel-header (hors scroll)');
+    } else {
+      // Fallback : injecter dans la liste scrollable avec position:sticky
+      container.prepend(searchBarContainer);
+      searchBarContainer.style.position = 'sticky';
+      searchBarContainer.style.top = '0';
+      searchBarContainer.style.zIndex = '99';
+      const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      searchBarContainer.style.backgroundColor = isDark ? '#1e1f22' : '#ffffff';
+      console.log('[MM] Barre de recherche injectée en fallback sticky (liste scrollable)');
+    }
   }
 
   /**
@@ -309,7 +307,7 @@
 
     window.removeEventListener('keydown', handleGlobalShortcut);
 
-    // Restaurer le style d'affichage
+    // Restaurer le style d'affichage de toutes les cartes masquées
     const cards = findSourceCards();
     cards.forEach(function (card) {
       card.style.display = '';
