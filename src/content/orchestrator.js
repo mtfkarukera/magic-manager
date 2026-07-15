@@ -71,7 +71,11 @@
    * @returns {boolean}
    */
   function isFeatureEnabled(featureKey) {
-    return preferences[STORAGE_PREFIX + featureKey] !== false;
+    let key = featureKey;
+    if (key && !key.startsWith('feature_')) {
+      key = 'feature_' + key;
+    }
+    return preferences[STORAGE_PREFIX + key] !== false;
   }
 
   // ═══════════════════════════════════════════════════════════════════════

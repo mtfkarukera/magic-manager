@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.5.2] — 2026-07-16
+
+### Corrigé
+- 🎛️ **Résilience des clés de paramètres** : Correction de l'inversion et de l'inactivité des options de configuration de l'extension. La fonction `isFeatureEnabled` dans `orchestrator.js` accepte désormais de manière transparente les clés courtes (ex: `'export'`) et longues (ex: `'feature_export'`) pour la lecture du stockage.
+- 📦 **Régression de disparition des boutons d'export et fusion** : Correction de la fonction `findSelectAllRow()` dans `export.js` et `merge.js`. Elle ignore désormais les grands conteneurs de listes parents pour ne cibler que la ligne Tout Sélectionner, évitant de filtrer à tort toutes les checkboxes de sources et restaurant l'affichage immédiat des boutons d'export/fusion par lot.
+
 ## [0.5.1] — 2026-07-16
 
 ### Corrigé

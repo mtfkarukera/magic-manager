@@ -163,6 +163,10 @@
     
     const divs = window.MM.findElementsInShadows('div, span, button', list);
     for (let el of divs) {
+      // Ignorer les conteneurs parents qui englobent des cartes de sources
+      if (el.querySelector && el.querySelector('.source-card, [class*="source-card"], [class*="source-item"]')) {
+        continue;
+      }
       const txt = (el.textContent || '').trim().toLowerCase().replace(/\s+/g, ' ');
       if (txt.includes('tout sélectionner') || txt.includes('select all') || txt.includes('seleccionar todo') || txt.includes('alle auswählen')) {
         let row = el.parentNode;
