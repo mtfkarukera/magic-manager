@@ -201,6 +201,9 @@
    * Parcourt la page pour traiter tous les blocs de code non encore gérés.
    */
   const scanAndHighlight = debounce(function () {
+    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('syntax')) {
+      return;
+    }
     // Utilisation de findElementsInShadows pour traverser le Shadow DOM
     const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])');
     preBlocks.forEach(function (pre) {

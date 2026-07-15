@@ -68,11 +68,9 @@
         (typeof cb.className === 'string' && cb.className.includes('checked')) ||
         cb.getAttribute('aria-selected') === 'true';
 
-      // Exclure la case globale "Tout sélectionner"
-      const isGlobal = 
-        (cb.id && cb.id.includes('select-all')) || 
-        (cb.getAttribute('aria-label') && cb.getAttribute('aria-label').includes('Tout sélectionner')) ||
-        window.MM.isInsideSelector(cb, '[class*="select-all"]');
+      // Exclure la case globale "Tout sélectionner" de façon sémantique
+      const selectAllRow = findSelectAllRow();
+      const isGlobal = selectAllRow && (cb === selectAllRow || selectAllRow.contains(cb));
 
       return isChecked && !isGlobal;
     });

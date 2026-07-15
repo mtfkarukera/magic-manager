@@ -54,9 +54,9 @@ magic-manager/
 
 ```mermaid
 graph TD
-    A["NotebookLM chargé"] -->|"content_scripts"| B["orchestrator.js"]
-    B --> C["Vérification paramètres"]
-    C -->|"browser.storage.local"| D["Chargement préférences"]
+    A["NotebookLM charge"] -->|"content_scripts"| B["orchestrator.js"]
+    B --> C["Verification parametres"]
+    C -->|"browser.storage.local"| D["Chargement preferences"]
     D --> E["Initialisation modules actifs"]
     E --> F["search.js"]
     E --> G["merge.js"]
@@ -64,7 +64,7 @@ graph TD
     E --> I["delete.js"]
     E --> J["syntax.js"]
     E --> K["chatexport.js"]
-    L["Popup"] -->|"browser.storage.local"| D
+    L["Bouton parametres in-page"] -->|"browser.storage.local"| D
 ```
 
 ## Système i18n
@@ -77,7 +77,7 @@ L'extension utilise le système natif `browser.i18n.getMessage()` de WebExtensio
 
 ## Paramétrage
 
-Chaque fonctionnalité peut être activée/désactivée individuellement via la popup de l'extension. Les préférences sont stockées dans `browser.storage.local` avec les clés suivantes :
+Chaque fonctionnalité peut être activée/désactivée individuellement via le micro-menu de paramètres (⚙️) injecté directement dans la page en bas à gauche de la liste des sources. Les préférences sont stockées dans `browser.storage.local` avec les clés suivantes :
 
 | Clé | Type | Défaut | Description |
 |---|---|---|---|

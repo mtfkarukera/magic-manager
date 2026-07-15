@@ -164,7 +164,10 @@
    * Lance l'extension.
    */
   async function init() {
-    console.log('[MM] Magic Manager v0.1.0 — Initialisation globale');
+    console.log('[MM] Magic Manager v0.5.0 — Initialisation globale');
+
+    // Mettre à disposition la vérification d'état des features pour les autres modules
+    window.MM.isFeatureEnabled = isFeatureEnabled;
 
     // 1. Charger les préférences utilisateur
     await loadPreferences();

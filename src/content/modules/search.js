@@ -222,6 +222,15 @@
    * 2. Fallback  : prepend dans la liste scrollable avec position:sticky
    */
   function checkAndInjectSearch() {
+    // Garde-fou préférence active
+    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('search')) {
+      if (searchBarContainer) {
+        searchBarContainer.remove();
+        searchBarContainer = null;
+      }
+      return;
+    }
+
     // 1. Détecter si l'utilisateur consulte une source active (mode lecture)
     const isViewingSource = document.querySelector('source-viewer, [class*="source-viewer"]') !== null;
 

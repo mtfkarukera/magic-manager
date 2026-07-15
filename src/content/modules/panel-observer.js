@@ -40,11 +40,11 @@
       const sourceViewer = document.querySelector('source-viewer');
 
       if (sourceViewer) {
-        // source-viewer présent → s'assurer que les boutons sont injectés
-        if (typeof window.MM.checkAndInjectIndividualDelete === 'function') {
+        // source-viewer présent → s'assurer que les boutons sont injectés (si les features sont actives)
+        if (window.MM.isFeatureEnabled('delete') && typeof window.MM.checkAndInjectIndividualDelete === 'function') {
           window.MM.checkAndInjectIndividualDelete();
         }
-        if (typeof window.MM.checkAndInjectIndividualExport === 'function') {
+        if (window.MM.isFeatureEnabled('export') && typeof window.MM.checkAndInjectIndividualExport === 'function') {
           window.MM.checkAndInjectIndividualExport();
         }
       } else {
@@ -52,12 +52,21 @@
         cleanupPanelButtons();
       }
 
-      // Toujours rafraîchir l'état des boutons batch (fusion, export par lot)
-      if (typeof window.MM.updateBatchExportButtonState === 'function') {
+      // Toujours rafraîchir l'état des boutons batch (fusion, export par lot) si actifs
+      if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
         window.MM.updateBatchExportButtonState();
+      } else if (typeof window.MM.updateBatchExportButtonState === 'function') {
+        // Retirer le bouton si la feature a été désactivée
+        const btn = document.querySelector('.mm-batch-export-btn');
+        if (btn) btn.remove();
       }
-      if (typeof window.MM.updateBatchMergeButtonState === 'function') {
+
+      if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
         window.MM.updateBatchMergeButtonState();
+      } else if (typeof window.MM.updateBatchMergeButtonState === 'function') {
+        // Retirer le bouton si la feature a été désactivée
+        const btn = document.querySelector('.mm-batch-merge-btn');
+        if (btn) btn.remove();
       }
     }, DEBOUNCE_DELAY);
   }

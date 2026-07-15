@@ -550,6 +550,12 @@
    * Injecte le bouton d'export dans l'en-tête du panneau Discussion.
    */
   const tryInjectButton = debounce(function () {
+    // Garde-fou préférence active
+    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('chatExport')) {
+      cleanupChatExport();
+      return;
+    }
+
     // Bouton déjà présent et dans le DOM → rien à faire
     if (exportChatBtn && document.contains(exportChatBtn)) return;
 

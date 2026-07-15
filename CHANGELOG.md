@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.5.1] — 2026-07-16
+
+### Corrigé
+- 📊 **Décompte des sources sélectionnées** : Correction de l'écart de 1 unité lors de la sélection globale ("Tout sélectionner") dans les modules de fusion (`merge.js`) et d'export (`export.js`). La checkbox globale de Google est désormais exclue sémantiquement en identifiant dynamiquement sa ligne conteneure via son contenu textuel, indifféremment de l'obfuscation de Google.
+- ⚙️ **Commutateurs de paramètres fonctionnels** : Résolution du comportement "purement décoratif" du panneau de configuration. Exposition de la fonction `isFeatureEnabled` sur le namespace `window.MM` et couplage de cette dernière dans `panel-observer.js`, `search.js`, `syntax.js` et `chatexport.js`. L'activation ou désactivation de chaque commutateur prend désormais effet instantanément sans conflit et sans injection orpheline de boutons.
+
 ## [0.5.0] — 2026-07-16
 
 ### Ajouté
