@@ -83,16 +83,36 @@
    */
   function initAllModules() {
     console.log('[MM] Initialisation des modules activés');
-    if (isFeatureEnabled(FEATURES.search)) window.MM.initSearch();
-    if (isFeatureEnabled(FEATURES.merge)) window.MM.initMerge();
-    if (isFeatureEnabled(FEATURES.export)) window.MM.initExport();
-    if (isFeatureEnabled(FEATURES.delete)) window.MM.initDelete();
+
+    // Chaque module est isolé dans un try-catch pour qu'un crash
+    // dans l'un n'empêche pas l'initialisation des suivants.
+    const modules = [
+      { key: FEATURES.search, init: 'initSearch', label: 'Recherche' },
+      { key: FEATURES.merge,  init: 'initMerge',  label: 'Fusion' },
+      { key: FEATURES.export, init: 'initExport', label: 'Export' },
+      { key: FEATURES.delete, init: 'initDelete', label: 'Suppression' },
+      { key: FEATURES.syntax, init: 'initSyntax', label: 'Syntaxe' },
+      { key: FEATURES.chatExport, init: 'initChatExport', label: 'ChatExport' }
+    ];
+
+    for (const mod of modules) {
+      if (isFeatureEnabled(mod.key) && typeof window.MM[mod.init] === 'function') {
+        try {
+          window.MM[mod.init]();
+        } catch (err) {
+          console.error(`[MM] ERREUR lors de l'init du module ${mod.label} :`, err);
+        }
+      }
+    }
+
     // Panel observer centralisé : actif si export OU delete est activé
     if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete)) {
-      window.MM.initPanelObserver();
+      try {
+        window.MM.initPanelObserver();
+      } catch (err) {
+        console.error('[MM] ERREUR lors de l\'init du PanelObserver :', err);
+      }
     }
-    if (isFeatureEnabled(FEATURES.syntax)) window.MM.initSyntax();
-    if (isFeatureEnabled(FEATURES.chatExport)) window.MM.initChatExport();
   }
 
   /**

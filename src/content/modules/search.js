@@ -219,12 +219,9 @@
     // Nettoyer une référence orpheline éventuelle
     if (searchBarContainer) searchBarContainer = null;
 
-    // Chercher les deux ancrages possibles
-    const header    = findSourcePanelHeader();
+    // Chercher le conteneur de la liste scrollable
     const container = findSourcesListContainer();
-
-    // Si aucun des deux n'est disponible, on abandonne (trop tôt dans le cycle SPA)
-    if (!header && !container) return;
+    if (!container) return;
 
     // Construire la barre de recherche
     const input = createElement('input', {
@@ -245,29 +242,14 @@
       className: 'mm-search-bar'
     }, [input]);
 
-    if (header) {
-      // Injection dans le panel-header : la barre est hors de la zone scrollable
-      // → elle reste visible quelle que soit la position de défilement.
-      // On l'insère avant les boutons natifs (mais après nos boutons MM s'ils existent).
-      const firstNativeBtn = Array.from(header.querySelectorAll(
-        'button:not(.mm-batch-merge-btn):not(.mm-batch-export-btn)'
-      ))[0];
-      if (firstNativeBtn) {
-        header.insertBefore(searchBarContainer, firstNativeBtn);
-      } else {
-        header.prepend(searchBarContainer);
-      }
-      console.log('[MM] Barre de recherche injectée dans le panel-header (hors scroll)');
-    } else {
-      // Fallback : injecter dans la liste scrollable avec position:sticky
-      container.prepend(searchBarContainer);
-      searchBarContainer.style.position = 'sticky';
-      searchBarContainer.style.top = '0';
-      searchBarContainer.style.zIndex = '99';
-      const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      searchBarContainer.style.backgroundColor = isDark ? '#1e1f22' : '#ffffff';
-      console.log('[MM] Barre de recherche injectée en fallback sticky (liste scrollable)');
-    }
+    // Injecter en tête de la liste scrollable avec position:sticky
+    container.prepend(searchBarContainer);
+    searchBarContainer.style.position = 'sticky';
+    searchBarContainer.style.top = '0';
+    searchBarContainer.style.zIndex = '99';
+    const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    searchBarContainer.style.backgroundColor = isDark ? '#1e1f22' : '#ffffff';
+    console.log('[MM] Barre de recherche injectée (sticky dans la liste)');
   }
 
   /**
