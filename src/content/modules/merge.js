@@ -11,6 +11,9 @@
   let batchMergeButton = null;
   let stylesElement = null;
 
+  /** Dernier nombre de sources cochées connu — sert de verrou d'idempotence */
+  let lastBatchMergeCount = -1;
+
   // CSS injecté pour la modale de fusion et les animations
   const CSS_STYLES = `
     .mm-merge-dialog::backdrop {
@@ -626,7 +629,8 @@
     }
 
     const checked = window.MM.getCheckedSourceCheckboxes();
-    console.debug(`[MM] updateBatchMergeButtonState : ${checked.length} source(s) cochée(s) détectée(s).`);
+    const count = checked.length;
+    console.debug(`[MM] updateBatchMergeButtonState : ${count} source(s) cochée(s) détectée(s).`);
     
     // Ancre prioritaire : le panel-header du panneau des sources de NotebookLM
     const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
@@ -656,14 +660,24 @@
       return;
     }
 
-    if (checked.length >= 2) {
+    // Verrou d'idempotence : si le compte n'a pas changé ET le bouton est déjà
+    // dans la bonne ancre (ou absent si count < 2), ne rien faire du tout.
+    if (count === lastBatchMergeCount) {
+      const buttonIsCorrect = count < 2
+        ? !batchMergeButton
+        : (batchMergeButton && anchor.contains(batchMergeButton));
+      if (buttonIsCorrect) return;
+    }
+    lastBatchMergeCount = count;
+
+    if (count >= 2) {
       if (!batchMergeButton || !anchor.contains(batchMergeButton)) {
         if (batchMergeButton) batchMergeButton.remove();
 
         console.debug('[MM] updateBatchMergeButtonState : création du bouton de fusion.');
         batchMergeButton = createElement('button', {
           className: 'mm-batch-merge-btn',
-          title: `${t('mergeButton') || 'Fusionner'} (${checked.length})`,
+          title: `${t('mergeButton') || 'Fusionner'} (${count})`,
           style: isHeader
             ? 'background: transparent; border: none; color: #34A853; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; width: 32px; height: 32px; transition: background-color var(--mm-transition-fast), color var(--mm-transition-fast); margin-right: 4px; padding: 0;'
             : 'background: transparent; border: none; color: #34A853; cursor: pointer; margin-left: 8px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--mm-radius-sm); padding: 4px; transition: color var(--mm-transition-fast);',
@@ -672,7 +686,7 @@
           createMergeIcon(),
           createElement('span', {
             style: 'font-size: 10px; font-weight: bold; margin-left: 2px; font-family: var(--mm-font-family);',
-            textContent: `(${checked.length})`
+            textContent: `(${count})`
           })
         ]);
 
@@ -711,10 +725,8 @@
         }
       } else {
         const span = batchMergeButton.querySelector('span');
-        if (span) {
-          span.textContent = `(${checked.length})`;
-        }
-        batchMergeButton.title = `${t('mergeButton') || 'Fusionner'} (${checked.length})`;
+        if (span) span.textContent = `(${count})`;
+        batchMergeButton.title = `${t('mergeButton') || 'Fusionner'} (${count})`;
       }
     } else {
       if (batchMergeButton) {
@@ -742,6 +754,7 @@
       batchMergeButton.remove();
       batchMergeButton = null;
     }
+    lastBatchMergeCount = -1;
     if (stylesElement) {
       stylesElement.remove();
       stylesElement = null;

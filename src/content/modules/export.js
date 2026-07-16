@@ -19,6 +19,9 @@
   /** Bouton d'exportation par lot (injecté dynamiquement) */
   let batchExportButton = null;
 
+  /** Dernier nombre de sources cochées connu — sert de verrou d'idempotence */
+  let lastBatchExportCount = -1;
+
   /** Observer pour détecter la sélection/désélection des checkboxes */
   let selectionObserver = null;
 
@@ -632,7 +635,8 @@
 
   function updateBatchExportButtonState() {
     const checked = window.MM.getCheckedSourceCheckboxes();
-    console.debug(`[MM] updateBatchExportButtonState : ${checked.length} source(s) cochée(s) détectée(s).`);
+    const count = checked.length;
+    console.debug(`[MM] updateBatchExportButtonState : ${count} source(s) cochée(s) détectée(s).`);
     
     // Ancre prioritaire : le panel-header du panneau des sources de NotebookLM (desktop)
     const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
@@ -662,7 +666,18 @@
       return;
     }
 
-    if (checked.length > 0) {
+    // Verrou d'idempotence : si le compte n'a pas changé ET le bouton est déjà
+    // dans la bonne ancre (ou absent si count=0), ne rien faire du tout.
+    // Évite toute mutation DOM redondante et interrompt proprement la boucle réactive.
+    if (count === lastBatchExportCount) {
+      const buttonIsCorrect = count === 0
+        ? !batchExportButton
+        : (batchExportButton && anchor.contains(batchExportButton));
+      if (buttonIsCorrect) return;
+    }
+    lastBatchExportCount = count;
+
+    if (count > 0) {
       if (!batchExportButton || !anchor.contains(batchExportButton)) {
         if (batchExportButton) batchExportButton.remove();
 
@@ -670,7 +685,7 @@
 
         batchExportButton = createElement('button', {
           className: 'mm-batch-export-btn',
-          title: `${t('exportButton')} (${checked.length})`,
+          title: `${t('exportButton')} (${count})`,
           style: isHeader
             ? 'background: transparent; border: none; color: var(--mm-primary, #4285F4); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; width: 32px; height: 32px; transition: background-color var(--mm-transition-fast), color var(--mm-transition-fast); margin-right: 4px; padding: 0;'
             : 'background: transparent; border: none; color: var(--mm-primary, #4285F4); cursor: pointer; margin-left: 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--mm-radius-sm); padding: 4px; transition: color var(--mm-transition-fast);',
@@ -679,7 +694,7 @@
           createDownloadIcon(),
           createElement('span', {
             style: 'font-size: 10px; font-weight: bold; margin-left: 2px; font-family: var(--mm-font-family);',
-            textContent: `(${checked.length})`
+            textContent: `(${count})`
           })
         ]);
 
@@ -716,10 +731,8 @@
         }
       } else {
         const span = batchExportButton.querySelector('span');
-        if (span) {
-          span.textContent = `(${checked.length})`;
-        }
-        batchExportButton.title = `${t('exportButton')} (${checked.length})`;
+        if (span) span.textContent = `(${count})`;
+        batchExportButton.title = `${t('exportButton')} (${count})`;
       }
     } else {
       if (batchExportButton) {
@@ -741,6 +754,7 @@
       batchExportButton.remove();
       batchExportButton = null;
     }
+    lastBatchExportCount = -1;
     document.querySelectorAll('.mm-individual-export-btn').forEach(
       function (b) { b.remove(); }
     );

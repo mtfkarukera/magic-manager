@@ -180,11 +180,16 @@
           window.MM.checkAndInjectIndividualExport();
         }
       }
-      // NOTE : updateBatchExportButtonState et updateBatchMergeButtonState sont
-      // intentionnellement ABSENTS d'ici. Ils ne doivent être déclenchés que par :
-      //   1. Les interactions utilisateur (clic/change) via debouncedPanelInteraction
-      //   2. Les changements de layout via onLayoutResize
-      // Les inclure ici génère une boucle infinie car ils modifient le DOM.
+
+      // 6. Mise à jour des boutons batch (export + merge)
+      // Protégé contre la boucle par le disconnect/reconnect des observers ci-dessus.
+      // L'idempotence interne des fonctions évite toute mutation DOM redondante.
+      if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
+        window.MM.updateBatchExportButtonState();
+      }
+      if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
+        window.MM.updateBatchMergeButtonState();
+      }
     } catch (err) {
       console.error('[MM] Erreur lors des injections globales :', err);
     } finally {
