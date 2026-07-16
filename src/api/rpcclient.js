@@ -554,12 +554,15 @@
       return [];
     }
     // Chaque source : [sourceId, title, ..., typeCode(slot[16])]
-    return result[0].map(src => ({
-      id: src[0],
-      title: src[1],
-      kind: src[16]
-    }));
+    return result[0]
+      .filter(src => Array.isArray(src))
+      .map(src => ({
+        id: src[0],
+        title: src[1],
+        kind: src[16]
+      }));
   }
+
 
   /**
    * Crée une note utilisateur en 2 étapes via RPC :
