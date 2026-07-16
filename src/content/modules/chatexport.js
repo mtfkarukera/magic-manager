@@ -11,7 +11,7 @@
 'use strict';
 
 (function () {
-  const { t, createElement, debounce } = window.MM;
+  const { t, createElement } = window.MM;
 
   // Référence au bouton injecté (un seul à la fois)
   let exportChatBtn = null;
@@ -605,8 +605,9 @@
 
   /**
    * Injecte le bouton d'export dans l'en-tête du panneau Discussion.
+   * Fonction pure, sans debounce intégré.
    */
-  const tryInjectButton = debounce(function () {
+  function tryInjectButton() {
     // Garde-fou préférence active
     if (typeof window.MM.isFeatureEnabled === 'function') {
       if (!window.MM.isFeatureEnabled('feature_chatExport')) {
@@ -630,7 +631,7 @@
       return;
     }
 
-    console.log('[MM] [ChatExport] Bouton injecté avec succès dans l\'en-tête de la Discussion :', header.tagName + '.' + header.className);
+    console.log('[MM] [ChatExport] Bouton injecté dans :', header.tagName + '.' + header.className);
     ensureSpinnerCss();
 
     exportChatBtn = createElement('button', {
@@ -672,7 +673,7 @@
     // Insérer au début de l'en-tête (avant les icônes natives de Google)
     header.insertBefore(exportChatBtn, header.firstChild);
     console.log('[MM] ChatExport : bouton injecté dans l\'en-tête du panneau Discussion.');
-  }, 300);
+  }
 
   // ═══════════════════════════════════════════════════════════════════════
   // 7. INITIALISATION ET NETTOYAGE
@@ -684,10 +685,17 @@
   function initChatExport() {
     if (chatHeaderObserver) return;
 
+    // Tentative immédiate + différée pour laisser le DOM se stabiliser
     tryInjectButton();
+    setTimeout(tryInjectButton, 500);
+    setTimeout(tryInjectButton, 1500);
+
+    // Timer local pour le debounce de l'observer (évite les re-entrées)
+    let injectTimer = null;
 
     chatHeaderObserver = new MutationObserver(function () {
-      tryInjectButton();
+      clearTimeout(injectTimer);
+      injectTimer = setTimeout(tryInjectButton, 300);
     });
 
     chatHeaderObserver.observe(document.body, {
