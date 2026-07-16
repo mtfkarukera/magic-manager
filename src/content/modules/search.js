@@ -291,6 +291,12 @@
     const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
 
     if (sourcePanel && header) {
+      // Nettoyer l'en-tête collant mobile s'il existe (transition mobile → desktop)
+      const mobileHeader = sourcePanel.querySelector('.mm-sticky-header');
+      if (mobileHeader) {
+        mobileHeader.remove();
+      }
+
       // Injecter juste après le header (hors zone scrollable, fixe dans le flux flexbox)
       header.parentNode.insertBefore(searchBarContainer, header.nextSibling);
       searchBarContainer.style.position = 'relative';
@@ -298,14 +304,20 @@
       searchBarContainer.style.zIndex = '99';
       console.log('[MM] Barre de recherche injectée de façon fixe après le header');
     } else {
-      // Fallback : prepend dans la liste scrollable avec position:sticky
-      container.prepend(searchBarContainer);
-      searchBarContainer.style.position = 'sticky';
-      searchBarContainer.style.top = '0';
-      searchBarContainer.style.zIndex = '99';
-      const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-      searchBarContainer.style.backgroundColor = isDark ? '#1e1f22' : '#ffffff';
-      console.log('[MM] Barre de recherche injectée en fallback (sticky)');
+      // Mode mobile / sans-header : utilisation de l'en-tête collant MM (.mm-sticky-header)
+      const stickyHeader = window.MM.getOrCreateStickyHeader();
+      if (stickyHeader) {
+        const searchWrapper = stickyHeader.querySelector('.mm-sticky-header-search');
+        if (searchWrapper && !searchWrapper.contains(searchBarContainer)) {
+          searchWrapper.appendChild(searchBarContainer);
+          // Réinitialiser les styles de fallback obsolètes
+          searchBarContainer.style.position = '';
+          searchBarContainer.style.margin = '0';
+          searchBarContainer.style.zIndex = '';
+          searchBarContainer.style.backgroundColor = 'transparent';
+          console.log('[MM] Barre de recherche injectée dans l\'en-tête collant mobile');
+        }
+      }
     }
 
     // Ré-appliquer le filtrage s'il y a une recherche active

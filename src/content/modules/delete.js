@@ -244,13 +244,30 @@
     const titleEl = sourceViewer.querySelector('.source-title');
     const sourcePanel = document.querySelector('section.source-panel');
     const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header') : null;
-    const nativeButtons = panelHeader ? Array.from(panelHeader.querySelectorAll(
-      'button:not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
-    )) : [];
-    const collapseBtn = nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
+
+    let anchor = panelHeader;
+    let collapseBtn = null;
+
+    if (panelHeader) {
+      const nativeButtons = Array.from(panelHeader.querySelectorAll(
+        'button:not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
+      ));
+      collapseBtn = nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
+    }
+
+    // 3. Mode mobile/sans-header : s'ancrer sur le bouton de retour du source-viewer
+    if (!anchor || !collapseBtn) {
+      const closeBtn = sourceViewer.querySelector(
+        'button[mattooltip="Close source view"], button[aria-label="Close source view"], button[aria-label="Close"]'
+      );
+      if (closeBtn) {
+        anchor = closeBtn.parentNode;
+        collapseBtn = closeBtn;
+      }
+    }
 
     // Si les éléments requis ne sont pas encore prêts (en cours d'hydratation asynchrone par Angular)
-    if (!titleEl || !titleEl.textContent.trim() || !panelHeader || !collapseBtn) {
+    if (!titleEl || !titleEl.textContent.trim() || !anchor || !collapseBtn) {
       const retryCount = parseInt(sourceViewer.dataset.mmDeleteRetryCount || '0', 10);
       if (retryCount < 3) {
         sourceViewer.dataset.mmDeleteRetryCount = String(retryCount + 1);

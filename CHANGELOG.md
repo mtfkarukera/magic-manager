@@ -4,6 +4,19 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.5.8] — 2026-07-16
+
+### Ajouté
+- 📱 **Support responsive (desktop ↔ mobile)** : Ajout d'un `ResizeObserver` dans `panel-observer.js` pour détecter le basculement de layout de NotebookLM (3 colonnes desktop ↔ onglets mobile) et forcer un cycle complet de réinjection des composants MM. Inclut un double dispatch retardé comme filet de sécurité pour les hydratations Angular tardives.
+- 🧩 **Module centralisé `source-helpers.js`** : Création d'un nouveau module partagé regroupant les 5 fonctions de détection DOM dupliquées entre `export.js` et `merge.js` (`findSourcesListContainer`, `findSelectAllRow`, `getCheckedSourceCheckboxes`, `findSourceContainerByTitle`, `findSourceCardFromCheckbox`).
+
+### Optimisé
+- ⚡ **Remplacement de `findElementsInShadows` par `querySelectorAll` natif** : Tous les appels récursifs de traversée Shadow DOM dans `export.js`, `merge.js` et `syntax.js` ont été remplacés par des sélecteurs CSS natifs du navigateur. Gain de performance estimé de 10-50x par scan DOM, car Angular NotebookLM utilise l'émulation CSS (pas de véritable Shadow DOM).
+- ⚡ **Debounce de `onPanelInteraction`** : Remplacement du `setTimeout(100ms)` naïf par un `debounce(150ms)` qui regroupe les rafales de clics et d'événements `change` lors d'un "Tout sélectionner".
+- 🧹 **Suppression du code dupliqué** : Retrait de ~190 lignes de code dupliqué entre `export.js` et `merge.js`, remplacées par les fonctions centralisées de `source-helpers.js`.
+- 🧹 **Nettoyage des logs de diagnostic** : Les `console.log` récurrents de mise à jour d'état dans `export.js` et `merge.js` ont été convertis en `console.debug` (invisibles par défaut). Le bloc de scan de diagnostic dans `merge.js` (scan complet des checkboxes uniquement pour loguage) a été supprimé.
+- 🧹 **Suppression de la copie locale de `findElementsInShadows`** dans `syntax.js` (redondante avec `utils.js`).
+
 ## [0.5.7] — 2026-07-16
 
 ### Corrigé

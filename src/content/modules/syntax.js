@@ -96,29 +96,8 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Gestion et recherche récursive (y compris Shadow DOM)
+  // Détection du langage
   // ═══════════════════════════════════════════════════════════════════════
-
-  /**
-   * Recherche récursivement des éléments correspondant au sélecteur,
-   * y compris à l'intérieur de tous les Shadow Roots.
-   * @param {string} selector - Sélecteur CSS.
-   * @param {Element|Document} [root=document] - Point de départ de la recherche.
-   * @returns {Array<Element>}
-   */
-  function findElementsInShadows(selector, root = document) {
-    let elements = Array.from(root.querySelectorAll(selector));
-    const children = root.querySelectorAll('*');
-
-    for (let i = 0; i < children.length; i++) {
-      const child = children[i];
-      if (child.shadowRoot) {
-        elements = elements.concat(findElementsInShadows(selector, child.shadowRoot));
-      }
-    }
-
-    return elements;
-  }
 
   /**
    * Détecte le langage à partir des classes de l'élément code ou pre.
@@ -199,6 +178,7 @@
 
   /**
    * Parcourt la zone de chat pour traiter tous les blocs de code non encore gérés.
+   * Optimisé : utilise querySelectorAll natif (pas de traversée Shadow DOM).
    */
   const scanAndHighlight = debounce(function () {
     if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('syntax')) {
@@ -210,8 +190,8 @@
     );
     if (!chatContainer) return;
 
-    // Utilisation de findElementsInShadows limitée au chat
-    const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])', chatContainer);
+    // querySelectorAll natif — le chat de NotebookLM n'utilise pas de Shadow DOM
+    const preBlocks = chatContainer.querySelectorAll('pre:not([data-mm-syntax-processed="true"])');
     preBlocks.forEach(function (pre) {
       if (!pre.closest('.mm-code-block')) {
         processPreBlock(pre);

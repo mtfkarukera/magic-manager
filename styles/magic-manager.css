@@ -614,3 +614,44 @@
   color: #D93025 !important;
 }
 
+/* En-tête collant en mode mobile / onglets */
+.mm-sticky-header {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background-color: var(--mm-surface, #ffffff);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--mm-outline-variant, #e8eaed);
+  gap: 12px;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mm-sticky-header {
+    background-color: #131314;
+    border-bottom: 1px solid #3c4043;
+  }
+}
+
+.mm-sticky-header-search {
+  flex: 1;
+  display: flex;
+  align-items: center;
+}
+
+.mm-sticky-header-search .mm-search-bar {
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.mm-sticky-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+

@@ -1,7 +1,9 @@
 // export.js — Module d'exportation de sources individuelles et par lot
 // Auteur : MTF Karukera | Licence : MPL-2.0
 // Dépendances :
-// - window.MM (t, createElement, debounce)
+// - window.MM (t, createElement, debounce, findSourcesListContainer,
+//   findSelectAllRow, getCheckedSourceCheckboxes, findSourceContainerByTitle,
+//   findSourceCardFromCheckbox — via source-helpers.js)
 // - lib/jspdf.umd.min.js (window.jspdf)
 // Note : JSZip supprimé — ZIP généré en pur JS via buildZipBlob (format STORE, sans eval)
 
@@ -24,62 +26,12 @@
   let sourceObserver = null;
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Sélecteurs DOM robustes
+  // Fonction locale spécifique à l'export (extraction du contenu source)
+  // Les sélecteurs DOM partagés (findSourcesListContainer, findSelectAllRow,
+  // getCheckedSourceCheckboxes, findSourceContainerByTitle,
+  // findSourceCardFromCheckbox) sont centralisés dans source-helpers.js
+  // et exposés via window.MM.*
   // ═══════════════════════════════════════════════════════════════════════
-
-  function findSourcesListContainer() {
-    return document.querySelector('section.source-panel, .source-panel, .sources-panel, [class*="source-panel"], [class*="sources-panel"], [class*="source-list"]');
-  }
-
-  function findSelectAllRow() {
-    const list = findSourcesListContainer();
-    if (!list) return null;
-    
-    // Trouver le texte "Tout sélectionner" ou équivalent dans d'autres langues
-    const divs = window.MM.findElementsInShadows('div, span, button', list);
-    for (let el of divs) {
-      // Ignorer les conteneurs parents qui englobent des cartes de sources
-      if (el.querySelector && el.querySelector('.source-card, [class*="source-card"], [class*="source-item"]')) {
-        continue;
-      }
-      const txt = (el.textContent || '').trim().toLowerCase().replace(/\s+/g, ' ');
-      if (txt.includes('tout sélectionner') || txt.includes('select all') || txt.includes('seleccionar todo') || txt.includes('alle auswählen')) {
-        let row = el.parentNode;
-        while (row && row !== list && row.tagName !== 'DIV') {
-          row = row.parentNode;
-        }
-        return row;
-      }
-    }
-    return null;
-  }
-
-  function getCheckedSourceCheckboxes() {
-    const list = findSourcesListContainer();
-    if (!list) return [];
-    
-    const selectAllRow = findSelectAllRow();
-    
-    // Sélecteurs précis : exclure [class*="checkbox"] qui capture les wrappers Angular
-    const checkboxes = window.MM.findElementsInShadows(
-      'input[type="checkbox"], [role="checkbox"], mat-pseudo-checkbox, .mat-pseudo-checkbox',
-      list
-    );
-    return checkboxes.filter(cb => {
-      const isChecked = 
-        cb.getAttribute('aria-checked') === 'true' || 
-        cb.checked === true || 
-        cb.classList.contains('mat-pseudo-checkbox-checked') || 
-        cb.getAttribute('state') === 'checked' ||
-        (typeof cb.className === 'string' && cb.className.includes('checked')) ||
-        cb.getAttribute('aria-selected') === 'true';
-
-      // Exclure la case globale "Tout sélectionner" de façon sémantique
-      const isGlobal = selectAllRow && (cb === selectAllRow || selectAllRow.contains(cb));
-
-      return isChecked && !isGlobal;
-    });
-  }
 
   function findIndividualSourceData() {
     const sourceViewer = document.querySelector('source-viewer');
@@ -106,42 +58,6 @@
     }
 
     return { title: title, content: content };
-  }
-
-  function findSourceContainerByTitle(sourceTitle) {
-    const list = findSourcesListContainer();
-    if (!list) return null;
-    const containers = window.MM.findElementsInShadows('.source-card, [class*="source-card"], [class*="source-item"]', list);
-    for (let ctr of containers) {
-      const stretchedBtn = window.MM.findElementsInShadows('button.source-stretched-button', ctr)[0];
-      if (stretchedBtn) {
-        const label = stretchedBtn.getAttribute('aria-label') || '';
-        if (label.includes(sourceTitle) || sourceTitle.includes(label)) {
-          return ctr;
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Remonte depuis une checkbox jusqu'à la carte source parente.
-   * Retourne { card, title, stretchedBtn } ou null.
-   */
-  function findSourceCardFromCheckbox(cb) {
-    let el = cb;
-    // Remonter au plus 15 niveaux jusqu'à trouver un conteneur de source
-    for (let i = 0; i < 15 && el; i++) {
-      el = el.parentElement || (el.parentNode && el.parentNode.host) || null;
-      if (!el) break;
-      // Chercher un bouton source-stretched-button dans ce conteneur
-      const stretchedBtn = el.querySelector('button.source-stretched-button');
-      if (stretchedBtn) {
-        const title = stretchedBtn.getAttribute('aria-label') || el.textContent.trim().split('\n')[0].slice(0, 80);
-        return { card: el, title: title, stretchedBtn: stretchedBtn };
-      }
-    }
-    return null;
   }
 
   /**
@@ -472,7 +388,7 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   async function triggerBatchExport() {
-    const checked = getCheckedSourceCheckboxes();
+    const checked = window.MM.getCheckedSourceCheckboxes();
     if (checked.length === 0) return;
 
     // Fermer le dialogue global de paramétrage s'il est ouvert
@@ -556,7 +472,7 @@
       const cb = checkboxes[i];
 
       // Remonter depuis la checkbox vers la carte source parente
-      const sourceInfo = findSourceCardFromCheckbox(cb);
+      const sourceInfo = window.MM.findSourceCardFromCheckbox(cb);
       if (!sourceInfo) {
         console.warn(`[MM] Export batch : impossible de remonter au conteneur pour la checkbox ${i}`);
         continue;
@@ -638,18 +554,33 @@
 
     if (document.querySelector('.mm-individual-export-btn')) return;
 
-    // 1. Trouver le panel-header de la SECTION source-panel (pas le header global)
+    // 1. Trouver le panel-header du panneau des sources (mode desktop)
     const sourcePanel = document.querySelector('section.source-panel');
     const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header') : null;
 
-    // 2. Capturer le bouton collapse AVANT toute injection (exclure les nôtres)
-    const nativeButtons = panelHeader ? Array.from(panelHeader.querySelectorAll(
-      'button:not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
-    )) : [];
-    const collapseBtn = nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
+    let anchor = panelHeader;
+    let collapseBtn = null;
+
+    if (panelHeader) {
+      const nativeButtons = Array.from(panelHeader.querySelectorAll(
+        'button:not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
+      ));
+      collapseBtn = nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
+    }
+
+    // 2. Si non trouvé (mode mobile), s'ancrer sur le bouton de retour du source-viewer
+    if (!anchor || !collapseBtn) {
+      const closeBtn = sourceViewer.querySelector(
+        'button[mattooltip="Close source view"], button[aria-label="Close source view"], button[aria-label="Close"]'
+      );
+      if (closeBtn) {
+        anchor = closeBtn.parentNode;
+        collapseBtn = closeBtn;
+      }
+    }
 
     // Si les éléments requis ne sont pas encore prêts (hydratation Angular asynchrone)
-    if (!panelHeader || !collapseBtn) {
+    if (!anchor || !collapseBtn) {
       const retryCount = parseInt(sourceViewer.dataset.mmExportRetryCount || '0', 10);
       if (retryCount < 3) {
         sourceViewer.dataset.mmExportRetryCount = String(retryCount + 1);
@@ -700,22 +631,32 @@
   }
 
   function updateBatchExportButtonState() {
-    const checked = getCheckedSourceCheckboxes();
-    console.log(`[MM] updateBatchExportButtonState : ${checked.length} source(s) cochée(s) détectée(s).`);
+    const checked = window.MM.getCheckedSourceCheckboxes();
+    console.debug(`[MM] updateBatchExportButtonState : ${checked.length} source(s) cochée(s) détectée(s).`);
     
-    // Ancre prioritaire : le panel-header du panneau des sources de NotebookLM
+    // Ancre prioritaire : le panel-header du panneau des sources de NotebookLM (desktop)
     const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
     const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header, [class*="header"]') : null;
-    
+
     let anchor = panelHeader;
     let isHeader = true;
-    
+    let isMobileSticky = false;
+
     if (!anchor) {
-      anchor = document.querySelector('.mm-search-bar') || findSelectAllRow();
-      isHeader = false;
-      console.log('[MM] updateBatchExportButtonState : pas de panel-header trouvé, utilisation fallback :', anchor ? anchor.tagName : 'non trouvé');
+      // Tenter d'utiliser l'en-tête collant mobile
+      const stickyHeader = window.MM.getOrCreateStickyHeader();
+      if (stickyHeader) {
+        anchor = stickyHeader.querySelector('.mm-sticky-header-actions');
+        isMobileSticky = true;
+      }
     }
-    
+
+    if (!anchor) {
+      anchor = document.querySelector('.mm-search-bar') || window.MM.findSelectAllRow();
+      isHeader = false;
+      console.debug('[MM] updateBatchExportButtonState : pas de panel-header trouvé, utilisation fallback :', anchor ? anchor.tagName : 'non trouvé');
+    }
+
     if (!anchor) {
       console.warn('[MM] updateBatchExportButtonState : aucune ancre trouvée pour injecter le bouton d\'export par lot.');
       return;
@@ -725,7 +666,7 @@
       if (!batchExportButton || !anchor.contains(batchExportButton)) {
         if (batchExportButton) batchExportButton.remove();
 
-        console.log('[MM] updateBatchExportButtonState : création du bouton d\'export par lot.');
+        console.debug('[MM] updateBatchExportButtonState : création du bouton d\'export par lot.');
 
         batchExportButton = createElement('button', {
           className: 'mm-batch-export-btn',
@@ -753,18 +694,22 @@
         }
 
         if (isHeader) {
-          // Trouver le bouton collapse natif
-          const nativeButtons = Array.from(anchor.querySelectorAll(
-            'button:not(.mm-batch-merge-btn):not(.mm-batch-export-btn):not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
-          ));
-          const collapseBtn = nativeButtons[nativeButtons.length - 1];
-          if (collapseBtn) {
-            // Insérer à gauche du bouton de fusion s'il existe déjà
-            const mergeBtn = anchor.querySelector('.mm-batch-merge-btn');
-            const targetBefore = mergeBtn || collapseBtn;
-            targetBefore.parentNode.insertBefore(batchExportButton, targetBefore);
-          } else {
+          if (isMobileSticky) {
             anchor.appendChild(batchExportButton);
+          } else {
+            // Trouver le bouton collapse natif
+            const nativeButtons = Array.from(anchor.querySelectorAll(
+              'button:not(.mm-batch-merge-btn):not(.mm-batch-export-btn):not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
+            ));
+            const collapseBtn = nativeButtons[nativeButtons.length - 1];
+            if (collapseBtn) {
+              // Insérer à gauche du bouton de fusion s'il existe déjà
+              const mergeBtn = anchor.querySelector('.mm-batch-merge-btn');
+              const targetBefore = mergeBtn || collapseBtn;
+              targetBefore.parentNode.insertBefore(batchExportButton, targetBefore);
+            } else {
+              anchor.appendChild(batchExportButton);
+            }
           }
         } else {
           anchor.appendChild(batchExportButton);
@@ -778,7 +723,7 @@
       }
     } else {
       if (batchExportButton) {
-        console.log('[MM] updateBatchExportButtonState : retrait du bouton d\'export par lot (0 source cochée).');
+        console.debug('[MM] updateBatchExportButtonState : retrait du bouton d\'export par lot (0 source cochée).');
         batchExportButton.remove();
         batchExportButton = null;
       }

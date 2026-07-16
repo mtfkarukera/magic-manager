@@ -4,6 +4,8 @@
  *
  * Observer centralisé et ciblé sur section.source-panel et document.body.
  * Coordonne la détection des éléments dynamiques et l'injection des boutons MM.
+ * Intègre un ResizeObserver pour survivre au basculement responsive
+ * (desktop 3 colonnes ↔ onglets mobile) de NotebookLM.
  */
 (function () {
   'use strict';
@@ -11,9 +13,19 @@
   // Le debounce central permet de grouper les rafales de mutations de la SPA
   const DEBOUNCE_DELAY = 250;
 
+  // Délai du second dispatch de sécurité (attrape les hydratations Angular tardives)
+  const LATE_DISPATCH_DELAY = 500;
+
   let panelObserver = null;
   let globalPageObserver = null;
+  let resizeObserver = null;
   let currentObservedPanel = null;
+
+  /** État courant du layout (true = desktop 3 colonnes, false = onglets mobile) */
+  let isDesktopLayout = null;
+
+  /** Timer du second dispatch retardé pour éviter les doublons */
+  let lateDispatchTimer = null;
 
   /**
    * Supprime les boutons MM injectés dans le panel-header.
@@ -25,18 +37,24 @@
   }
 
   /**
-   * Gère le clic dans le panneau des sources pour mettre à jour les boutons batch de façon réactive.
+   * Exécute les mises à jour des boutons batch de façon réactive.
+   * Debouncé pour regrouper les rafales de clics et d'événements change.
+   */
+  const debouncedPanelInteraction = window.MM.debounce(function () {
+    if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
+      window.MM.updateBatchExportButtonState();
+    }
+    if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
+      window.MM.updateBatchMergeButtonState();
+    }
+  }, 150);
+
+  /**
+   * Gère le clic dans le panneau des sources pour mettre à jour les boutons batch.
+   * Utilise un debounce au lieu d'un setTimeout pour regrouper les interactions rapides.
    */
   function onPanelInteraction() {
-    // Petit délai pour laisser Angular mettre à jour les attributs de sélection (checked, state...)
-    setTimeout(function () {
-      if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
-        window.MM.updateBatchExportButtonState();
-      }
-      if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
-        window.MM.updateBatchMergeButtonState();
-      }
-    }, 100);
+    debouncedPanelInteraction();
   }
 
   /**
@@ -82,7 +100,7 @@
         childList: true
       });
 
-      // Écouter les interactions de clic/changement pour mettre à jour les boutons batch de façon performante
+      // Écouter les interactions de clic/changement pour mettre à jour les boutons batch
       sourcePanel.addEventListener('click', onPanelInteraction);
       sourcePanel.addEventListener('change', onPanelInteraction);
 
@@ -142,7 +160,77 @@
         window.MM.checkAndInjectIndividualExport();
       }
     }
+
+    // 6. Mise à jour réactive des boutons batch (export + merge)
+    // Garantit que les changements d'état des checkboxes Angular (via mutations DOM)
+    // déclenchent la recalculation des boutons, même sans clic utilisateur direct.
+    if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
+      window.MM.updateBatchExportButtonState();
+    }
+    if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
+      window.MM.updateBatchMergeButtonState();
+    }
   }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Détection du changement de layout responsive
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Détecte si le layout courant est en mode desktop (3 colonnes) ou mobile (onglets).
+   * Vérifie la VISIBILITÉ RÉELLE des panneaux (pas leur simple présence dans le DOM),
+   * car Angular masque les panneaux via CSS en mode onglets sans les supprimer du DOM.
+   * @returns {boolean} true si le layout desktop est détecté.
+   */
+  function detectDesktopLayout() {
+    const sourcePanel = document.querySelector('section.source-panel');
+    const chatPanel = document.querySelector('section.chat-panel, [class*="chat-panel"]');
+
+    // Vérifier que les deux panneaux sont VISIBLES (pas juste présents dans le DOM)
+    // offsetParent === null pour les éléments masqués via display:none
+    // getBoundingClientRect().width > 0 comme fallback si visibility:hidden est utilisé
+    function isVisible(el) {
+      if (!el) return false;
+      if (el.offsetParent !== null) return true;
+      // Fallback pour les éléments avec position:fixed ou visibility:hidden
+      const rect = el.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    }
+
+    return isVisible(sourcePanel) && isVisible(chatPanel);
+  }
+
+  /**
+   * Callback du ResizeObserver — détecte le basculement de layout et force
+   * un cycle complet de réinjection uniquement si le mode a changé.
+   */
+  const onLayoutResize = window.MM.debounce(function () {
+    const currentLayout = detectDesktopLayout();
+
+    // Ne réagir que si le layout a effectivement changé (franchissement de seuil)
+    if (isDesktopLayout !== currentLayout) {
+      const previousLayout = isDesktopLayout;
+      isDesktopLayout = currentLayout;
+      console.log(
+        '[MM] Changement de layout détecté :',
+        previousLayout === null ? 'initial' : (previousLayout ? 'desktop' : 'mobile'),
+        '→', currentLayout ? 'desktop' : 'mobile'
+      );
+
+      // Premier dispatch immédiat pour la reconstruction rapide
+      dispatchCentralInjections();
+
+      // Second dispatch retardé — filet de sécurité pour les hydratations Angular tardives
+      if (lateDispatchTimer) {
+        clearTimeout(lateDispatchTimer);
+      }
+      lateDispatchTimer = setTimeout(function () {
+        lateDispatchTimer = null;
+        dispatchCentralInjections();
+        console.debug('[MM] Second dispatch post-resize exécuté (filet de sécurité)');
+      }, LATE_DISPATCH_DELAY);
+    }
+  }, 500);
 
   // ═══════════════════════════════════════════════════════════════════════
   // Cycle de vie
@@ -150,6 +238,9 @@
 
   function initPanelObserver() {
     if (globalPageObserver) return;
+
+    // Initialiser l'état du layout courant
+    isDesktopLayout = detectDesktopLayout();
 
     // MutationObserver central et unique sur document.body
     globalPageObserver = new MutationObserver(window.MM.debounce(function () {
@@ -160,6 +251,13 @@
       childList: true,
       subtree: true
     });
+
+    // ResizeObserver pour détecter les basculements de layout responsive
+    if (typeof ResizeObserver !== 'undefined') {
+      resizeObserver = new ResizeObserver(onLayoutResize);
+      resizeObserver.observe(document.documentElement);
+      console.log('[MM] ResizeObserver initialisé pour la détection de layout responsive');
+    }
 
     // Lancer une première détection immédiate
     dispatchCentralInjections();
@@ -175,12 +273,25 @@
       panelObserver.disconnect();
       panelObserver = null;
     }
+    if (resizeObserver) {
+      resizeObserver.disconnect();
+      resizeObserver = null;
+    }
+    if (lateDispatchTimer) {
+      clearTimeout(lateDispatchTimer);
+      lateDispatchTimer = null;
+    }
     if (currentObservedPanel) {
       currentObservedPanel.removeEventListener('click', onPanelInteraction);
       currentObservedPanel.removeEventListener('change', onPanelInteraction);
       currentObservedPanel = null;
     }
     cleanupPanelButtons();
+    const mobileHeader = document.querySelector('.mm-sticky-header');
+    if (mobileHeader) {
+      mobileHeader.remove();
+    }
+    isDesktopLayout = null;
     console.log('[MM] Observer global de page centralisé nettoyé');
   }
 
