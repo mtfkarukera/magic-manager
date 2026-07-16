@@ -1,5 +1,8 @@
 # 🧩 Magic Manager for NotebookLM
 
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/mtfkarukera/magic-manager?color=green)
+![GitHub license](https://img.shields.io/github/license/mtfkarukera/magic-manager?color=blue)
+
 **Magic Manager** est une extension Firefox qui enrichit l'interface de [Google NotebookLM](https://notebooklm.google.com/) avec des fonctionnalités avancées de productivité.
 
 ## ✨ Fonctionnalités
