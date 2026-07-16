@@ -207,11 +207,14 @@
     if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('syntax')) {
       return;
     }
-    // Cibler uniquement le conteneur du chat pour éviter de parcourir tout le document
-    const chatContainer = document.querySelector(
+    let chatContainer = document.querySelector(
       'chat-viewer, [class*="chat-viewer"], [class*="conversation-container"], section.chat-panel, .chat-panel'
     );
-    if (!chatContainer) return;
+    
+    // Repli sur document.body en mode mobile si le conteneur de chat spécifique est introuvable
+    if (!chatContainer) {
+      chatContainer = document.body;
+    }
 
     // Recherche récursive Shadow DOM limitée au seul conteneur de chat pour de hautes performances
     const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])', chatContainer);

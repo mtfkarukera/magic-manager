@@ -568,9 +568,9 @@
       collapseBtn = nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
     }
 
-    // 2. Si non trouvé (mode mobile), s'ancrer sur le bouton de retour du source-viewer
+    // 2. Si non trouvé (mode mobile), s'ancrer sur le bouton de retour du document (recherche globale)
     if (!anchor || !collapseBtn) {
-      const closeBtn = sourceViewer.querySelector(
+      const closeBtn = document.querySelector(
         'button[mattooltip="Close source view"], button[aria-label="Close source view"], button[aria-label="Close"]'
       );
       if (closeBtn) {
