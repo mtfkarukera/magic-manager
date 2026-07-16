@@ -189,6 +189,38 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // Bouton de fermeture/retour du document ouvert
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Trouve le bouton de retour/fermeture du document ouvert de façon robuste
+   * et indépendante de la langue de l'interface Google.
+   * @param {Element} sourceViewer - L'élément source-viewer actif.
+   * @returns {Element|null}
+   */
+  function findSourceViewerCloseButton(sourceViewer) {
+    if (!sourceViewer) return null;
+    
+    // 1. Recherche structurelle via le titre du document (indépendante de la langue)
+    const titleEl = sourceViewer.querySelector('.source-title, .title') || 
+                    document.querySelector('.source-title, [class*="source-title"]');
+    if (titleEl && titleEl.parentElement) {
+      const btn = titleEl.parentElement.querySelector('button');
+      if (btn) return btn;
+    }
+    
+    // 2. Fallbacks de sélecteurs linguistiques ciblés
+    return sourceViewer.querySelector(
+      'button[mattooltip*="Close" i], button[aria-label*="Close" i], ' +
+      'button[mattooltip*="Fermer" i], button[aria-label*="Fermer" i], ' +
+      'button[mattooltip*="Retour" i], button[aria-label*="Retour" i]'
+    ) || document.querySelector(
+      'button[mattooltip*="Close" i], button[aria-label*="Close" i], ' +
+      'button[mattooltip*="Fermer" i], button[aria-label*="Fermer" i]'
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // Exposition dans le namespace global MM
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -198,4 +230,5 @@
   window.MM.findSourceContainerByTitle = findSourceContainerByTitle;
   window.MM.findSourceCardFromCheckbox = findSourceCardFromCheckbox;
   window.MM.getOrCreateStickyHeader = getOrCreateStickyHeader;
+  window.MM.findSourceViewerCloseButton = findSourceViewerCloseButton;
 })();

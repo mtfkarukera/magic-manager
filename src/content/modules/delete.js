@@ -255,11 +255,9 @@
       collapseBtn = nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
     }
 
-    // 3. Mode mobile/sans-header : s'ancrer sur le bouton de retour du document (recherche globale)
+    // 3. Mode mobile/sans-header : s'ancrer sur le bouton de retour du document (recherche globale robuste)
     if (!anchor || !collapseBtn) {
-      const closeBtn = document.querySelector(
-        'button[mattooltip="Close source view"], button[aria-label="Close source view"], button[aria-label="Close"]'
-      );
+      const closeBtn = window.MM.findSourceViewerCloseButton(sourceViewer);
       if (closeBtn) {
         anchor = closeBtn.parentNode;
         collapseBtn = closeBtn;

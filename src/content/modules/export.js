@@ -568,11 +568,9 @@
       collapseBtn = nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
     }
 
-    // 2. Si non trouvé (mode mobile), s'ancrer sur le bouton de retour du document (recherche globale)
+    // 2. Si non trouvé (mode mobile), s'ancrer sur le bouton de retour du document (recherche globale robuste)
     if (!anchor || !collapseBtn) {
-      const closeBtn = document.querySelector(
-        'button[mattooltip="Close source view"], button[aria-label="Close source view"], button[aria-label="Close"]'
-      );
+      const closeBtn = window.MM.findSourceViewerCloseButton(sourceViewer);
       if (closeBtn) {
         anchor = closeBtn.parentNode;
         collapseBtn = closeBtn;

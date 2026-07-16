@@ -27,6 +27,9 @@
   /** Timer du second dispatch retardé pour éviter les doublons */
   let lateDispatchTimer = null;
 
+  /** Verrou de modification du DOM pour empêcher les boucles de mutations infinies */
+  let isModifyingDOM = false;
+
   /**
    * Supprime les boutons MM injectés dans le panel-header.
    */
@@ -132,43 +135,55 @@
    * Appelé de manière centralisée lors des mutations globales.
    */
   function dispatchCentralInjections() {
-    // 1. Gérer l'observation du panneau des sources
-    tryObservePanel();
+    if (isModifyingDOM) return;
+    isModifyingDOM = true;
 
-    // 2. Recherche : Barre de recherche
-    if (window.MM.isFeatureEnabled('search') && typeof window.MM.checkAndInjectSearch === 'function') {
-      window.MM.checkAndInjectSearch();
-    }
+    try {
+      // 1. Gérer l'observation du panneau des sources
+      tryObservePanel();
 
-    // 3. Chat Export : Bouton d'export de conversation
-    if (window.MM.isFeatureEnabled('chatExport') && typeof window.MM.checkAndInjectChatExport === 'function') {
-      window.MM.checkAndInjectChatExport();
-    }
-
-    // 4. Syntaxe : Coloration des blocs de code
-    if (window.MM.isFeatureEnabled('syntax') && typeof window.MM.scanAndHighlight === 'function') {
-      window.MM.scanAndHighlight();
-    }
-
-    // 5. Injections individuelles (Poubelle & Export) s'il y a un source-viewer actif
-    const sourceViewer = document.querySelector('source-viewer');
-    if (sourceViewer) {
-      if (window.MM.isFeatureEnabled('delete') && typeof window.MM.checkAndInjectIndividualDelete === 'function') {
-        window.MM.checkAndInjectIndividualDelete();
+      // 2. Recherche : Barre de recherche
+      if (window.MM.isFeatureEnabled('search') && typeof window.MM.checkAndInjectSearch === 'function') {
+        window.MM.checkAndInjectSearch();
       }
-      if (window.MM.isFeatureEnabled('export') && typeof window.MM.checkAndInjectIndividualExport === 'function') {
-        window.MM.checkAndInjectIndividualExport();
-      }
-    }
 
-    // 6. Mise à jour réactive des boutons batch (export + merge)
-    // Garantit que les changements d'état des checkboxes Angular (via mutations DOM)
-    // déclenchent la recalculation des boutons, même sans clic utilisateur direct.
-    if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
-      window.MM.updateBatchExportButtonState();
-    }
-    if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
-      window.MM.updateBatchMergeButtonState();
+      // 3. Chat Export : Bouton d'export de conversation
+      if (window.MM.isFeatureEnabled('chatExport') && typeof window.MM.checkAndInjectChatExport === 'function') {
+        window.MM.checkAndInjectChatExport();
+      }
+
+      // 4. Syntaxe : Coloration des blocs de code
+      if (window.MM.isFeatureEnabled('syntax') && typeof window.MM.scanAndHighlight === 'function') {
+        window.MM.scanAndHighlight();
+      }
+
+      // 5. Injections individuelles (Poubelle & Export) s'il y a un source-viewer actif
+      const sourceViewer = document.querySelector('source-viewer');
+      if (sourceViewer) {
+        if (window.MM.isFeatureEnabled('delete') && typeof window.MM.checkAndInjectIndividualDelete === 'function') {
+          window.MM.checkAndInjectIndividualDelete();
+        }
+        if (window.MM.isFeatureEnabled('export') && typeof window.MM.checkAndInjectIndividualExport === 'function') {
+          window.MM.checkAndInjectIndividualExport();
+        }
+      }
+
+      // 6. Mise à jour réactive des boutons batch (export + merge)
+      // Garantit que les changements d'état des checkboxes Angular (via mutations DOM)
+      // déclenchent la recalculation des boutons, même sans clic utilisateur direct.
+      if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
+        window.MM.updateBatchExportButtonState();
+      }
+      if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
+        window.MM.updateBatchMergeButtonState();
+      }
+    } catch (err) {
+      console.error('[MM] Erreur lors des injections globales :', err);
+    } finally {
+      // Libérer le verrou asynchronement pour digérer les mutations générées par l'extension
+      setTimeout(function () {
+        isModifyingDOM = false;
+      }, 50);
     }
   }
 
