@@ -23,7 +23,7 @@
 
 1. Clonez ce dépôt :
    ```bash
-   git clone https://github.com/mtmusic/magic-manager.git
+   git clone https://github.com/mtfkarukera/magic-manager.git
    cd magic-manager
    ```
 2. Ouvrez Firefox et allez dans `about:debugging#/runtime/this-firefox`.
