@@ -541,7 +541,20 @@
    * @returns {Element|null}
    */
   function findChatPanelHeader() {
-    // 1. Approche privilégiée : Partir du textarea du chat pour cibler son conteneur
+    // 1. Approche par texte : chercher un panel-header contenant "Discussion" ou "Chat"
+    const panelHeaders = document.querySelectorAll('.panel-header, [class*="panel-header"], [class*="header"]');
+    for (const h of panelHeaders) {
+      // Écarter à coup sûr le panneau des sources
+      if (h.closest('section.source-panel, [class*="source-panel"], .left-sidebar')) {
+        continue;
+      }
+      const text = h.textContent || '';
+      if (/discussion|chat/i.test(text)) {
+        return h;
+      }
+    }
+
+    // 2. Approche descendante : Partir du textarea du chat pour cibler son conteneur
     const chatInput = document.querySelector(
       'textarea[aria-label*="Ask" i], ' +
       'textarea[placeholder*="Ask" i], ' +
@@ -566,7 +579,7 @@
       }
     }
 
-    // 2. Approche alternative : Recherche par sélecteurs candidats directs
+    // 3. Approche alternative : Recherche par sélecteurs candidats directs
     for (const sel of CHAT_HEADER_SELECTORS) {
       const candidates = document.querySelectorAll(sel);
       for (const el of candidates) {
@@ -577,7 +590,7 @@
       }
     }
 
-    // 3. Recherche de repli dans le Shadow DOM
+    // 4. Recherche de repli dans le Shadow DOM
     const shadowCandidates = window.MM.findElementsInShadows(
       CHAT_HEADER_SELECTORS.join(', ')
     );
@@ -612,8 +625,12 @@
     if (exportChatBtn) exportChatBtn = null;
 
     const header = findChatPanelHeader();
-    if (!header) return;
+    if (!header) {
+      console.warn('[MM] [ChatExport] En-tête de Discussion introuvable dans la page.');
+      return;
+    }
 
+    console.log('[MM] [ChatExport] Bouton injecté avec succès dans l\'en-tête de la Discussion :', header.tagName + '.' + header.className);
     ensureSpinnerCss();
 
     exportChatBtn = createElement('button', {
