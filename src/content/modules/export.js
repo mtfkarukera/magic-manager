@@ -552,8 +552,6 @@
     const sourceViewer = document.querySelector('source-viewer');
     if (!sourceViewer) return;
 
-    if (document.querySelector('.mm-individual-export-btn')) return;
-
     // 1. Trouver le panel-header du panneau des sources (mode desktop)
     const sourcePanel = document.querySelector('section.source-panel');
     const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header') : null;
@@ -588,6 +586,10 @@
       }
       return;
     }
+
+    // Vérifier localement sous le parent commun pour éviter de détecter
+    // des boutons fantômes d'autres onglets mis en cache par Angular
+    if (collapseBtn.parentNode.querySelector('.mm-individual-export-btn')) return;
 
     // Bouton d'exportation individuel circulaire
     const exportBtn = createElement('button', {

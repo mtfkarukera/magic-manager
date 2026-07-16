@@ -234,7 +234,6 @@
    */
   function checkAndInjectIndividualDelete() {
     if (window.location.pathname.indexOf('/notebook/') === -1) return;
-    if (document.querySelector('.mm-individual-delete-btn')) return;
 
     // 1. Détecter si un source-viewer est actif (preuve que la vue est ouverte)
     const sourceViewer = document.querySelector('source-viewer');
@@ -255,7 +254,7 @@
       collapseBtn = nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
     }
 
-    // 3. Mode mobile/sans-header : s'ancrer sur le bouton de retour du document (recherche globale robuste)
+    // 3. Mode mobile/sans-header : s'ancrer sur le bouton de retour du document
     if (!anchor || !collapseBtn) {
       const closeBtn = window.MM.findSourceViewerCloseButton(sourceViewer);
       if (closeBtn) {
@@ -275,6 +274,10 @@
       }
       return;
     }
+
+    // Vérifier localement sous le parent commun pour éviter de détecter
+    // des boutons fantômes d'autres onglets mis en cache par Angular
+    if (collapseBtn.parentNode.querySelector('.mm-individual-delete-btn')) return;
 
     const sourceTitle = titleEl.textContent.trim();
 

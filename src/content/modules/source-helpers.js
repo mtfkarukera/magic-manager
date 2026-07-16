@@ -201,15 +201,20 @@
   function findSourceViewerCloseButton(sourceViewer) {
     if (!sourceViewer) return null;
     
-    // 1. Recherche structurelle via le titre du document (indépendante de la langue)
-    const titleEl = sourceViewer.querySelector('.source-title, .title') || 
-                    document.querySelector('.source-title, [class*="source-title"]');
-    if (titleEl && titleEl.parentElement) {
-      const btn = titleEl.parentElement.querySelector('button');
-      if (btn) return btn;
+    // 1. Recherche structurelle via le titre (indépendante de la langue)
+    //    Remonte jusqu'à 3 niveaux de parents pour supporter les sources URL
+    //    dont le titre est dans un conteneur imbriqué supplémentaire
+    const titleEl = window.MM.findSourceViewerTitle(sourceViewer);
+    if (titleEl) {
+      let parent = titleEl.parentElement;
+      for (let i = 0; i < 3 && parent; i++) {
+        const btn = parent.querySelector('button');
+        if (btn) return btn;
+        parent = parent.parentElement;
+      }
     }
     
-    // 2. Fallbacks de sélecteurs linguistiques ciblés
+    // 2. Fallbacks de sélecteurs linguistiques ciblés dans le viewer
     return sourceViewer.querySelector(
       'button[mattooltip*="Close" i], button[aria-label*="Close" i], ' +
       'button[mattooltip*="Fermer" i], button[aria-label*="Fermer" i], ' +

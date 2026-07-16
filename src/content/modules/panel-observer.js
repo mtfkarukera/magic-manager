@@ -27,8 +27,8 @@
   /** Timer du second dispatch retardé pour éviter les doublons */
   let lateDispatchTimer = null;
 
-  /** Verrou de modification du DOM pour empêcher les boucles de mutations infinies */
-  let isModifyingDOM = false;
+  /** Indique si un dispatch est déjà en cours d'exécution (protection anti-réentrance synchrone) */
+  let isDispatching = false;
 
   /**
    * Supprime les boutons MM injectés dans le panel-header.
@@ -134,9 +134,22 @@
    * Exécute les vérifications et injections pour l'ensemble des modules actifs.
    * Appelé de manière centralisée lors des mutations globales.
    */
+  /**
+   * Exécute les injections MM en déconnectant temporairement les observers.
+   * Garantit que les mutations générées par l'extension ne déclenchent pas
+   * une nouvelle itération, éliminant la boucle infinie à la racine.
+   */
   function dispatchCentralInjections() {
-    if (isModifyingDOM) return;
-    isModifyingDOM = true;
+    // Protection anti-réentrance synchrone (cas d'appels imbriqués)
+    if (isDispatching) return;
+    isDispatching = true;
+
+    // Déconnecter les observers AVANT toute modification du DOM
+    // — les mutations générées par nos injections seront ainsi silencieuses
+    const observeOptions = { childList: true, subtree: true };
+    const panelObserveOptions = { childList: true };
+    if (globalPageObserver) globalPageObserver.disconnect();
+    if (panelObserver && currentObservedPanel) panelObserver.disconnect();
 
     try {
       // 1. Gérer l'observation du panneau des sources
@@ -168,9 +181,8 @@
         }
       }
 
-      // 6. Mise à jour réactive des boutons batch (export + merge)
-      // Garantit que les changements d'état des checkboxes Angular (via mutations DOM)
-      // déclenchent la recalculation des boutons, même sans clic utilisateur direct.
+      // 6. Mise à jour des boutons batch (export + merge)
+      // Lecture seulement — ne modifie le DOM que si l'état a changé.
       if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
         window.MM.updateBatchExportButtonState();
       }
@@ -180,10 +192,10 @@
     } catch (err) {
       console.error('[MM] Erreur lors des injections globales :', err);
     } finally {
-      // Libérer le verrou asynchronement pour digérer les mutations générées par l'extension
-      setTimeout(function () {
-        isModifyingDOM = false;
-      }, 50);
+      // Reconnecter les observers APRÈS toutes les modifications
+      if (globalPageObserver) globalPageObserver.observe(document.body, observeOptions);
+      if (panelObserver && currentObservedPanel) panelObserver.observe(currentObservedPanel, panelObserveOptions);
+      isDispatching = false;
     }
   }
 
