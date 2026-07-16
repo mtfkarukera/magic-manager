@@ -4,6 +4,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.5.5] — 2026-07-16
+
+### Ajouté
+- 🤝 **Crédits dans le README** : Attribution et remerciements officiels ajoutés au projet open-source `notebooklm-py` de teng-lin pour l'ingénierie inverse de l'API.
+
+### Sécurisé
+- 🔒 **Confidentialité accrue** : Retrait définitif d'AGENTS.md du suivi de version Git et purge complète de tout son historique de commits sur le dépôt public GitHub pour éviter les fuites de consignes internes. Ajout systématique du fichier dans le `.gitignore`.
+
 ## [0.5.4] — 2026-07-16
 
 ### Corrigé
