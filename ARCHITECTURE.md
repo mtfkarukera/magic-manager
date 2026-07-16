@@ -102,8 +102,14 @@ Depuis la version 0.5.4, toutes les boîtes de dialogue et la modale de fusion u
 - Un comportement standardisé de la modale via `.showModal()`.
 - Une gestion native et sécurisée du Focus Trap (le focus clavier reste piégé dans le dialogue).
 - Une fermeture automatique et cohérente via la touche `Escape` (via l'événement `cancel` intercepté).
-- Le floutage de l'arrière-plan via le pseudo-élément `::backdrop` et son support de `backdrop-filter`.
 - Une conformité totale avec les critères WCAG 2.1 AA pour l'accessibilité des modales (rôles et états ARIA intégrés).
+
+## Cycle d'observation et Performance (Coordinateur)
+
+Pour garantir une expérience utilisateur fluide sur la SPA NotebookLM sans pénaliser les performances :
+- **Observer Centralisé** : Au lieu d'avoir plusieurs MutationObservers concurrents scrutant `document.body` en continu, un unique observateur global dans `panel-observer.js` centralise la surveillance du DOM. Avec un debounce de 250ms, il coordonne et distribue les injections pour la barre de recherche, l'export de chat, et la coloration syntaxique.
+- **Délégation d'Événements** : Le recalcul du nombre de sources sélectionnées (fusion et export par lot) n'utilise plus de MutationObserver d'attributs. Il est déclenché de façon performante par la délégation d'événements de clics (`click` et `change`) sur le conteneur du panneau des sources, limitant les parcours complexes dans le Shadow DOM aux seules interactions de l'utilisateur.
+- **Ciblage de Coloration** : La coloration syntaxique des codes source (`syntax.js`) limite son analyse récursive au seul conteneur de messages du chat (`chat-viewer`), éliminant tout scan superflu des autres panneaux (sources, notes).
 
 ## Conventions
 
