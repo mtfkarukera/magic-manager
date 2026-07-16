@@ -242,23 +242,26 @@
 
     // 2. Récupérer le titre du document ouvert depuis source-viewer
     const titleEl = sourceViewer.querySelector('.source-title');
-    if (!titleEl) return;
-    const sourceTitle = titleEl.textContent.trim();
-    if (!sourceTitle) return;
-
-    // 3. Trouver le panel-header de la SECTION source-panel (pas le header global)
     const sourcePanel = document.querySelector('section.source-panel');
-    if (!sourcePanel) return;
-    const panelHeader = sourcePanel.querySelector('.panel-header');
-    if (!panelHeader) return;
-
-    // 4. Capturer le bouton collapse AVANT toute injection
-    //    (le dernier bouton dans le panel-header avant qu'on ajoute les nôtres)
-    const nativeButtons = Array.from(panelHeader.querySelectorAll(
+    const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header') : null;
+    const nativeButtons = panelHeader ? Array.from(panelHeader.querySelectorAll(
       'button:not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
-    ));
-    if (nativeButtons.length === 0) return;
-    const collapseBtn = nativeButtons[nativeButtons.length - 1];
+    )) : [];
+    const collapseBtn = nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
+
+    // Si les éléments requis ne sont pas encore prêts (en cours d'hydratation asynchrone par Angular)
+    if (!titleEl || !titleEl.textContent.trim() || !panelHeader || !collapseBtn) {
+      const retryCount = parseInt(sourceViewer.dataset.mmDeleteRetryCount || '0', 10);
+      if (retryCount < 3) {
+        sourceViewer.dataset.mmDeleteRetryCount = String(retryCount + 1);
+        setTimeout(function () {
+          checkAndInjectIndividualDelete();
+        }, retryCount === 0 ? 100 : 300);
+      }
+      return;
+    }
+
+    const sourceTitle = titleEl.textContent.trim();
 
     // 5. Trouver le conteneur source correspondant dans la liste (il est encore dans le DOM)
     //    Les single-source-container existent même quand source-viewer est ouvert

@@ -131,6 +131,17 @@
     if (window.MM.isFeatureEnabled('syntax') && typeof window.MM.scanAndHighlight === 'function') {
       window.MM.scanAndHighlight();
     }
+
+    // 5. Injections individuelles (Poubelle & Export) s'il y a un source-viewer actif
+    const sourceViewer = document.querySelector('source-viewer');
+    if (sourceViewer) {
+      if (window.MM.isFeatureEnabled('delete') && typeof window.MM.checkAndInjectIndividualDelete === 'function') {
+        window.MM.checkAndInjectIndividualDelete();
+      }
+      if (window.MM.isFeatureEnabled('export') && typeof window.MM.checkAndInjectIndividualExport === 'function') {
+        window.MM.checkAndInjectIndividualExport();
+      }
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════

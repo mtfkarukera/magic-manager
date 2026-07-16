@@ -639,16 +639,25 @@
 
     // 1. Trouver le panel-header de la SECTION source-panel (pas le header global)
     const sourcePanel = document.querySelector('section.source-panel');
-    if (!sourcePanel) return;
-    const panelHeader = sourcePanel.querySelector('.panel-header');
-    if (!panelHeader) return;
+    const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header') : null;
 
     // 2. Capturer le bouton collapse AVANT toute injection (exclure les nôtres)
-    const nativeButtons = Array.from(panelHeader.querySelectorAll(
+    const nativeButtons = panelHeader ? Array.from(panelHeader.querySelectorAll(
       'button:not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
-    ));
-    if (nativeButtons.length === 0) return;
-    const collapseBtn = nativeButtons[nativeButtons.length - 1];
+    )) : [];
+    const collapseBtn = nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
+
+    // Si les éléments requis ne sont pas encore prêts (hydratation Angular asynchrone)
+    if (!panelHeader || !collapseBtn) {
+      const retryCount = parseInt(sourceViewer.dataset.mmExportRetryCount || '0', 10);
+      if (retryCount < 3) {
+        sourceViewer.dataset.mmExportRetryCount = String(retryCount + 1);
+        setTimeout(function () {
+          checkAndInjectIndividualExport();
+        }, retryCount === 0 ? 100 : 300);
+      }
+      return;
+    }
 
     // Bouton d'exportation individuel circulaire
     const exportBtn = createElement('button', {

@@ -4,6 +4,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.5.6] — 2026-07-16
+
+### Corrigé
+- 🗑️ **Chargement des actions individuelles** : Résolution du bug d'affichage intermittent des boutons de suppression (poubelle) et d'export dans la vue de document. L'injection s'effectue désormais de manière synchrone avec l'hydratation asynchrone d'Angular en s'intégrant au dispatcher global de mutations profonds combiné à des retries locaux programmés (100ms / 300ms).
+
 ## [0.5.5] — 2026-07-16
 
 ### Ajouté
