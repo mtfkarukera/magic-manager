@@ -7,8 +7,9 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 ## [0.5.3] — 2026-07-16
 
 ### Corrigé
-- 💬 **Restauration de l'export de discussion (chat)** : Correction de la garde-fou de préférence dans `chatexport.js` qui déconnectait par erreur le MutationObserver en cas de chargement asynchrone des préférences. Le garde-fou supprime désormais le bouton s'il existe sans détruire le cycle d'observation.
-- 🎯 **Sélecteurs de Discussion résilients** : Élargissement des sélecteurs de repli `CHAT_HEADER_SELECTORS` pour faire face aux variations structurelles de balises et de classes sur l'en-tête du panneau Discussion de NotebookLM.
+- 💬 **Restauration de l'export de discussion (chat)** : Correction d'un bug syntaxique silencieux dans `chatexport.js`. Une accolade de fermeture résiduelle `}, 300)` issue d'une précédente refactorisation du `debounce` global court-circuitait la déclaration de la fonction `tryInjectButton()`, la rendant inopérante sans lever d'erreur visible. Suppression du résidu et conversion en fonction pure (`function` declaration).
+- 🔁 **Observer chatExport stabilisé** : Remplacement du `debounce` global par un timer local (`clearTimeout/setTimeout`) dans le callback du `MutationObserver` pour éviter les conflits d'état entre les cycles d'initialisation/nettoyage. Ajout de tentatives différées (500ms, 1500ms) au lancement pour absorber les délais de rendu SPA de NotebookLM.
+- 🎯 **Ciblage exclusif du panneau Discussion** : `findChatPanelHeader()` utilise désormais une approche ascendante depuis le `<textarea>` du chat (garantissant le bon conteneur) combinée à une exclusion stricte de `.source-panel` et `.left-sidebar`, empêchant définitivement l'injection erronée dans le panneau des Sources.
 
 ## [0.5.2] — 2026-07-16
 
