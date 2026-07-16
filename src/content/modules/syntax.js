@@ -96,6 +96,29 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // Recherche Shadow DOM ciblée
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Recherche récursivement des éléments dans les Shadow DOMs de manière ciblée.
+   * Limité à la zone locale passée en paramètre pour des performances optimales.
+   * @param {string} selector - Sélecteur CSS.
+   * @param {Element|ShadowRoot} root - Racine de recherche.
+   * @returns {Array<Element>}
+   */
+  function findElementsInShadows(selector, root) {
+    let elements = Array.from(root.querySelectorAll(selector));
+    const children = root.querySelectorAll('*');
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i];
+      if (child.shadowRoot) {
+        elements = elements.concat(findElementsInShadows(selector, child.shadowRoot));
+      }
+    }
+    return elements;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // Détection du langage
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -190,8 +213,8 @@
     );
     if (!chatContainer) return;
 
-    // querySelectorAll natif — le chat de NotebookLM n'utilise pas de Shadow DOM
-    const preBlocks = chatContainer.querySelectorAll('pre:not([data-mm-syntax-processed="true"])');
+    // Recherche récursive Shadow DOM limitée au seul conteneur de chat pour de hautes performances
+    const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])', chatContainer);
     preBlocks.forEach(function (pre) {
       if (!pre.closest('.mm-code-block')) {
         processPreBlock(pre);

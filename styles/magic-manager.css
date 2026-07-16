@@ -619,18 +619,23 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  background-color: var(--mm-surface, #ffffff);
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 16px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--mm-outline-variant, #e8eaed);
   gap: 12px;
+  margin: 0 -16px 12px -16px; /* Annule le padding horizontal du conteneur de liste */
+  width: calc(100% + 32px); /* Étire sur toute la largeur */
+  box-sizing: border-box; /* Évite tout débordement horizontal */
 }
 
 @media (prefers-color-scheme: dark) {
   .mm-sticky-header {
-    background-color: #131314;
+    background-color: rgba(19, 19, 20, 0.85);
     border-bottom: 1px solid #3c4043;
   }
 }
