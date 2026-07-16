@@ -11,6 +11,9 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 - 🔴 **Fuite mémoire CSRF (B3)** : Optimisation de `getCsrfToken()` par mise en cache et suppression complète de l'analyse globale de `document.documentElement.innerHTML`.
 - 🔴 **Accessibilité WCAG 2.3.3 (B4)** : Ajout du support de `@media (prefers-reduced-motion: reduce)` pour toutes les animations de modale et transitions.
 - 🔴 **Accessibilité WCAG 2.1.2 & 4.1.2 (B5 + B6)** : Migration complète des boîtes de dialogue et du dialogue de fusion vers la balise HTML5 native `<dialog>` avec gestion native du focus trap, closing Escape automatique, rôle ARIA et attributs `aria-modal`/`aria-labelledby`.
+- ⚡ **Optimisation des performances globales** : Centralisation de tous les MutationObservers sur `document.body` au sein d'un unique coordinateur dans `panel-observer.js` et remplacement du suivi des attributs de checkboxes par de la délégation d'événements de clic (CPU libéré en tâche de fond).
+- ⚡ **Ciblage de la coloration** : Limitation du balayage de coloration syntaxique des codes source au seul conteneur du chat pour éliminer les analyses DOM globales.
+- 🔁 **Ergonomie de fusion** : Retrait du rechargement de page automatique à la fin du processus de fusion de sources, évitant de couper la discussion de chat en cours de rédaction.
 
 ## [0.5.3] — 2026-07-16
 

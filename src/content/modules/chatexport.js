@@ -683,37 +683,18 @@
    * Initialise le module d'export chat.
    */
   function initChatExport() {
-    if (chatHeaderObserver) return;
-
-    // Tentative immédiate + différée pour laisser le DOM se stabiliser
+    // Tentative immédiate + différées pour laisser le DOM se stabiliser au chargement
     tryInjectButton();
     setTimeout(tryInjectButton, 500);
     setTimeout(tryInjectButton, 1500);
-
-    // Timer local pour le debounce de l'observer (évite les re-entrées)
-    let injectTimer = null;
-
-    chatHeaderObserver = new MutationObserver(function () {
-      clearTimeout(injectTimer);
-      injectTimer = setTimeout(tryInjectButton, 300);
-    });
-
-    chatHeaderObserver.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
 
     console.log('[MM] Module chatExport initialisé');
   }
 
   /**
-   * Nettoie les éléments UI et stoppe l'observation du DOM.
+   * Nettoie les éléments UI.
    */
   function cleanupChatExport() {
-    if (chatHeaderObserver) {
-      chatHeaderObserver.disconnect();
-      chatHeaderObserver = null;
-    }
     document.querySelectorAll('.mm-chat-export-btn').forEach(function (btn) {
       btn.remove();
     });
@@ -723,4 +704,5 @@
 
   window.MM.initChatExport = initChatExport;
   window.MM.cleanupChatExport = cleanupChatExport;
+  window.MM.checkAndInjectChatExport = tryInjectButton;
 })();

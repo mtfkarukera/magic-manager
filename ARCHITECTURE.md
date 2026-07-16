@@ -91,9 +91,19 @@ Chaque fonctionnalité peut être activée/désactivée individuellement via le 
 ## Couche de transport RPC
 
 L'extension s'affranchit des simulations d'interactions DOM (fragiles et sources d'effets visuels secondaires) pour les opérations lourdes en exploitant directement l'API interne `batchexecute` de Google NotebookLM :
+- **Résilience réseau (v0.5.4)** : Intégration d'un timeout de 30 secondes (via `AbortController`) et d'un retry exponentiel adaptatif (3 tentatives, gestion de `Retry-After`) sur toutes les requêtes RPC.
 - **GET_SOURCE (`hizoJc`)** : Permet de récupérer le texte brut indexé d'une source à l'index `[3][0]` (ou l'HTML de rendu à `[4][1]`), sans charger le document dans le visualiseur DOM de la page.
 - **CREATE_NOTE (`CYK0Xb`) / UPDATE_NOTE (`cYAfTb`)** : Création séquentielle robuste en tâche de fond pour exporter les conversations de chat en notes sans focus automatique de l'interface Google.
 - **DELETE_SOURCE (`tGMBJ`) / ADD_SOURCE (`izAoDd`)** : Appels directs utilisant des structures de tableaux doublement et triplement enveloppées pour des mutations réseau résilientes.
+
+## Composants d'interface (Modales & Dialogues)
+
+Depuis la version 0.5.4, toutes les boîtes de dialogue et la modale de fusion utilisent l'élément HTML5 natif `<dialog>`. Cela garantit :
+- Un comportement standardisé de la modale via `.showModal()`.
+- Une gestion native et sécurisée du Focus Trap (le focus clavier reste piégé dans le dialogue).
+- Une fermeture automatique et cohérente via la touche `Escape` (via l'événement `cancel` intercepté).
+- Le floutage de l'arrière-plan via le pseudo-élément `::backdrop` et son support de `backdrop-filter`.
+- Une conformité totale avec les critères WCAG 2.1 AA pour l'accessibilité des modales (rôles et états ARIA intégrés).
 
 ## Conventions
 

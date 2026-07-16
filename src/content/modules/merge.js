@@ -652,7 +652,7 @@
 
       statusEl.textContent = 'Fusion terminée !';
       statusEl.style.color = '#34A853';
-      substatusEl.textContent = 'La nouvelle source a été ajoutée à votre carnet. Actualisation en cours...';
+      substatusEl.textContent = 'La nouvelle source a été ajoutée. Elle va apparaître dans votre carnet sous peu.';
       
       const btnClose = createElement('button', {
         className: 'mm-merge-btn-confirm',
@@ -661,19 +661,9 @@
         onClick: () => {
           dialog.close();
           dialog.remove();
-          window.location.reload();
         }
       });
       progressContainer.appendChild(btnClose);
-
-      // Rechargement automatique de la page après 1.5s pour synchroniser l'affichage
-      setTimeout(() => {
-        if (dialog && dialog.parentNode) {
-          dialog.close();
-          dialog.remove();
-          window.location.reload();
-        }
-      }, 1500);
 
     } catch (err) {
       console.error('[MM] Erreur lors de la fusion :', err);

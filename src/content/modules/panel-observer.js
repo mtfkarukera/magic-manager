@@ -2,24 +2,18 @@
  * panel-observer.js — Magic Manager for NotebookLM
  * Auteur : MTF Karukera — MPL-2.0
  *
- * Observer centralisé et ciblé sur section.source-panel.
- * Remplace les deux observers séparés de delete.js et export.js sur document.body.
- *
- * Responsabilités :
- *  - Détecter l'apparition de source-viewer → injecter les boutons MM
- *  - Détecter la disparition de source-viewer → nettoyer les boutons MM
- *  - Scope restreint à section.source-panel (perf >> document.body)
+ * Observer centralisé et ciblé sur section.source-panel et document.body.
+ * Coordonne la détection des éléments dynamiques et l'injection des boutons MM.
  */
 (function () {
   'use strict';
 
-  // Délai de debounce pour limiter les appels répétés lors des rafales de mutations
-  const DEBOUNCE_DELAY = 200;
+  // Le debounce central permet de grouper les rafales de mutations de la SPA
+  const DEBOUNCE_DELAY = 250;
 
   let panelObserver = null;
   let globalPageObserver = null;
   let currentObservedPanel = null;
-  let debounceTimer = null;
 
   /**
    * Supprime les boutons MM injectés dans le panel-header.
@@ -31,44 +25,39 @@
   }
 
   /**
-   * Callback exécuté à chaque mutation dans section.source-panel.
-   * Vérifie la présence de source-viewer et agit en conséquence.
+   * Gère le clic dans le panneau des sources pour mettre à jour les boutons batch de façon réactive.
    */
-  function onPanelMutation() {
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(function () {
-      const sourceViewer = document.querySelector('source-viewer');
-
-      if (sourceViewer) {
-        // source-viewer présent → s'assurer que les boutons sont injectés (si les features sont actives)
-        if (window.MM.isFeatureEnabled('delete') && typeof window.MM.checkAndInjectIndividualDelete === 'function') {
-          window.MM.checkAndInjectIndividualDelete();
-        }
-        if (window.MM.isFeatureEnabled('export') && typeof window.MM.checkAndInjectIndividualExport === 'function') {
-          window.MM.checkAndInjectIndividualExport();
-        }
-      } else {
-        // source-viewer absent → nettoyer les boutons orphelins
-        cleanupPanelButtons();
-      }
-
-      // Toujours rafraîchir l'état des boutons batch (fusion, export par lot) si actifs
+  function onPanelInteraction() {
+    // Petit délai pour laisser Angular mettre à jour les attributs de sélection (checked, state...)
+    setTimeout(function () {
       if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
         window.MM.updateBatchExportButtonState();
-      } else if (typeof window.MM.updateBatchExportButtonState === 'function') {
-        // Retirer le bouton si la feature a été désactivée
-        const btn = document.querySelector('.mm-batch-export-btn');
-        if (btn) btn.remove();
       }
-
       if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
         window.MM.updateBatchMergeButtonState();
-      } else if (typeof window.MM.updateBatchMergeButtonState === 'function') {
-        // Retirer le bouton si la feature a été désactivée
-        const btn = document.querySelector('.mm-batch-merge-btn');
-        if (btn) btn.remove();
       }
-    }, DEBOUNCE_DELAY);
+    }, 100);
+  }
+
+  /**
+   * Callback exécuté à chaque mutation d'enfants dans section.source-panel.
+   * Détecte l'apparition/disparition de source-viewer pour injecter les boutons individuels.
+   */
+  function onPanelMutation() {
+    const sourceViewer = document.querySelector('source-viewer');
+
+    if (sourceViewer) {
+      // source-viewer présent → s'assurer que les boutons sont injectés (si les features sont actives)
+      if (window.MM.isFeatureEnabled('delete') && typeof window.MM.checkAndInjectIndividualDelete === 'function') {
+        window.MM.checkAndInjectIndividualDelete();
+      }
+      if (window.MM.isFeatureEnabled('export') && typeof window.MM.checkAndInjectIndividualExport === 'function') {
+        window.MM.checkAndInjectIndividualExport();
+      }
+    } else {
+      // source-viewer absent → nettoyer les boutons orphelins
+      cleanupPanelButtons();
+    }
   }
 
   /**
@@ -82,18 +71,27 @@
       if (panelObserver) {
         panelObserver.disconnect();
       }
+      if (currentObservedPanel) {
+        currentObservedPanel.removeEventListener('click', onPanelInteraction);
+        currentObservedPanel.removeEventListener('change', onPanelInteraction);
+      }
 
+      // Observer local léger : uniquement childList de premier niveau (pas subtree, pas d'attributes)
       panelObserver = new MutationObserver(onPanelMutation);
       panelObserver.observe(sourcePanel, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['class', 'aria-checked', 'checked', 'state', 'aria-selected']
+        childList: true
       });
 
+      // Écouter les interactions de clic/changement pour mettre à jour les boutons batch de façon performante
+      sourcePanel.addEventListener('click', onPanelInteraction);
+      sourcePanel.addEventListener('change', onPanelInteraction);
+
       currentObservedPanel = sourcePanel;
-      console.log('[MM] Panel observer connecté à la nouvelle instance de section.source-panel');
+      console.log('[MM] Panel observer connecté à la nouvelle instance de section.source-panel (mode léger + events)');
+      
+      // Exécuter une première vérification des éléments
       onPanelMutation();
+      onPanelInteraction();
     }
     // Cas 2 : Le panneau a été détruit/retiré du DOM actif
     else if (!sourcePanel && currentObservedPanel) {
@@ -101,9 +99,37 @@
         panelObserver.disconnect();
         panelObserver = null;
       }
+      if (currentObservedPanel) {
+        currentObservedPanel.removeEventListener('click', onPanelInteraction);
+        currentObservedPanel.removeEventListener('change', onPanelInteraction);
+      }
       currentObservedPanel = null;
       cleanupPanelButtons();
       console.log('[MM] Panel observer déconnecté (panneau absent du DOM)');
+    }
+  }
+
+  /**
+   * Exécute les vérifications et injections pour l'ensemble des modules actifs.
+   * Appelé de manière centralisée lors des mutations globales.
+   */
+  function dispatchCentralInjections() {
+    // 1. Gérer l'observation du panneau des sources
+    tryObservePanel();
+
+    // 2. Recherche : Barre de recherche
+    if (window.MM.isFeatureEnabled('search') && typeof window.MM.checkAndInjectSearch === 'function') {
+      window.MM.checkAndInjectSearch();
+    }
+
+    // 3. Chat Export : Bouton d'export de conversation
+    if (window.MM.isFeatureEnabled('chatExport') && typeof window.MM.checkAndInjectChatExport === 'function') {
+      window.MM.checkAndInjectChatExport();
+    }
+
+    // 4. Syntaxe : Coloration des blocs de code
+    if (window.MM.isFeatureEnabled('syntax') && typeof window.MM.scanAndHighlight === 'function') {
+      window.MM.scanAndHighlight();
     }
   }
 
@@ -114,10 +140,10 @@
   function initPanelObserver() {
     if (globalPageObserver) return;
 
-    // MutationObserver global sur document.body pour détecter les changements de carnet
+    // MutationObserver central et unique sur document.body
     globalPageObserver = new MutationObserver(window.MM.debounce(function () {
-      tryObservePanel();
-    }, 200));
+      dispatchCentralInjections();
+    }, DEBOUNCE_DELAY));
 
     globalPageObserver.observe(document.body, {
       childList: true,
@@ -125,12 +151,11 @@
     });
 
     // Lancer une première détection immédiate
-    tryObservePanel();
-    console.log('[MM] Observer global de page initialisé dans panel-observer.js');
+    dispatchCentralInjections();
+    console.log('[MM] Observer global de page centralisé initialisé');
   }
 
   function cleanupPanelObserver() {
-    clearTimeout(debounceTimer);
     if (globalPageObserver) {
       globalPageObserver.disconnect();
       globalPageObserver = null;
@@ -139,9 +164,13 @@
       panelObserver.disconnect();
       panelObserver = null;
     }
-    currentObservedPanel = null;
+    if (currentObservedPanel) {
+      currentObservedPanel.removeEventListener('click', onPanelInteraction);
+      currentObservedPanel.removeEventListener('change', onPanelInteraction);
+      currentObservedPanel = null;
+    }
     cleanupPanelButtons();
-    console.log('[MM] Panel observer nettoyé complet');
+    console.log('[MM] Observer global de page centralisé nettoyé');
   }
 
   window.MM.initPanelObserver = initPanelObserver;

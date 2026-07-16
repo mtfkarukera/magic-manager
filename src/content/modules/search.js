@@ -319,19 +319,7 @@
     // 1. Effectuer une détection et injection immédiate
     checkAndInjectSearch();
 
-    // 2. Installer un observer permanent pour surveiller les transitions SPA et lecture de source
-    if (!pageObserver) {
-      pageObserver = new MutationObserver(debounce(function () {
-        checkAndInjectSearch();
-      }, 200));
-
-      pageObserver.observe(document.body, {
-        childList: true,
-        subtree: true
-      });
-    }
-
-    // 3. Ajouter l'écouteur de raccourci clavier global
+    // 2. Ajouter l'écouteur de raccourci clavier global
     window.removeEventListener('keydown', handleGlobalShortcut);
     window.addEventListener('keydown', handleGlobalShortcut);
 
@@ -342,11 +330,6 @@
    * Nettoie les éléments injectés par le module.
    */
   function cleanupSearch() {
-    if (pageObserver) {
-      pageObserver.disconnect();
-      pageObserver = null;
-    }
-
     window.removeEventListener('keydown', handleGlobalShortcut);
 
     // Réinitialiser la requête de recherche courante
@@ -371,4 +354,5 @@
   // Exposition dans le namespace global MM
   window.MM.initSearch = initSearch;
   window.MM.cleanupSearch = cleanupSearch;
+  window.MM.checkAndInjectSearch = checkAndInjectSearch;
 })();

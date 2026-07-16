@@ -198,19 +198,21 @@
   }
 
   /**
-   * Parcourt la page pour traiter tous les blocs de code non encore gérés.
+   * Parcourt la zone de chat pour traiter tous les blocs de code non encore gérés.
    */
   const scanAndHighlight = debounce(function () {
     if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('syntax')) {
       return;
     }
-    // Utilisation de findElementsInShadows pour traverser le Shadow DOM
-    const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])');
+    // Cibler uniquement le conteneur du chat pour éviter de parcourir tout le document
+    const chatContainer = document.querySelector(
+      'chat-viewer, [class*="chat-viewer"], [class*="conversation-container"], section.chat-panel, .chat-panel'
+    );
+    if (!chatContainer) return;
+
+    // Utilisation de findElementsInShadows limitée au chat
+    const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])', chatContainer);
     preBlocks.forEach(function (pre) {
-      // Exclure les blocs situés dans le panneau des sources, le visualiseur de sources ou le studio de notes
-      if (window.MM.isInsideSelector(pre, '.sources-panel, [class*="sources-panel"], section.source-panel, source-viewer, .studio-panel, [class*="studio-"], [class*="note-"]')) {
-        return;
-      }
       if (!pre.closest('.mm-code-block')) {
         processPreBlock(pre);
       }
@@ -225,36 +227,20 @@
    * Initialise le module de coloration syntaxique.
    */
   function initSyntax() {
-    if (chatObserver) return; // Déjà actif
-
-    // Scanner immédiatement le DOM
+    // Scanner immédiatement la zone de chat
     scanAndHighlight();
-
-    // Observer global pour détecter l'apparition de nouveaux blocs de code
-    chatObserver = new MutationObserver(function () {
-      scanAndHighlight();
-    });
-
-    chatObserver.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
     console.log('[MM] Module coloration syntaxique initialisé');
   }
 
   /**
-   * Nettoie les listeners et arrête l'observation.
+   * Nettoie les listeners.
    */
   function cleanupSyntax() {
-    if (chatObserver) {
-      chatObserver.disconnect();
-      chatObserver = null;
-    }
     console.log('[MM] Module coloration syntaxique nettoyé');
   }
 
   // Exposition dans le namespace global MM
   window.MM.initSyntax = initSyntax;
   window.MM.cleanupSyntax = cleanupSyntax;
+  window.MM.scanAndHighlight = scanAndHighlight;
 })();
