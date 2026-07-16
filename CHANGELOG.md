@@ -4,7 +4,23 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.5.9] — 2026-07-17
+
+### Ajouté
+- 🔒 **Garde-fou anti-leak de compilation (`build.sh`)** : Interruption automatique du build en cas de détection de variables de débogage (`DEBUG = true`) dans le code source de production.
+- ♿ **Indicateur de focus clavier universel** : Ajout d'une règle `:focus-visible` contrastée sur l'ensemble des boutons injectés pour améliorer la navigation au clavier.
+- 🎨 **Glassmorphism Premium** : Application d'un effet visuel de dépolissage de verre cristallin (`backdrop-filter: blur(16px) saturate(190%)`) sur les popovers et boîtes de dialogue modales.
+- 🎨 **Micro-animations tactiles** : Transitions de survol (`hover` avec translation) et de clic (`active` avec compression à 97%) sur tous les boutons pour un rendu premium et réactif.
+
+### Corrigé
+- 🔒 **Sécurité - Dialogues bloquants (Règle 14)** : Élimination complète de `window.alert()` et `confirm()` au profit de modales non bloquantes personnalisées (`showConfirmDialog`, `showAlertDialog`).
+- 🛠️ **Robustesse - Protection Anti-Processus Fantôme** : Ajout d'un témoin d'annulation (`isCancelled`) écoutant la fermeture du dialogue de progression lors de la fusion de sources, coupant immédiatement le thread RPC.
+- ♿ **Accessibilité WCAG 2.1 AA du popover de réglages** : Gestion complète de la fermeture au clavier (touche *Échap* et *focusout*) et ajouts des attributs sémantiques ARIA (`role="dialog"`, `aria-haspopup`, `aria-expanded`).
+- ♿ **Contrastes conformes en mode sombre** : Ajustement des couleurs de coloration syntaxique pour les commentaires et mots-clés de code sur fond sombre.
+- 🧹 **Nettoyage de code mort** : Retrait des variables d'observations MutationObserver inutilisées dans les modules fonctionnels.
+
 ## [0.5.8] — 2026-07-16
+
 
 ### Ajouté
 - 📱 **Support responsive (desktop ↔ mobile)** : Ajout d'un `ResizeObserver` dans `panel-observer.js` pour détecter le basculement de layout de NotebookLM (3 colonnes desktop ↔ onglets mobile) et forcer un cycle complet de réinjection des composants MM. Inclut un double dispatch retardé comme filet de sécurité pour les hydratations Angular tardives.

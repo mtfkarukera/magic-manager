@@ -3,9 +3,16 @@
 # Auteur : MTF Karukera | Licence : MPL-2.0
 set -e
 
+# Vérifier la constante DEBUG (Règle Globale 12 - Garde-fou)
+if grep -rqE "const\s+DEBUG\s*=\s*true|DEBUG\s*=\s*true" src/; then
+  echo "❌ ERREUR DE BUILD : Une constante de débogage (DEBUG = true) est active dans src/ !"
+  exit 1
+fi
+
 VERSION=$(node -p "require('./manifest.json').version")
 NAME="magic_manager_for_notebooklm"
 DIST="dist"
+
 
 echo "🔨 Building ${NAME}-${VERSION}.xpi …"
 

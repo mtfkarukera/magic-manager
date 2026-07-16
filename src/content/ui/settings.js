@@ -41,6 +41,9 @@
 
   /** Handler du clic extérieur pour fermer le popover */
   let outsideClickHandler = null;
+  let popoverKeydownHandler = null;
+  let popoverFocusoutHandler = null;
+
 
   // ═══════════════════════════════════════════════════════════════════════
   // Icône engrenage SVG
@@ -148,10 +151,19 @@
       return createToggleRow(feature.key, feature.i18nKey, isChecked);
     });
 
-    // Assembler le popover
-    popoverElement = createElement('div', { className: 'mm-settings-popover' }, [
+    // Assembler le popover avec attributs d'accessibilité
+    popoverElement = createElement('div', {
+      className: 'mm-settings-popover',
+      role: 'dialog',
+      'aria-label': t('settingsTitle')
+    }, [
       title
     ].concat(toggleRows));
+
+    // Mettre à jour l'état aria-expanded du bouton
+    if (settingsButton) {
+      settingsButton.setAttribute('aria-expanded', 'true');
+    }
 
     // Positionner au-dessus du bouton fixe
     popoverElement.style.position = 'fixed';
@@ -165,6 +177,26 @@
       popoverElement.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
       popoverElement.style.left = rect.left + 'px';
     }
+
+    // Fermeture avec la touche Echap
+    popoverKeydownHandler = function (e) {
+      if (e.key === 'Escape') {
+        closeSettingsPopover();
+        if (settingsButton) settingsButton.focus();
+      }
+    };
+    document.addEventListener('keydown', popoverKeydownHandler);
+
+    // Fermeture si le focus clavier sort du popover
+    popoverFocusoutHandler = function (e) {
+      setTimeout(function () {
+        const active = document.activeElement;
+        if (popoverElement && !popoverElement.contains(active) && active !== settingsButton) {
+          closeSettingsPopover();
+        }
+      }, 50);
+    };
+    popoverElement.addEventListener('focusout', popoverFocusoutHandler);
 
     // Fermer au clic extérieur (avec délai pour éviter la fermeture immédiate)
     setTimeout(function () {
@@ -182,13 +214,23 @@
    */
   function closeSettingsPopover() {
     if (popoverElement) {
+      popoverElement.removeEventListener('focusout', popoverFocusoutHandler);
       popoverElement.remove();
       popoverElement = null;
+    }
+    if (settingsButton) {
+      settingsButton.setAttribute('aria-expanded', 'false');
     }
     if (outsideClickHandler) {
       document.removeEventListener('click', outsideClickHandler, true);
       outsideClickHandler = null;
     }
+    if (popoverKeydownHandler) {
+      document.removeEventListener('keydown', popoverKeydownHandler);
+      popoverKeydownHandler = null;
+    }
+  }
+
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -209,9 +251,12 @@
     settingsButton = createElement('button', {
       className: 'mm-settings-btn mm-settings-btn-fixed',
       'aria-label': t('settingsTitle'),
+      'aria-haspopup': 'dialog',
+      'aria-expanded': 'false',
       title: t('settingsTitle'),
       onClick: openSettingsPopover
     }, [createGearIcon()]);
+
 
     document.body.appendChild(settingsButton);
 

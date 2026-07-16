@@ -22,11 +22,6 @@
   /** Dernier nombre de sources cochées connu — sert de verrou d'idempotence */
   let lastBatchExportCount = -1;
 
-  /** Observer pour détecter la sélection/désélection des checkboxes */
-  let selectionObserver = null;
-
-  /** Observer pour détecter l'affichage du panneau individuel de source */
-  let sourceObserver = null;
 
   // ═══════════════════════════════════════════════════════════════════════
   // Fonction locale spécifique à l'export (extraction du contenu source)
@@ -456,9 +451,10 @@
 
     const notebookId = window.MM.getActiveNotebookId();
     if (!notebookId) {
-      alert('[MM] Impossible de détecter l\'identifiant du notebook.');
+      window.MM.showAlertDialog('exportError', 'notebookIdNotFound');
       return;
     }
+
 
     // Récupérer toutes les sources du carnet via RPC pour le fallback de matching
     let allSources = [];
@@ -594,11 +590,10 @@
     // des boutons fantômes d'autres onglets mis en cache par Angular
     if (collapseBtn.parentNode.querySelector('.mm-individual-export-btn')) return;
 
-    // Bouton d'exportation individuel circulaire
+    // Bouton d'exportation individuel circulaire (stylisé par classe .mm-individual-export-btn)
     const exportBtn = createElement('button', {
-      className: 'mm-individual-export-btn',
+      className: 'mm-individual-export-btn mm-btn-icon',
       title: t('exportButton'),
-      style: 'width: 32px; height: 32px; border: none; background: transparent; color: var(--mm-on-surface, #e3e3e3); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; padding: 0; margin-right: 6px; transition: background-color var(--mm-transition-fast), color var(--mm-transition-fast); vertical-align: middle;',
       onClick: function (e) {
         e.stopPropagation();
 
@@ -617,14 +612,6 @@
       }
     }, [createDownloadIcon()]);
 
-    exportBtn.addEventListener('mouseenter', function () {
-      exportBtn.style.backgroundColor = 'rgba(66, 133, 244, 0.08)';
-      exportBtn.style.color = 'var(--mm-primary, #4285F4)';
-    });
-    exportBtn.addEventListener('mouseleave', function () {
-      exportBtn.style.backgroundColor = 'transparent';
-      exportBtn.style.color = 'var(--mm-on-surface, #e3e3e3)';
-    });
 
     // Insérer à gauche du bouton delete MM s'il existe, sinon devant collapse
     const deleteBtn = document.querySelector('.mm-individual-delete-btn');
@@ -684,29 +671,17 @@
         console.debug('[MM] updateBatchExportButtonState : création du bouton d\'export par lot.');
 
         batchExportButton = createElement('button', {
-          className: 'mm-batch-export-btn',
+          className: isHeader ? 'mm-batch-export-btn mm-btn-icon' : 'mm-batch-export-btn mm-btn-row',
           title: `${t('exportButton')} (${count})`,
-          style: isHeader
-            ? 'background: transparent; border: none; color: var(--mm-primary, #4285F4); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; width: 32px; height: 32px; transition: background-color var(--mm-transition-fast), color var(--mm-transition-fast); margin-right: 4px; padding: 0;'
-            : 'background: transparent; border: none; color: var(--mm-primary, #4285F4); cursor: pointer; margin-left: 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--mm-radius-sm); padding: 4px; transition: color var(--mm-transition-fast);',
           onClick: triggerBatchExport
         }, [
           createDownloadIcon(),
           createElement('span', {
-            style: 'font-size: 10px; font-weight: bold; margin-left: 2px; font-family: var(--mm-font-family);',
+            className: 'mm-badge-count',
             textContent: `(${count})`
           })
         ]);
 
-        // Effets de survol si injecté dans le header
-        if (isHeader) {
-          batchExportButton.addEventListener('mouseenter', function () {
-            batchExportButton.style.backgroundColor = 'rgba(66, 133, 244, 0.08)';
-          });
-          batchExportButton.addEventListener('mouseleave', function () {
-            batchExportButton.style.backgroundColor = 'transparent';
-          });
-        }
 
         if (isHeader) {
           if (isMobileSticky) {

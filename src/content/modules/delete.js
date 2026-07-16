@@ -13,11 +13,9 @@
   // État interne
   // ═══════════════════════════════════════════════════════════════════════
 
-  /** Observer DOM global pour détecter l'ouverture du panneau individuel */
-  let listObserver = null;
-
   /** Verrou global pour empêcher les doubles suppressions concurrentes */
   let isDeleting = false;
+
 
   // ═══════════════════════════════════════════════════════════════════════
   // Sélecteurs DOM — fondés sur le diagnostic réel de NotebookLM
@@ -325,37 +323,42 @@
         const sourceId = extractSourceId(targetContainer);
 
         if (notebookId && sourceId) {
-          const isConfirmed = confirm(`${t('deleteConfirmTitle')} "${sourceTitle}" ?`);
-          if (!isConfirmed) return;
+          window.MM.showConfirmDialog(
+            'deleteConfirmTitle',
+            'deleteConfirmMessage',
+            [sourceTitle],
+            function () {
+              deleteBtn.disabled = true;
+              console.log(`[MM] Suppression par RPC de la source ${sourceId} dans le notebook ${notebookId}`);
 
-          deleteBtn.disabled = true;
-          console.log(`[MM] Suppression par RPC de la source ${sourceId} dans le notebook ${notebookId}`);
+              window.MM.rpc.deleteSource(sourceId, notebookId)
+                .then(function () {
+                  console.log('[MM] Suppression RPC réussie. Nettoyage de l\'interface.');
 
-          window.MM.rpc.deleteSource(sourceId, notebookId)
-            .then(function () {
-              console.log('[MM] Suppression RPC réussie. Nettoyage de l\'interface.');
+                  // Retirer visuellement la source du DOM avec effet fondu
+                  if (targetContainer) {
+                    targetContainer.style.transition = 'opacity 0.4s ease';
+                    targetContainer.style.opacity = '0';
+                    setTimeout(function () {
+                      targetContainer.remove();
+                    }, 400);
+                  }
 
-              // Retirer visuellement la source du DOM avec effet fondu
-              if (targetContainer) {
-                targetContainer.style.transition = 'opacity 0.4s ease';
-                targetContainer.style.opacity = '0';
-                setTimeout(function () {
-                  targetContainer.remove();
-                }, 400);
-              }
-
-              // Fermer le panneau individuel (collapse)
-              simulateClick(collapseBtn);
-            })
-            .catch(function (err) {
-              console.error('[MM] Échec de la suppression RPC, repli sur le flux natif :', err);
-              // Fallback en cas d'erreur de communication ou d'expiration de session
-              triggerNativeDeleteDialog(targetContainer);
-            })
-            .finally(function () {
-              deleteBtn.disabled = false;
-            });
+                  // Fermer le panneau individuel (collapse)
+                  simulateClick(collapseBtn);
+                })
+                .catch(function (err) {
+                  console.error('[MM] Échec de la suppression RPC, repli sur le flux natif :', err);
+                  // Fallback en cas d'erreur de communication ou d'expiration de session
+                  triggerNativeDeleteDialog(targetContainer);
+                })
+                .finally(function () {
+                  deleteBtn.disabled = false;
+                });
+            }
+          );
         } else {
+
           console.warn('[MM] Informations de source ou de notebook manquantes pour RPC, utilisation du flux natif.');
           triggerNativeDeleteDialog(targetContainer);
         }

@@ -7,12 +7,12 @@
 (function () {
   const { t, createElement } = window.MM;
 
-  let selectionObserver = null;
   let batchMergeButton = null;
   let stylesElement = null;
 
   /** Dernier nombre de sources cochées connu — sert de verrou d'idempotence */
   let lastBatchMergeCount = -1;
+
 
   // CSS injecté pour la modale de fusion et les animations
   const CSS_STYLES = `
@@ -351,23 +351,30 @@
     
     const mdBtn = createElement('button', {
       className: 'mm-merge-format-btn active',
+      'aria-pressed': 'true',
       textContent: 'Markdown (.txt)'
     });
     const pdfBtn = createElement('button', {
       className: 'mm-merge-format-btn',
+      'aria-pressed': 'false',
       textContent: 'PDF (.pdf)'
     });
 
     mdBtn.onclick = () => {
       mdBtn.classList.add('active');
+      mdBtn.setAttribute('aria-pressed', 'true');
       pdfBtn.classList.remove('active');
+      pdfBtn.setAttribute('aria-pressed', 'false');
       selectedFormat = 'Markdown';
     };
     pdfBtn.onclick = () => {
       pdfBtn.classList.add('active');
+      pdfBtn.setAttribute('aria-pressed', 'true');
       mdBtn.classList.remove('active');
+      mdBtn.setAttribute('aria-pressed', 'false');
       selectedFormat = 'PDF';
     };
+
 
     const formatField = createElement('div', { className: 'mm-merge-field' }, [
       formatLabel,
@@ -464,13 +471,18 @@
   async function runMergeProcess(checkboxes, title, format, dialog) {
     const notebookId = window.MM.getActiveNotebookId();
     if (!notebookId) {
-      alert('[MM] Impossible de détecter l\'identifiant du notebook dans l\'URL.');
+      window.MM.showAlertDialog('mergeError', 'notebookIdNotFound');
       dialog.close();
       dialog.remove();
       return;
     }
 
-    dialog.innerHTML = '';
+    let isCancelled = false;
+    dialog.addEventListener('close', () => {
+      isCancelled = true;
+    });
+
+    dialog.replaceChildren();
     const progressContainer = createElement('div', { className: 'mm-merge-progress-container' }, [
       createElement('div', { className: 'mm-merge-spinner' }),
       createElement('div', {
@@ -478,6 +490,7 @@
         style: 'font-weight: 500; font-family: var(--mm-font-family); margin-bottom: 8px;',
         textContent: 'Initialisation...'
       }),
+
       createElement('div', {
         id: 'mm-merge-substatus',
         style: 'font-size: 12px; color: #aaa; font-family: var(--mm-font-family);',
@@ -501,6 +514,10 @@
       }
 
       for (let i = 0; i < checkboxes.length; i++) {
+        if (isCancelled) {
+          console.log('[MM] Processus de fusion annulé par la fermeture de la modale.');
+          return;
+        }
         const cb = checkboxes[i];
 
         // Remonter depuis la checkbox vers la carte source parente
@@ -530,6 +547,7 @@
         // 2. Récupérer le contenu brut via RPC
         try {
           const content = await window.MM.rpc.getSourceContent(sourceId, notebookId);
+          if (isCancelled) return; // double check après l'appel réseau
           if (content) {
             mergedContent += `# ${sourceTitle}\n\n${content}\n\n---\n\n`;
           } else {
@@ -545,6 +563,8 @@
         }
       }
 
+      if (isCancelled) return;
+
       if (!mergedContent) {
         throw new Error('Aucun contenu textuel n\'a pu être extrait des sources sélectionnées.');
       }
@@ -559,9 +579,12 @@
         await window.MM.rpc.uploadBlob(notebookId, pdfBlob, `${title}.pdf`);
       }
 
+      if (isCancelled) return;
+
       // Cacher le spinner
       const spinner = dialog.querySelector('.mm-merge-spinner');
       if (spinner) spinner.style.display = 'none';
+
 
       statusEl.textContent = 'Fusion terminée !';
       statusEl.style.color = '#34A853';
@@ -676,29 +699,17 @@
 
         console.debug('[MM] updateBatchMergeButtonState : création du bouton de fusion.');
         batchMergeButton = createElement('button', {
-          className: 'mm-batch-merge-btn',
+          className: isHeader ? 'mm-batch-merge-btn mm-btn-icon' : 'mm-batch-merge-btn mm-btn-row',
           title: `${t('mergeButton') || 'Fusionner'} (${count})`,
-          style: isHeader
-            ? 'background: transparent; border: none; color: #34A853; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; width: 32px; height: 32px; transition: background-color var(--mm-transition-fast), color var(--mm-transition-fast); margin-right: 4px; padding: 0;'
-            : 'background: transparent; border: none; color: #34A853; cursor: pointer; margin-left: 8px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--mm-radius-sm); padding: 4px; transition: color var(--mm-transition-fast);',
           onClick: () => showMergeDialog(checked)
         }, [
           createMergeIcon(),
           createElement('span', {
-            style: 'font-size: 10px; font-weight: bold; margin-left: 2px; font-family: var(--mm-font-family);',
+            className: 'mm-badge-count',
             textContent: `(${count})`
           })
         ]);
 
-        // Effets de survol si injecté dans le header
-        if (isHeader) {
-          batchMergeButton.addEventListener('mouseenter', function () {
-            batchMergeButton.style.backgroundColor = 'rgba(52, 168, 83, 0.08)';
-          });
-          batchMergeButton.addEventListener('mouseleave', function () {
-            batchMergeButton.style.backgroundColor = 'transparent';
-          });
-        }
 
         if (isHeader) {
           if (isMobileSticky) {

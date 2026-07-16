@@ -9,10 +9,14 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Couleurs primaires */
-  --mm-primary: #4285F4;
-  --mm-primary-hover: #3367D6;
-  --mm-primary-light: #E8F0FE;
+  /* Couleurs primaires HSL (Bleu NotebookLM) */
+  --mm-primary-h: 217;
+  --mm-primary-s: 89%;
+  --mm-primary-l: 61%;
+
+  --mm-primary: hsl(var(--mm-primary-h), var(--mm-primary-s), var(--mm-primary-l));
+  --mm-primary-hover: hsl(var(--mm-primary-h), var(--mm-primary-s), calc(var(--mm-primary-l) - 8%));
+  --mm-primary-light: hsl(var(--mm-primary-h), var(--mm-primary-s), 96%);
   --mm-on-primary: #FFFFFF;
 
   /* Couleurs de surface */
@@ -34,7 +38,7 @@
   --mm-outline-variant: #E8EAED;
   --mm-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
   --mm-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
-  --mm-shadow-3: 0 8px 16px rgba(0, 0, 0, 0.16), 0 4px 8px rgba(0, 0, 0, 0.08);
+  --mm-shadow-3: 0 8px 32px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
 
   /* Espacement */
   --mm-spacing-xs: 4px;
@@ -74,8 +78,12 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --mm-primary: #8AB4F8;
-    --mm-primary-hover: #AECBFA;
+    --mm-primary-h: 217;
+    --mm-primary-s: 90%;
+    --mm-primary-l: 76%;
+
+    --mm-primary: hsl(var(--mm-primary-h), var(--mm-primary-s), var(--mm-primary-l));
+    --mm-primary-hover: hsl(var(--mm-primary-h), var(--mm-primary-s), calc(var(--mm-primary-l) + 8%));
     --mm-primary-light: #1A2733;
     --mm-on-primary: #202124;
 
@@ -94,15 +102,16 @@
     --mm-outline-variant: #3C4043;
     --mm-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
     --mm-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
-    --mm-shadow-3: 0 8px 16px rgba(0, 0, 0, 0.4), 0 4px 8px rgba(0, 0, 0, 0.2);
+    --mm-shadow-3: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2);
 
-    /* Coloration syntaxique */
-    --mm-token-keyword: #569CD6;
+    /* Coloration syntaxique (contrastes conformes WCAG AA sur fond sombre #35363A) */
+    --mm-token-keyword: #9CDCFE;
     --mm-token-string: #CE9178;
-    --mm-token-comment: #6A9955;
+    --mm-token-comment: #85C46C;
     --mm-token-number: #B5CEA8;
   }
 }
+
 
 /* ═══════════════════════════════════════════════════════════════════════
    Animations
@@ -124,12 +133,12 @@
   }
 }
 
-@keyframes mm-scaleIn {
-  from {
+@keyframes mm-scaleInElastic {
+  0% {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.92);
   }
-  to {
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -156,14 +165,14 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border: none;
   border-radius: var(--mm-radius-full);
   background: transparent;
   color: var(--mm-on-surface-variant);
   cursor: pointer;
-  transition: background var(--mm-transition-fast), color var(--mm-transition-fast);
+  transition: background var(--mm-transition-fast), color var(--mm-transition-fast), transform var(--mm-transition-fast);
   padding: 0;
   margin: var(--mm-spacing-xs);
 }
@@ -171,10 +180,12 @@
 .mm-settings-btn:hover {
   background: var(--mm-surface-variant);
   color: var(--mm-on-surface);
+  transform: translateY(-1px);
 }
 
 .mm-settings-btn:active {
   background: var(--mm-outline-variant);
+  transform: scale(0.97);
 }
 
 .mm-settings-btn svg {
@@ -189,36 +200,52 @@
   bottom: 20px;
   left: 20px;
   z-index: 9999;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   background: var(--mm-surface);
   border: 1px solid var(--mm-outline);
   box-shadow: var(--mm-shadow-2);
   opacity: 0.85;
-  transition: opacity var(--mm-transition-fast), background var(--mm-transition-fast), box-shadow var(--mm-transition-fast);
+  transition: opacity var(--mm-transition-fast), background var(--mm-transition-fast), box-shadow var(--mm-transition-fast), transform var(--mm-transition-fast);
 }
 
 .mm-settings-btn-fixed:hover {
   opacity: 1;
   background: var(--mm-surface-variant);
   box-shadow: var(--mm-shadow-3);
+  transform: translateY(-1px);
+}
+
+.mm-settings-btn-fixed:active {
+  transform: scale(0.97);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Popover paramétrage
+   Popover paramétrage (Glassmorphism Premium)
    ═══════════════════════════════════════════════════════════════════════ */
 
 .mm-settings-popover {
   position: absolute;
   z-index: 10000;
   min-width: 240px;
-  background: var(--mm-surface);
-  border: 1px solid var(--mm-outline);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(16px) saturate(190%);
+  -webkit-backdrop-filter: blur(16px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: var(--mm-radius-lg);
-  box-shadow: var(--mm-shadow-3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
   padding: var(--mm-spacing-md);
   animation: mm-slideIn var(--mm-transition-normal) ease-out;
 }
+
+@media (prefers-color-scheme: dark) {
+  .mm-settings-popover {
+    background: rgba(30, 41, 59, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+}
+
 
 .mm-settings-popover-title {
   font-family: var(--mm-font-family);
@@ -303,7 +330,7 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Dialogues modaux
+   Dialogues modaux (Glassmorphism Premium)
    ═══════════════════════════════════════════════════════════════════════ */
 
 .mm-dialog-overlay {
@@ -321,22 +348,32 @@
 }
 
 .mm-dialog {
-  background: var(--mm-surface);
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(16px) saturate(190%);
+  -webkit-backdrop-filter: blur(16px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   border-radius: var(--mm-radius-lg);
-  box-shadow: var(--mm-shadow-3);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   padding: var(--mm-spacing-lg);
   min-width: 320px;
   max-width: 480px;
-  border: none;
   color: var(--mm-on-surface);
   margin: auto;
-  animation: mm-scaleIn var(--mm-transition-normal) ease-out;
+  animation: mm-scaleInElastic 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mm-dialog {
+    background: rgba(41, 42, 45, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+  }
 }
 
 .mm-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   animation: mm-fadeIn var(--mm-transition-fast);
 }
 
@@ -363,8 +400,22 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   Boutons
+   Boutons (Optimisations Premium & Accessibilité)
    ═══════════════════════════════════════════════════════════════════════ */
+
+/* Focus universel accessible pour navigation clavier (SC 2.4.7 focus visible) */
+.mm-btn:focus-visible,
+.mm-btn-icon:focus-visible,
+.mm-settings-btn:focus-visible,
+.mm-settings-btn-fixed:focus-visible,
+.mm-individual-delete-btn:focus-visible,
+.mm-individual-export-btn:focus-visible,
+.mm-batch-export-btn:focus-visible,
+.mm-batch-merge-btn:focus-visible,
+.mm-chat-export-btn:focus-visible {
+  outline: 2px solid var(--mm-primary) !important;
+  outline-offset: 2px !important;
+}
 
 .mm-btn {
   display: inline-flex;
@@ -378,9 +429,17 @@
   border: none;
   border-radius: var(--mm-radius-full);
   cursor: pointer;
-  transition: background var(--mm-transition-fast), box-shadow var(--mm-transition-fast);
+  transition: background var(--mm-transition-fast), box-shadow var(--mm-transition-fast), transform var(--mm-transition-fast);
   white-space: nowrap;
   user-select: none;
+}
+
+.mm-btn:hover {
+  transform: translateY(-1px);
+}
+
+.mm-btn:active {
+  transform: scale(0.97);
 }
 
 .mm-btn-primary {
@@ -423,14 +482,21 @@
   background: transparent;
   color: var(--mm-on-surface-variant);
   cursor: pointer;
-  transition: background var(--mm-transition-fast), color var(--mm-transition-fast);
+  transition: background var(--mm-transition-fast), color var(--mm-transition-fast), transform var(--mm-transition-fast);
   padding: 0;
+  flex-shrink: 0;
 }
 
 .mm-btn-icon:hover {
   background: var(--mm-surface-variant);
-  color: var(--mm-on-surface);
+  color: var(--mm-primary);
+  transform: translateY(-1px);
 }
+
+.mm-btn-icon:active {
+  transform: scale(0.97);
+}
+
 
 .mm-btn-icon svg {
   width: 20px;
@@ -658,5 +724,106 @@
   gap: 8px;
   flex-shrink: 0;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Boutons et Badges Déportés (Classes Standardisées)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Badge de compteur */
+.mm-badge-count {
+  font-size: 10px;
+  font-weight: bold;
+  margin-left: 2px;
+  font-family: var(--mm-font-family);
+}
+
+/* Boutons de lot (batch) dans l'en-tête */
+.mm-batch-export-btn.mm-btn-icon:hover {
+  background-color: rgba(66, 133, 244, 0.08);
+  color: var(--mm-primary, #4285F4) !important;
+}
+
+.mm-batch-merge-btn.mm-btn-icon {
+  color: #34A853 !important;
+}
+
+.mm-batch-merge-btn.mm-btn-icon:hover {
+  background-color: rgba(52, 168, 83, 0.08);
+  color: #34A853 !important;
+}
+
+/* Boutons d'action individuels */
+.mm-individual-export-btn {
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.mm-individual-export-btn:hover {
+  background-color: rgba(66, 133, 244, 0.08) !important;
+  color: var(--mm-primary, #4285F4) !important;
+}
+
+/* Bouton d'export de chat */
+.mm-chat-export-btn {
+  margin: 0 2px;
+}
+
+.mm-chat-export-btn:hover {
+  background-color: rgba(197, 202, 233, 0.08) !important;
+  color: var(--mm-primary, #c5cae9) !important;
+}
+
+/* Boutons de lot sous forme de ligne (Row) - Fallback */
+.mm-batch-export-btn.mm-btn-row,
+.mm-batch-merge-btn.mm-btn-row {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--mm-radius-sm);
+  padding: 4px;
+  transition: color var(--mm-transition-fast), transform var(--mm-transition-fast), background-color var(--mm-transition-fast);
+}
+
+.mm-batch-export-btn.mm-btn-row {
+  color: var(--mm-primary, #4285F4);
+  margin-left: 12px;
+}
+
+.mm-batch-merge-btn.mm-btn-row {
+  color: #34A853;
+  margin-left: 8px;
+}
+
+.mm-batch-export-btn.mm-btn-row:hover,
+.mm-batch-merge-btn.mm-btn-row:hover {
+  transform: translateY(-1px);
+  background-color: var(--mm-surface-variant);
+}
+
+.mm-batch-export-btn.mm-btn-row:active,
+.mm-batch-merge-btn.mm-btn-row:active {
+  transform: scale(0.97);
+}
+
+/* Spinner de chargement de l'export de chat */
+.mm-chat-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  display: inline-block;
+  animation: mm-spin 0.7s linear infinite;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+@keyframes mm-spin {
+  to { transform: rotate(360deg); }
+}
+
 
 

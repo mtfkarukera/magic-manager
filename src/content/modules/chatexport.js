@@ -294,8 +294,7 @@
     return 'Notebook';
   }
 
-  async function createNoteViaRpc(title, content) {
-    const notebookId = window.MM.getActiveNotebookId();
+  async function createNoteViaRpc(notebookId, title, content) {
     if (!notebookId) {
       throw new Error('[MM] ChatExport : impossible de détecter l\'identifiant du notebook dans l\'URL.');
     }
@@ -304,6 +303,7 @@
     await window.MM.rpc.createNoteRpc(notebookId, title, content);
     console.log('[MM] ChatExport : note créée avec succès via RPC direct.');
   }
+
 
   /**
    * Attend l'apparition d'un élément correspondant à l'un des sélecteurs.
@@ -366,6 +366,14 @@
   async function handleExportChat() {
     if (!exportChatBtn) return;
 
+    // Capturer notebookId dès le clic initial de façon synchrone
+    const notebookId = window.MM.getActiveNotebookId();
+    if (!notebookId) {
+      console.error('[MM] ChatExport : notebookId absent au clic');
+      showButtonFeedback('error');
+      return;
+    }
+
     // Empêcher les doubles-clics pendant l'export
     exportChatBtn.disabled = true;
     showButtonFeedback('loading');
@@ -393,7 +401,7 @@
       const noteTitle = `Discussion - ${notebookName} (${dateStr})`;
 
       // Créer la note via le RPC direct en tâche de fond (sans toucher au DOM)
-      await createNoteViaRpc(noteTitle, markdownContent);
+      await createNoteViaRpc(notebookId, noteTitle, markdownContent);
 
       showButtonFeedback('success');
 
@@ -401,6 +409,7 @@
       console.error('[MM] ChatExport : erreur lors de la création de la note :', err);
       showButtonFeedback('error');
     } finally {
+
       // Réactiver le bouton après un délai
       setTimeout(function () {
         if (exportChatBtn) {
@@ -446,18 +455,11 @@
   function showButtonFeedback(state) {
     if (!exportChatBtn) return;
 
-    exportChatBtn.innerHTML = '';
+    exportChatBtn.replaceChildren();
 
     if (state === 'loading') {
       const spinner = document.createElement('span');
-      spinner.style.cssText = [
-        'width: 14px', 'height: 14px',
-        'border: 2px solid currentColor',
-        'border-top-color: transparent',
-        'border-radius: 50%',
-        'display: inline-block',
-        'animation: mm-spin 0.7s linear infinite'
-      ].join('; ');
+      spinner.className = 'mm-chat-spinner';
       exportChatBtn.appendChild(spinner);
       exportChatBtn.title = 'Export en cours…';
 
@@ -501,10 +503,11 @@
    */
   function resetButtonIcon() {
     if (!exportChatBtn) return;
-    exportChatBtn.innerHTML = '';
+    exportChatBtn.replaceChildren();
     exportChatBtn.appendChild(createExportIcon());
     exportChatBtn.title = t('chatExportButton') || 'Exporter toute la conversation en note';
   }
+
 
   // ═══════════════════════════════════════════════════════════════════════
   // 6. INJECTION DU BOUTON DANS L'EN-TÊTE DU PANNEAU DISCUSSION
@@ -635,40 +638,14 @@
     ensureSpinnerCss();
 
     exportChatBtn = createElement('button', {
-      className: 'mm-chat-export-btn',
+      className: 'mm-chat-export-btn mm-btn-icon',
       title: t('chatExportButton') || 'Exporter toute la conversation en note',
-      style: [
-        'display: inline-flex',
-        'align-items: center',
-        'justify-content: center',
-        'width: 32px',
-        'height: 32px',
-        'border: none',
-        'background: transparent',
-        'color: var(--mm-on-surface, #c4c7c5)',
-        'cursor: pointer',
-        'border-radius: 50%',
-        'padding: 0',
-        'margin: 0 2px',
-        'transition: background-color 0.15s ease, color 0.15s ease',
-        'flex-shrink: 0'
-      ].join('; '),
       onClick: function (e) {
         e.stopPropagation();
         handleExportChat();
       }
     }, [createExportIcon()]);
 
-    exportChatBtn.addEventListener('mouseenter', function () {
-      if (!exportChatBtn.disabled) {
-        exportChatBtn.style.backgroundColor = 'rgba(197, 202, 233, 0.08)';
-        exportChatBtn.style.color = 'var(--mm-primary, #c5cae9)';
-      }
-    });
-    exportChatBtn.addEventListener('mouseleave', function () {
-      exportChatBtn.style.backgroundColor = 'transparent';
-      exportChatBtn.style.color = 'var(--mm-on-surface, #c4c7c5)';
-    });
 
     // Insérer au début de l'en-tête (avant les icônes natives de Google)
     header.insertBefore(exportChatBtn, header.firstChild);

@@ -17,9 +17,6 @@
   /** Référence à l'élément de message d'erreur/vide */
   let noResultsElement = null;
 
-  /** Observer permanent surveillant les mutations de la page pour ré-injecter si la SPA reconstruit le DOM */
-  let pageObserver = null;
-
   /** Requête de recherche courante pour assurer la persistance lors des transitions SPA */
   let currentQuery = '';
 
@@ -271,8 +268,10 @@
       type: 'text',
       className: 'mm-search-input',
       placeholder: t('searchPlaceholder'),
+      'aria-label': t('searchPlaceholder'),
       value: currentQuery, // Pré-remplir avec la requête courante (persistance)
       onInput: performSearch,
+
       onKeydown: function (e) {
         if (e.key === 'Escape') {
           input.value = '';

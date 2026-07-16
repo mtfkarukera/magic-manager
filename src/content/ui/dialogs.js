@@ -185,8 +185,63 @@
     cancelBtn.focus();
   }
 
+  /**
+   * Affiche un dialogue d'alerte simple non bloquant (remplace alert()).
+   *
+   * @param {string}   titleKey            - Clé i18n du titre.
+   * @param {string}   messageKey          - Clé i18n du message.
+   * @param {Array}    [messageSubstitutions=[]] - Substitutions pour le message.
+   * @param {Function} [onClose]           - Callback exécuté à la fermeture.
+   */
+  function showAlertDialog(titleKey, messageKey, messageSubstitutions, onClose) {
+    closeDialog();
+
+    const okBtn = createElement('button', {
+      className: 'mm-btn mm-btn-primary',
+      textContent: t('dialogConfirmButton') || 'OK',
+      onClick: () => {
+        closeDialog();
+        if (onClose) onClose();
+      }
+    });
+
+    const dialogTitleId = 'mm-dialog-title-' + Date.now();
+    const dialog = createElement('dialog', {
+      className: 'mm-dialog mm-dialog-alert',
+      role: 'alertdialog',
+      'aria-modal': 'true',
+      'aria-labelledby': dialogTitleId
+    }, [
+      createElement('h2', { id: dialogTitleId, className: 'mm-dialog-title', textContent: t(titleKey) || titleKey }),
+      createElement('p', { className: 'mm-dialog-message', textContent: t(messageKey, messageSubstitutions || []) || messageKey }),
+      createElement('div', { className: 'mm-dialog-actions' }, [okBtn])
+    ]);
+
+    activeDialog = dialog;
+
+    dialog.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      closeDialog();
+      if (onClose) onClose();
+    });
+
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) {
+        closeDialog();
+        if (onClose) onClose();
+      }
+    });
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    okBtn.focus();
+  }
+
   // Exposition dans le namespace global MM
   window.MM.showConfirmDialog = showConfirmDialog;
   window.MM.showFormatChoiceDialog = showFormatChoiceDialog;
+  window.MM.showAlertDialog = showAlertDialog;
   window.MM.closeDialog = closeDialog;
 })();
+
