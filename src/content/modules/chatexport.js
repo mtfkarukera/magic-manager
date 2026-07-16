@@ -537,17 +537,57 @@
   ];
 
   /**
-   * Tente de trouver l'en-tête du panneau Discussion.
+   * Tente de trouver l'en-tête du panneau Discussion de manière ultra-robuste.
    * @returns {Element|null}
    */
   function findChatPanelHeader() {
-    for (const sel of CHAT_HEADER_SELECTORS) {
-      const el = document.querySelector(sel);
-      if (el) return el;
+    // 1. Approche privilégiée : Partir du textarea du chat pour cibler son conteneur
+    const chatInput = document.querySelector(
+      'textarea[aria-label*="Ask" i], ' +
+      'textarea[placeholder*="Ask" i], ' +
+      'textarea[aria-label*="tapez" i], ' +
+      'textarea[aria-label*="Start typing" i], ' +
+      '.chat-input textarea'
+    );
+    if (chatInput) {
+      const chatPanel = chatInput.closest(
+        'section, div[role="region"], [class*="chat-panel"], [class*="conversation-panel"]'
+      );
+      if (chatPanel) {
+        const header = chatPanel.querySelector(
+          '.panel-header, [class*="header"], [class*="toolbar"]'
+        );
+        if (header) {
+          // Écarter à coup sûr le panneau des sources
+          if (!header.closest('section.source-panel, [class*="source-panel"], .left-sidebar')) {
+            return header;
+          }
+        }
+      }
     }
-    return window.MM.findElementsInShadows(
+
+    // 2. Approche alternative : Recherche par sélecteurs candidats directs
+    for (const sel of CHAT_HEADER_SELECTORS) {
+      const candidates = document.querySelectorAll(sel);
+      for (const el of candidates) {
+        // Ignorer tout élément appartenant au panneau des sources de gauche
+        if (!el.closest('section.source-panel, [class*="source-panel"], .left-sidebar')) {
+          return el;
+        }
+      }
+    }
+
+    // 3. Recherche de repli dans le Shadow DOM
+    const shadowCandidates = window.MM.findElementsInShadows(
       CHAT_HEADER_SELECTORS.join(', ')
-    )[0] || null;
+    );
+    for (const el of shadowCandidates) {
+      if (!el.closest('section.source-panel, [class*="source-panel"], .left-sidebar')) {
+        return el;
+      }
+    }
+
+    return null;
   }
 
   /**
@@ -555,13 +595,14 @@
    */
   const tryInjectButton = debounce(function () {
     // Garde-fou préférence active
-    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('feature_chatExport')) {
-      // Si la feature est désactivée, s'assurer que le bouton est retiré sans couper l'observer
-      if (exportChatBtn) {
-        exportChatBtn.remove();
-        exportChatBtn = null;
+    if (typeof window.MM.isFeatureEnabled === 'function') {
+      if (!window.MM.isFeatureEnabled('feature_chatExport')) {
+        if (exportChatBtn) {
+          exportChatBtn.remove();
+          exportChatBtn = null;
+        }
+        return;
       }
-      return;
     }
 
     // Bouton déjà présent et dans le DOM → rien à faire
