@@ -240,8 +240,8 @@
     const sourceViewer = document.querySelector('source-viewer');
     if (!sourceViewer) return;
 
-    // 2. Récupérer le titre du document ouvert depuis source-viewer
-    const titleEl = sourceViewer.querySelector('.source-title');
+    // 2. Récupérer le titre du document ouvert (recherche robuste)
+    const titleEl = window.MM.findSourceViewerTitle(sourceViewer);
     const sourcePanel = document.querySelector('section.source-panel');
     const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header') : null;
 

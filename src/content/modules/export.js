@@ -37,7 +37,7 @@
     const sourceViewer = document.querySelector('source-viewer');
     if (!sourceViewer) return null;
 
-    const titleEl = sourceViewer.querySelector('.source-title');
+    const titleEl = window.MM.findSourceViewerTitle(sourceViewer);
     if (!titleEl) return null;
     const title = titleEl.textContent.trim();
 
@@ -622,7 +622,7 @@
     });
 
     // Insérer à gauche du bouton delete MM s'il existe, sinon devant collapse
-    const deleteBtn = panelHeader.querySelector('.mm-individual-delete-btn');
+    const deleteBtn = document.querySelector('.mm-individual-delete-btn');
     const anchorBefore = deleteBtn || collapseBtn;
     collapseBtn.parentNode.insertBefore(exportBtn, anchorBefore);
     console.log('[MM] Bouton exportation individuelle injecté dans section.source-panel .panel-header');

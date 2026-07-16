@@ -221,6 +221,26 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // Titre du document ouvert
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Trouve l'élément de titre du document ouvert dans le source-viewer de façon robuste.
+   * Supporte les documents (PDF/docs) et les sources URL.
+   * @param {Element} sourceViewer - L'élément source-viewer actif.
+   * @returns {Element|null}
+   */
+  function findSourceViewerTitle(sourceViewer) {
+    if (!sourceViewer) return null;
+    return sourceViewer.querySelector(
+      '.source-title, .title, [class*="source-title"], [class*="viewer-title"]'
+    ) || document.querySelector(
+      'source-viewer .source-title, source-viewer .title, ' +
+      '[class*="source-title"], [class*="viewer-title"]'
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // Exposition dans le namespace global MM
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -231,4 +251,5 @@
   window.MM.findSourceCardFromCheckbox = findSourceCardFromCheckbox;
   window.MM.getOrCreateStickyHeader = getOrCreateStickyHeader;
   window.MM.findSourceViewerCloseButton = findSourceViewerCloseButton;
+  window.MM.findSourceViewerTitle = findSourceViewerTitle;
 })();
