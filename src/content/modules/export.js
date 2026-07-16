@@ -37,9 +37,9 @@
     const sourceViewer = document.querySelector('source-viewer');
     if (!sourceViewer) return null;
 
-    const titleEl = window.MM.findSourceViewerTitle(sourceViewer);
-    if (!titleEl) return null;
-    const title = titleEl.textContent.trim();
+    const title = window.MM.findSourceViewerTitleText(sourceViewer) ||
+                  (window.MM.findSourceViewerTitle(sourceViewer) || { textContent: '' }).textContent.trim();
+    if (!title) return null;
 
     // Cloner et nettoyer pour extraire proprement le texte
     const clone = sourceViewer.cloneNode(true);

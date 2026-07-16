@@ -246,6 +246,60 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // Extraction du texte de titre (nettoyé des icônes Material)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  // Liste des noms d'icônes Material connus qui peuvent polluer le textContent
+  const MATERIAL_ICON_NAMES = new Set([
+    'arrow_back', 'open_in_new', 'close', 'expand_less', 'expand_more',
+    'more_vert', 'more_horiz', 'download', 'upload', 'delete', 'edit',
+    'info', 'info_outline', 'help', 'help_outline', 'search', 'clear',
+    'check', 'check_circle', 'cancel', 'add', 'remove', 'link',
+    'content_copy', 'content_paste', 'file_download', 'file_upload',
+    'visibility', 'visibility_off', 'lock', 'lock_open', 'star', 'share'
+  ]);
+
+  /**
+   * Extrait le texte pur du titre du document ouvert dans le source-viewer,
+   * en filtrant les noms d'icônes Material (arrow_back, open_in_new, etc.)
+   * qui contaminent le textContent quand le titleEl est un conteneur.
+   * Utilisé exclusivement pour construire des noms de fichiers propres.
+   * @param {Element} sourceViewer - L'élément source-viewer actif.
+   * @returns {string} Le texte de titre nettoyé, ou une chaîne vide.
+   */
+  function findSourceViewerTitleText(sourceViewer) {
+    const titleEl = findSourceViewerTitle(sourceViewer);
+    if (!titleEl) return '';
+
+    // Parcourir les noeuds texte directs du titleEl pour extraire le texte pur
+    // (évite de capturer les textContent des icônes Material dans les enfants)
+    const textNodes = Array.from(titleEl.childNodes).filter(function (node) {
+      return node.nodeType === Node.TEXT_NODE && node.textContent.trim().length > 0;
+    });
+
+    if (textNodes.length > 0) {
+      return textNodes.map(function (n) { return n.textContent.trim(); }).join(' ').trim();
+    }
+
+    // Fallback : parcourir les spans/éléments enfants directs non-iconiques
+    const candidates = Array.from(titleEl.children).filter(function (el) {
+      const txt = el.textContent.trim();
+      // Exclure les éléments dont le texte complet est un nom d'icône Material connu
+      return txt.length > 0 && !MATERIAL_ICON_NAMES.has(txt) && el.tagName !== 'BUTTON';
+    });
+
+    if (candidates.length > 0) {
+      return candidates.map(function (el) { return el.textContent.trim(); }).join(' ').trim();
+    }
+
+    // Dernier recours : retourner le textContent complet en filtrant les mots d'icônes
+    const rawText = titleEl.textContent.trim();
+    const words = rawText.split(/\s+/);
+    const filtered = words.filter(function (w) { return !MATERIAL_ICON_NAMES.has(w); });
+    return filtered.join(' ').trim();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // Exposition dans le namespace global MM
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -257,4 +311,5 @@
   window.MM.getOrCreateStickyHeader = getOrCreateStickyHeader;
   window.MM.findSourceViewerCloseButton = findSourceViewerCloseButton;
   window.MM.findSourceViewerTitle = findSourceViewerTitle;
+  window.MM.findSourceViewerTitleText = findSourceViewerTitleText;
 })();

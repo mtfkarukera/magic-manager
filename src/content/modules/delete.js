@@ -279,7 +279,8 @@
     // des boutons fantômes d'autres onglets mis en cache par Angular
     if (collapseBtn.parentNode.querySelector('.mm-individual-delete-btn')) return;
 
-    const sourceTitle = titleEl.textContent.trim();
+    // Utiliser findSourceViewerTitleText pour un titre propre (sans icônes Material)
+    const sourceTitle = window.MM.findSourceViewerTitleText(sourceViewer) || titleEl.textContent.trim();
 
     // 5. Trouver le conteneur source correspondant dans la liste (il est encore dans le DOM)
     //    Les single-source-container existent même quand source-viewer est ouvert

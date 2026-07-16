@@ -180,15 +180,11 @@
           window.MM.checkAndInjectIndividualExport();
         }
       }
-
-      // 6. Mise à jour des boutons batch (export + merge)
-      // Lecture seulement — ne modifie le DOM que si l'état a changé.
-      if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
-        window.MM.updateBatchExportButtonState();
-      }
-      if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
-        window.MM.updateBatchMergeButtonState();
-      }
+      // NOTE : updateBatchExportButtonState et updateBatchMergeButtonState sont
+      // intentionnellement ABSENTS d'ici. Ils ne doivent être déclenchés que par :
+      //   1. Les interactions utilisateur (clic/change) via debouncedPanelInteraction
+      //   2. Les changements de layout via onLayoutResize
+      // Les inclure ici génère une boucle infinie car ils modifient le DOM.
     } catch (err) {
       console.error('[MM] Erreur lors des injections globales :', err);
     } finally {
@@ -246,6 +242,15 @@
 
       // Premier dispatch immédiat pour la reconstruction rapide
       dispatchCentralInjections();
+
+      // Mettre à jour les boutons batch après changement de layout
+      // (ne pas inclure dans dispatchCentralInjections pour éviter les boucles)
+      if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
+        window.MM.updateBatchExportButtonState();
+      }
+      if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
+        window.MM.updateBatchMergeButtonState();
+      }
 
       // Second dispatch retardé — filet de sécurité pour les hydratations Angular tardives
       if (lateDispatchTimer) {
