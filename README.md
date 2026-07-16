@@ -42,6 +42,10 @@
 | 🇯🇵 Japonais | `ja` |
 | 🇻🇳 Vietnamien | `vi` |
 
+## 🤝 Crédits
+
+Ce projet s'appuie grandement sur l'analyse et l'ingénierie inverse de l'API interne de NotebookLM réalisées par le projet open-source [notebooklm-py](https://github.com/teng-lin/notebooklm-py). Un grand merci à ses contributeurs pour leur travail remarquable de documentation et d'exploration !
+
 ## 📄 Licence
 
 Ce projet est distribué sous la licence [MPL-2.0](./LICENSE).
