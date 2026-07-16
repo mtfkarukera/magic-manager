@@ -4,6 +4,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.5.7] — 2026-07-16
+
+### Corrigé
+- ⚡ **Performance de l'export/fusion par lot** : Optimisation critique de la fonction `getCheckedSourceCheckboxes()` en mettant en cache la recherche du bouton global "Tout sélectionner". Cela évite d'exécuter des scans récursifs profonds du Shadow DOM pour chacune des checkboxes candidates (division par 132x du temps de calcul DOM), rendant l'apparition des boutons instantanée.
+
 ## [0.5.6] — 2026-07-16
 
 ### Corrigé

@@ -178,6 +178,8 @@
     const list = findSourcesListContainer();
     if (!list) return [];
     
+    const selectAllRow = findSelectAllRow();
+    
     // Sélecteurs précis : exclure [class*="checkbox"] qui capture les wrappers Angular
     const checkboxes = window.MM.findElementsInShadows(
       'input[type="checkbox"], [role="checkbox"], mat-pseudo-checkbox, .mat-pseudo-checkbox',
@@ -193,7 +195,6 @@
         cb.getAttribute('aria-selected') === 'true';
 
       // Exclure la case globale "Tout sélectionner" de façon sémantique
-      const selectAllRow = findSelectAllRow();
       const isGlobal = selectAllRow && (cb === selectAllRow || selectAllRow.contains(cb));
 
       return isChecked && !isGlobal;
