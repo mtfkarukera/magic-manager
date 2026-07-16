@@ -4,6 +4,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.5.4] — 2026-07-16
+
+### Corrigé
+- 🔴 **Robustesse Réseau (B1 + B2)** : Intégration d'un timeout de 30 secondes et d'un retry exponentiel adaptatif (3 tentatives avec gestion de `Retry-After` sur erreur 429) dans le client RPC `rpcclient.js`.
+- 🔴 **Fuite mémoire CSRF (B3)** : Optimisation de `getCsrfToken()` par mise en cache et suppression complète de l'analyse globale de `document.documentElement.innerHTML`.
+- 🔴 **Accessibilité WCAG 2.3.3 (B4)** : Ajout du support de `@media (prefers-reduced-motion: reduce)` pour toutes les animations de modale et transitions.
+- 🔴 **Accessibilité WCAG 2.1.2 & 4.1.2 (B5 + B6)** : Migration complète des boîtes de dialogue et du dialogue de fusion vers la balise HTML5 native `<dialog>` avec gestion native du focus trap, closing Escape automatique, rôle ARIA et attributs `aria-modal`/`aria-labelledby`.
+
 ## [0.5.3] — 2026-07-16
 
 ### Corrigé

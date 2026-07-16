@@ -16,11 +16,8 @@
   // État interne
   // ═══════════════════════════════════════════════════════════════════════
 
-  /** Référence à l'overlay de la modale active (null si aucune) */
-  let activeOverlay = null;
-
-  /** Handler de la touche Echap pour fermer la modale */
-  let escapeHandler = null;
+  /** Référence à la modale active (null si aucune) */
+  let activeDialog = null;
 
   // ═══════════════════════════════════════════════════════════════════════
   // Fonctions internes
@@ -30,28 +27,15 @@
    * Ferme la modale active et nettoie les listeners.
    */
   function closeDialog() {
-    if (activeOverlay) {
-      activeOverlay.remove();
-      activeOverlay = null;
-    }
-    if (escapeHandler) {
-      document.removeEventListener('keydown', escapeHandler);
-      escapeHandler = null;
-    }
-  }
-
-  /**
-   * Installe le handler Echap pour la modale.
-   * @param {Function} [onCancel] - Callback optionnel à exécuter en plus de fermer.
-   */
-  function setupEscapeHandler(onCancel) {
-    escapeHandler = (e) => {
-      if (e.key === 'Escape') {
-        closeDialog();
-        if (onCancel) onCancel();
+    if (activeDialog) {
+      try {
+        activeDialog.close();
+      } catch (e) {
+        // Ignorer si déjà fermé
       }
-    };
-    document.addEventListener('keydown', escapeHandler);
+      activeDialog.remove();
+      activeDialog = null;
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -95,26 +79,38 @@
       }
     });
 
-    // Contenu de la modale
-    const dialog = createElement('div', { className: 'mm-dialog' }, [
-      createElement('h2', { className: 'mm-dialog-title', textContent: t(titleKey) }),
+    const dialogTitleId = 'mm-dialog-title-' + Date.now();
+    // Contenu de la modale sous forme de dialog natif
+    const dialog = createElement('dialog', {
+      className: 'mm-dialog',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': dialogTitleId
+    }, [
+      createElement('h2', { id: dialogTitleId, className: 'mm-dialog-title', textContent: t(titleKey) }),
       createElement('p', { className: 'mm-dialog-message', textContent: t(messageKey, messageSubstitutions || []) }),
       createElement('div', { className: 'mm-dialog-actions' }, [cancelBtn, confirmBtn])
     ]);
 
-    // Overlay
-    activeOverlay = createElement('div', { className: 'mm-dialog-overlay' }, [dialog]);
+    activeDialog = dialog;
 
-    // Clic sur l'overlay (hors dialog) pour fermer
-    activeOverlay.addEventListener('click', (e) => {
-      if (e.target === activeOverlay) {
+    // Fermeture native via touche Echap
+    dialog.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      closeDialog();
+      if (onCancel) onCancel();
+    });
+
+    // Clic extérieur (sur le ::backdrop) pour fermer
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) {
         closeDialog();
         if (onCancel) onCancel();
       }
     });
 
-    document.body.appendChild(activeOverlay);
-    setupEscapeHandler(onCancel);
+    document.body.appendChild(dialog);
+    dialog.showModal();
 
     // Focus sur le bouton Annuler par défaut (sécurité)
     cancelBtn.focus();
@@ -159,21 +155,34 @@
       onClick: () => closeDialog()
     });
 
-    // Contenu
-    const dialog = createElement('div', { className: 'mm-dialog' }, [
-      createElement('h2', { className: 'mm-dialog-title', textContent: t(titleKey) }),
+    const dialogTitleId = 'mm-dialog-title-' + Date.now();
+    // Contenu sous forme de dialog natif
+    const dialog = createElement('dialog', {
+      className: 'mm-dialog',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': dialogTitleId
+    }, [
+      createElement('h2', { id: dialogTitleId, className: 'mm-dialog-title', textContent: t(titleKey) }),
       createElement('p', { className: 'mm-dialog-message', textContent: t('mergeFormatLabel') }),
       createElement('div', { className: 'mm-dialog-actions' }, [cancelBtn, mdBtn, pdfBtn])
     ]);
 
-    // Overlay
-    activeOverlay = createElement('div', { className: 'mm-dialog-overlay' }, [dialog]);
-    activeOverlay.addEventListener('click', (e) => {
-      if (e.target === activeOverlay) closeDialog();
+    activeDialog = dialog;
+
+    dialog.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      closeDialog();
     });
 
-    document.body.appendChild(activeOverlay);
-    setupEscapeHandler();
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) closeDialog();
+    });
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    cancelBtn.focus();
   }
 
   // Exposition dans le namespace global MM

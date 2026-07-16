@@ -190,25 +190,90 @@
   // 3. SECURE AUTH & TRANSPORT (content script context)
   // ═══════════════════════════════════════════════════════════════════════
 
+  let cachedCsrfToken = null;
+
   /**
    * Récupère de façon résiliente le jeton CSRF (SNlM0e) depuis le DOM HTML.
    */
   function getCsrfToken() {
-    const html = document.documentElement.innerHTML;
-    let match = html.match(/"SNlM0e"\s*:\s*"([^"]+)"/);
-    if (match && match[1]) {
-      return match[1];
+    if (cachedCsrfToken) {
+      return cachedCsrfToken;
     }
     // Recherche alternative dans toutes les balises script
     const scripts = document.querySelectorAll('script');
     for (const script of scripts) {
       const content = script.textContent || '';
-      match = content.match(/"SNlM0e"\s*:\s*"([^"]+)"/);
+      const match = content.match(/"SNlM0e"\s*:\s*"([^"]+)"/);
       if (match && match[1]) {
-        return match[1];
+        cachedCsrfToken = match[1];
+        return cachedCsrfToken;
       }
     }
     return null;
+  }
+
+  /**
+   * Effectue un fetch réseau avec timeout (AbortController) et retries exponentiels sur
+   * les erreurs réseau ou les codes de statut HTTP transitoires (429, 500, 502, 503, 504).
+   */
+  async function fetchWithRetryAndTimeout(url, options = {}, maxRetries = 3, initialDelay = 1000) {
+    let retries = 0;
+    while (true) {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000); // Timeout de 30s
+
+      try {
+        const fetchOptions = {
+          ...options,
+          signal: controller.signal
+        };
+
+        const response = await fetch(url, fetchOptions);
+        clearTimeout(timeoutId);
+
+        if (response.ok) {
+          return response;
+        }
+
+        const transientStatuses = [429, 500, 502, 503, 504];
+        if (transientStatuses.includes(response.status) && retries < maxRetries) {
+          retries++;
+          let delay = initialDelay * Math.pow(2, retries - 1);
+
+          if (response.status === 429) {
+            const retryAfter = response.headers.get('Retry-After');
+            if (retryAfter) {
+              const seconds = parseInt(retryAfter, 10);
+              if (!isNaN(seconds)) {
+                delay = seconds * 1000;
+              }
+            }
+          }
+
+          console.warn(`[MM] Erreur HTTP ${response.status} sur ${url}. Tentative ${retries}/${maxRetries} après ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+
+        return response;
+
+      } catch (err) {
+        clearTimeout(timeoutId);
+        
+        if (err.name === 'AbortError') {
+          console.error(`[MM] Requête expirée (timeout 30s) sur ${url}.`);
+        }
+
+        if (retries < maxRetries) {
+          retries++;
+          const delay = initialDelay * Math.pow(2, retries - 1);
+          console.warn(`[MM] Erreur réseau (${err.message}) sur ${url}. Tentative ${retries}/${maxRetries} après ${delay}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        throw err;
+      }
+    }
   }
 
   /**
@@ -237,7 +302,7 @@
 
     console.log(`[MM] Envoi de la requête RPC ${rpcId} (authuser: ${authuser})`);
 
-    const response = await fetch(endpoint, {
+    const response = await fetchWithRetryAndTimeout(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8'
@@ -345,7 +410,7 @@
     });
 
     console.log(`[MM] Étape 2 : Initialisation de la session d'upload resumable`);
-    const startResponse = await fetch(uploadStartUrl, {
+    const startResponse = await fetchWithRetryAndTimeout(uploadStartUrl, {
       method: 'POST',
       headers: {
         'Accept': '*/*',
@@ -369,7 +434,7 @@
 
     // Étape 3 : Envoyer le contenu binaire (POST finalize)
     console.log(`[MM] Étape 3 : Envoi du Blob binaire (${blob.size} octets)`);
-    const finalizeResponse = await fetch(uploadUrl, {
+    const finalizeResponse = await fetchWithRetryAndTimeout(uploadUrl, {
       method: 'POST',
       headers: {
         'Accept': '*/*',

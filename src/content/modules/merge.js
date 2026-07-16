@@ -13,17 +13,10 @@
 
   // CSS injecté pour la modale de fusion et les animations
   const CSS_STYLES = `
-    .mm-merge-overlay {
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
+    .mm-merge-dialog::backdrop {
       background: rgba(0, 0, 0, 0.6);
       backdrop-filter: blur(4px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10000;
-      font-family: var(--mm-font-family, system-ui, -apple-system, sans-serif);
-      animation: mmFadeIn 0.2s ease-out;
+      -webkit-backdrop-filter: blur(4px);
     }
     .mm-merge-dialog {
       background: var(--mm-surface, #1e1e1e);
@@ -34,6 +27,8 @@
       max-width: 90%;
       color: var(--mm-on-surface, #e3e3e3);
       box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+      margin: auto;
+      display: block;
       animation: mmSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .mm-merge-title {
@@ -408,10 +403,16 @@
     const dateStr = new Date().toISOString().split('T')[0];
     const defaultTitle = `${t('mergedSourcesTitle') || 'Sources fusionnées'} - ${dateStr}`;
 
-    const overlay = createElement('div', { className: 'mm-merge-overlay' });
-    const dialog = createElement('div', { className: 'mm-merge-dialog' });
+    const dialogTitleId = 'mm-merge-title-' + Date.now();
+    const dialog = createElement('dialog', {
+      className: 'mm-merge-dialog',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': dialogTitleId
+    });
     
     const titleEl = createElement('div', { 
+      id: dialogTitleId,
       className: 'mm-merge-title', 
       textContent: t('mergeButton') || 'Fusionner les sources' 
     });
@@ -463,7 +464,10 @@
     const btnCancel = createElement('button', {
       className: 'mm-merge-btn-cancel',
       textContent: 'Annuler',
-      onClick: () => overlay.remove()
+      onClick: () => {
+        dialog.close();
+        dialog.remove();
+      }
     });
     const btnConfirm = createElement('button', {
       className: 'mm-merge-btn-confirm',
@@ -471,7 +475,7 @@
       onClick: async () => {
         const titleInput = titleField.querySelector('input');
         const finalTitle = titleInput.value.trim() || defaultTitle;
-        await runMergeProcess(checkboxes, finalTitle, selectedFormat, dialog, overlay);
+        await runMergeProcess(checkboxes, finalTitle, selectedFormat, dialog);
       }
     });
 
@@ -485,8 +489,21 @@
     dialog.appendChild(formatField);
     dialog.appendChild(buttonsContainer);
     
-    overlay.appendChild(dialog);
-    document.body.appendChild(overlay);
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) {
+        dialog.close();
+        dialog.remove();
+      }
+    });
+
+    dialog.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      dialog.close();
+      dialog.remove();
+    });
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
 
     setTimeout(() => titleField.querySelector('input').select(), 50);
   }
@@ -531,11 +548,12 @@
     return null;
   }
 
-  async function runMergeProcess(checkboxes, title, format, dialog, overlay) {
+  async function runMergeProcess(checkboxes, title, format, dialog) {
     const notebookId = window.MM.getActiveNotebookId();
     if (!notebookId) {
       alert('[MM] Impossible de détecter l\'identifiant du notebook dans l\'URL.');
-      overlay.remove();
+      dialog.close();
+      dialog.remove();
       return;
     }
 
@@ -641,7 +659,8 @@
         style: 'margin-top: 16px; background-color: #34A853;',
         textContent: 'Fermer',
         onClick: () => {
-          overlay.remove();
+          dialog.close();
+          dialog.remove();
           window.location.reload();
         }
       });
@@ -649,8 +668,9 @@
 
       // Rechargement automatique de la page après 1.5s pour synchroniser l'affichage
       setTimeout(() => {
-        if (overlay && overlay.parentNode) {
-          overlay.remove();
+        if (dialog && dialog.parentNode) {
+          dialog.close();
+          dialog.remove();
           window.location.reload();
         }
       }, 1500);
@@ -669,7 +689,10 @@
         className: 'mm-merge-btn-cancel',
         style: 'margin-top: 16px;',
         textContent: 'Fermer',
-        onClick: () => overlay.remove()
+        onClick: () => {
+          dialog.close();
+          dialog.remove();
+        }
       });
       progressContainer.appendChild(btnClose);
     }
