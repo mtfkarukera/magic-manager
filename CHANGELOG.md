@@ -4,7 +4,7 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
-## [0.6.1] — 2026-07-18
+## [0.6.2] — 2026-07-18
 
 ### Optimisé & Corrigé
 - ♿ **Accessibilité WCAG 2.1 AA** :
