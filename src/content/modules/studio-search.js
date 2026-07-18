@@ -54,23 +54,57 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
+   * Trouve le conteneur principal du panneau Studio (colonne de droite ou grille globale).
+   */
+  function findStudioPanel() {
+    const panel = document.querySelector('section.studio-panel, .studio-panel, section.right-sidebar, .right-sidebar, [class*="studio-panel"]');
+    if (panel) return panel;
+
+    const headers = Array.from(document.querySelectorAll('h2, h3, div, span, button')).filter(el => {
+      return (el.textContent || '').trim() === 'Studio';
+    });
+    for (const h of headers) {
+      const parentSection = h.closest('section, div[role="region"], .right-sidebar, [class*="-panel"]');
+      if (parentSection) return parentSection;
+    }
+    return null;
+  }
+
+  /**
+   * Trouve l'en-tête (header) du Studio.
+   */
+  function findStudioHeader(panel) {
+    if (!panel) return null;
+    const header = panel.querySelector('.panel-header, [class*="header"], [class*="title"]');
+    if (header) return header;
+
+    const els = Array.from(panel.querySelectorAll('*'));
+    for (const el of els) {
+      if ((el.textContent || '').trim() === 'Studio') {
+        return el.closest('div') || el;
+      }
+    }
+    return panel.firstChild;
+  }
+
+  /**
    * Détecte si la vue courante est le Studio (guide d'étude / grille de notes).
-   * Doit retourner false si un artéfact individuel ou le chat est affiché en plein écran.
    */
   function isStudioActive() {
-    // 1. Il faut être dans un notebook ouvert
     const path = window.location.pathname;
     if (!path.includes('/notebook/')) return false;
 
-    // 2. Si un viewer d'artéfact ou de note individuelle est affiché en grand
-    const hasActiveViewer = document.querySelector('.artifact-viewer, [class*="artifact-viewer"], source-viewer, note-viewer') !== null;
-    if (hasActiveViewer) return false;
+    // Si on consulte un document individuel en plein écran (source-viewer)
+    const hasActiveSourceViewer = document.querySelector('source-viewer, [class*="source-viewer"]') !== null;
+    if (hasActiveSourceViewer) return false;
 
-    // 3. Tenter de localiser la grille de notes ou le conteneur du studio
-    const hasNotesGrid = document.querySelector('.notes-grid, .grid-container, mat-grid-list, [class*="notes-list"]') !== null;
-    const hasStudioElements = document.querySelector('button[aria-label*="Note"], button:has-text("Note"), [class*="studio"]') !== null;
+    const studioPanel = findStudioPanel();
+    if (!studioPanel) return false;
 
-    return hasNotesGrid || hasStudioElements;
+    const rect = studioPanel.getBoundingClientRect();
+    if (rect.width < 50) return false;
+
+    return true;
   }
 
   /**
@@ -124,12 +158,23 @@
     const input = searchBarContainer.querySelector('.mm-studio-search-input');
     const query = input ? input.value.toLowerCase().trim() : '';
 
-    // Trouver toutes les cartes d'artéfacts/notes du studio
-    const cards = Array.from(document.querySelectorAll(
-      '.notes-grid > *, .grid-container > *, mat-grid-tile, mat-card, [class*="note-card"], [class*="studio-card"]'
+    const studioPanel = findStudioPanel();
+    if (!studioPanel) return;
+
+    // Trouver toutes les cartes d'artéfacts/notes dans la zone Studio
+    const cards = Array.from(studioPanel.querySelectorAll(
+      'mat-grid-tile, mat-card, [class*="card"], [class*="tile"], [class*="note-item"], [class*="artifact-item"], button[role="button"]'
     )).filter(el => {
-      // Exclure la barre de recherche elle-même et les éléments de structure globaux
-      return !el.classList.contains('mm-studio-search-bar') && !el.closest('.mm-studio-search-bar');
+      return !el.classList.contains('mm-studio-search-bar') && 
+             !el.closest('.mm-studio-search-bar') && 
+             !el.classList.contains('mm-studio-delete-btn') &&
+             (el.querySelector('mat-card-title, [class*="title"], [class*="header"]') || 
+              el.textContent.includes('Résumé') || 
+              el.textContent.includes('Présentation') || 
+              el.textContent.includes('Quiz') || 
+              el.textContent.includes('FAQ') || 
+              el.textContent.includes('Chronologie') || 
+              el.tagName === 'MAT-CARD');
     });
 
     let matchCount = 0;
@@ -310,20 +355,23 @@
       return;
     }
 
-    // Trouver l'ancre d'injection : le conteneur principal du Studio ou le premier panneau
-    const notesGrid = document.querySelector('.notes-grid, .grid-container, mat-grid-list, [class*="notes-list"]');
-    if (!notesGrid) return;
+    const studioPanel = findStudioPanel();
+    if (!studioPanel) return;
+
+    const header = findStudioHeader(studioPanel);
+    if (!header) return;
 
     if (searchBarContainer) {
       searchBarContainer.style.display = '';
-      if (!notesGrid.parentNode.contains(searchBarContainer)) {
-        notesGrid.parentNode.insertBefore(searchBarContainer, notesGrid);
+      if (!studioPanel.contains(searchBarContainer)) {
+        header.parentNode.insertBefore(searchBarContainer, header.nextSibling);
       }
       return;
     }
 
     searchBarContainer = createSearchBar();
-    notesGrid.parentNode.insertBefore(searchBarContainer, notesGrid);
+    searchBarContainer.classList.add('mm-studio-header-search');
+    header.parentNode.insertBefore(searchBarContainer, header.nextSibling);
     console.log('[MM] Pilule de recherche du Studio injectée.');
   }
 

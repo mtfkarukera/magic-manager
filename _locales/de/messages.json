@@ -188,5 +188,23 @@
   "exportFailedNoContent": {
     "message": "Inhalt der ausgewählten Quellen konnte nicht gelesen werden.",
     "description": "Traduction pour exportFailedNoContent"
+  },
+  "settingsFeatureTransfer": {
+    "message": "Kopieren zwischen Notebooks",
+    "description": "Libellé de la copie de sources inter-carnets dans les paramètres"
+  },
+  "settingsFeatureStudioSearch": {
+    "message": "Studio-Suche & Filter",
+    "description": "Libellé de la recherche et des filtres Studio dans les paramètres"
+  },
+  "deleteBatchConfirmMessage": {
+    "message": "Sind Sie sicher, dass Sie die ausgewählten $count$ Quellen löschen möchten? Diese Aktion ist unwiderruflich.",
+    "description": "Message de confirmation de suppression en lot",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

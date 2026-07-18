@@ -188,5 +188,23 @@
   "exportFailedNoContent": {
     "message": "No se pudo leer el contenido de las fuentes seleccionadas.",
     "description": "Traduction pour exportFailedNoContent"
+  },
+  "settingsFeatureTransfer": {
+    "message": "Copiar entre cuadernos",
+    "description": "Libellé de la copie de sources inter-carnets dans les paramètres"
+  },
+  "settingsFeatureStudioSearch": {
+    "message": "Búsqueda y filtros del Studio",
+    "description": "Libellé de la recherche et des filtres Studio dans les paramètres"
+  },
+  "deleteBatchConfirmMessage": {
+    "message": "¿Está seguro de que desea eliminar las $count$ fuentes seleccionadas? Esta acción es irreversible.",
+    "description": "Message de confirmation de suppression en lot",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

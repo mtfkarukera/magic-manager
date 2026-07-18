@@ -188,5 +188,23 @@
   "exportFailedNoContent": {
     "message": "選択したソースのコンテンツを読み取れませんでした。",
     "description": "Traduction pour exportFailedNoContent"
+  },
+  "settingsFeatureTransfer": {
+    "message": "ノートブック間コピー",
+    "description": "Libellé de la copie de sources inter-carnets dans les paramètres"
+  },
+  "settingsFeatureStudioSearch": {
+    "message": "Studio検索とフィルター",
+    "description": "Libellé de la recherche et des filtres Studio dans les paramètres"
+  },
+  "deleteBatchConfirmMessage": {
+    "message": "選択した $count$ 個のソースを削除してもよろしいですか？この操作は取り消せません。",
+    "description": "Message de confirmation de suppression en lot",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

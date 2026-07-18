@@ -188,5 +188,23 @@
   "exportFailedNoContent": {
     "message": "Unable to read the content of the selected sources.",
     "description": "Traduction pour exportFailedNoContent"
+  },
+  "settingsFeatureTransfer": {
+    "message": "Inter-notebook transfer",
+    "description": "Label of inter-notebook source transfer in settings"
+  },
+  "settingsFeatureStudioSearch": {
+    "message": "Studio search",
+    "description": "Label of studio search and filters in settings"
+  },
+  "deleteBatchConfirmMessage": {
+    "message": "Are you sure you want to delete the $count$ selected sources? This action is irreversible.",
+    "description": "Message to confirm batch deletion",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
   }
 }

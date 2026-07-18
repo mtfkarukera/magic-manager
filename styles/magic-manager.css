@@ -524,43 +524,54 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 .mm-search-bar {
-  display: flex;
-  align-items: center;
-  gap: var(--mm-spacing-sm);
-  padding: var(--mm-spacing-xs) 0;
-  margin-bottom: var(--mm-spacing-sm);
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--mm-spacing-sm) !important;
+  padding: var(--mm-spacing-xs) 0 !important;
+  margin-bottom: var(--mm-spacing-sm) !important;
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  animation: mm-slideIn var(--mm-transition-normal) ease-out;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  animation: mm-slideIn var(--mm-transition-normal) ease-out !important;
 }
 
 .mm-search-bar.mm-desktop-header {
-  position: relative;
-  margin: 8px 16px;
-  z-index: 99;
+  position: relative !important;
+  margin: 8px 16px !important;
+  width: calc(100% - 32px) !important;
+  align-self: stretch !important;
+  box-sizing: border-box !important;
+  z-index: 99 !important;
 }
 
 .mm-search-input {
-  flex: 1;
-  font-family: var(--mm-font-family);
-  font-size: var(--mm-font-size-md);
-  color: var(--mm-on-surface);
-  background: var(--mm-surface-variant);
-  border: 1px solid var(--mm-outline);
-  border-radius: var(--mm-radius-full);
-  padding: var(--mm-spacing-sm) var(--mm-spacing-md);
-  outline: none;
-  transition: border-color var(--mm-transition-fast), box-shadow var(--mm-transition-fast);
+  flex: 1 1 auto !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  height: 36px !important;
+  box-sizing: border-box !important;
+  font-family: var(--mm-font-family) !important;
+  font-size: var(--mm-font-size-md) !important;
+  color: var(--mm-on-surface) !important;
+  background: var(--mm-surface-variant) !important;
+  border: 1px solid var(--mm-outline) !important;
+  border-radius: var(--mm-radius-full) !important;
+  padding: 8px 16px !important;
+  outline: none !important;
+  transition: border-color var(--mm-transition-fast), box-shadow var(--mm-transition-fast) !important;
 }
 
 .mm-search-input::placeholder {
-  color: var(--mm-on-surface-variant);
+  color: var(--mm-on-surface-variant) !important;
 }
 
 .mm-search-input:focus {
-  border-color: var(--mm-primary);
-  box-shadow: 0 0 0 2px var(--mm-primary-light);
+  border-color: var(--mm-primary) !important;
+  box-shadow: 0 0 0 2px var(--mm-primary-light) !important;
 }
 
 .mm-search-no-results {
@@ -775,6 +786,24 @@
   color: #34A853 !important;
 }
 
+.mm-batch-delete-btn.mm-btn-icon {
+  color: var(--mm-error, #D93025) !important;
+}
+
+.mm-batch-delete-btn.mm-btn-icon:hover {
+  background-color: var(--mm-error-light) !important;
+  color: var(--mm-error-hover, #C5221F) !important;
+}
+
+.mm-batch-transfer-btn.mm-btn-icon {
+  color: #F4B400 !important;
+}
+
+.mm-batch-transfer-btn.mm-btn-icon:hover {
+  background-color: rgba(244, 180, 0, 0.08) !important;
+  color: #DBA000 !important;
+}
+
 /* Boutons d'action individuels */
 .mm-individual-export-btn {
   margin-right: 6px;
@@ -784,6 +813,146 @@
 .mm-individual-export-btn:hover {
   background-color: rgba(66, 133, 244, 0.08) !important;
   color: var(--mm-primary, #4285F4) !important;
+}
+
+.mm-individual-delete-btn {
+  color: var(--mm-error, #D93025) !important;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.mm-individual-delete-btn:hover {
+  background-color: var(--mm-error-light) !important;
+  color: var(--mm-error-hover, #C5221F) !important;
+}
+
+.mm-individual-transfer-btn {
+  color: #F4B400 !important;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+
+.mm-individual-transfer-btn:hover {
+  background-color: rgba(244, 180, 0, 0.08) !important;
+  color: #DBA000 !important;
+}
+
+/* Boutons de suppression rapide Studio */
+.mm-studio-delete-btn {
+  position: absolute !important;
+  top: 8px !important;
+  right: 8px !important;
+  background-color: var(--mm-surface) !important;
+  border: 1px solid var(--mm-outline) !important;
+  border-radius: 50% !important;
+  width: 28px !important;
+  height: 28px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  color: var(--mm-error, #D93025) !important;
+  box-shadow: var(--mm-shadow-1) !important;
+  cursor: pointer !important;
+  opacity: 0;
+  transition: opacity var(--mm-transition-fast), background-color var(--mm-transition-fast), transform var(--mm-transition-fast) !important;
+  z-index: 10 !important;
+}
+
+mat-grid-tile:hover .mm-studio-delete-btn,
+mat-card:hover .mm-studio-delete-btn,
+[class*="note-card"]:hover .mm-studio-delete-btn,
+[class*="studio-card"]:hover .mm-studio-delete-btn {
+  opacity: 1 !important;
+}
+
+.mm-studio-delete-btn:hover {
+  background-color: var(--mm-error-light) !important;
+  transform: scale(1.1) !important;
+}
+
+.mm-studio-delete-btn:active {
+  transform: scale(0.95) !important;
+}
+
+/* Barre de recherche Studio et filtres */
+.mm-studio-search-bar {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--mm-spacing-sm) !important;
+  padding: 8px 16px !important;
+  background: var(--mm-surface) !important;
+  border-bottom: 1px solid var(--mm-outline-variant) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  flex-shrink: 0 !important;
+  z-index: 99 !important;
+  animation: mm-slideIn var(--mm-transition-normal) ease-out !important;
+}
+
+.mm-studio-search-input {
+  flex: 1 !important;
+  font-family: var(--mm-font-family) !important;
+  font-size: var(--mm-font-size-md) !important;
+  color: var(--mm-on-surface) !important;
+  background: var(--mm-surface-variant) !important;
+  border: 1px solid var(--mm-outline) !important;
+  border-radius: var(--mm-radius-full) !important;
+  padding: 8px 16px !important;
+  outline: none !important;
+  height: 36px !important;
+  box-sizing: border-box !important;
+  transition: border-color var(--mm-transition-fast), box-shadow var(--mm-transition-fast) !important;
+}
+
+.mm-studio-search-input:focus {
+  border-color: var(--mm-primary) !important;
+  box-shadow: 0 0 0 2px var(--mm-primary-light) !important;
+}
+
+.mm-studio-filter-menu {
+  position: absolute !important;
+  background: var(--mm-surface) !important;
+  border: 1px solid var(--mm-outline) !important;
+  border-radius: var(--mm-radius-md) !important;
+  padding: var(--mm-spacing-sm) !important;
+  box-shadow: var(--mm-shadow-2) !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: var(--mm-spacing-xs) !important;
+  min-width: 200px !important;
+  z-index: 10000 !important;
+  animation: mm-fadeIn var(--mm-transition-fast) ease-out !important;
+}
+
+.mm-filter-option {
+  display: flex !important;
+  align-items: center !important;
+  gap: var(--mm-spacing-sm) !important;
+  padding: var(--mm-spacing-xs) var(--mm-spacing-sm) !important;
+  cursor: pointer !important;
+  border-radius: var(--mm-radius-sm) !important;
+  transition: background-color var(--mm-transition-fast) !important;
+}
+
+.mm-filter-option:hover {
+  background-color: var(--mm-surface-variant) !important;
+}
+
+.mm-filter-option label {
+  font-family: var(--mm-font-family) !important;
+  font-size: var(--mm-font-size-md) !important;
+  color: var(--mm-on-surface) !important;
+  cursor: pointer !important;
+}
+
+.mm-studio-no-results {
+  font-family: var(--mm-font-family) !important;
+  font-size: var(--mm-font-size-md) !important;
+  color: var(--mm-on-surface-variant) !important;
+  text-align: center !important;
+  padding: var(--mm-spacing-xl) !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
 }
 
 /* Bouton d'export de chat */
@@ -798,7 +967,9 @@
 
 /* Boutons de lot sous forme de ligne (Row) - Fallback */
 .mm-batch-export-btn.mm-btn-row,
-.mm-batch-merge-btn.mm-btn-row {
+.mm-batch-merge-btn.mm-btn-row,
+.mm-batch-delete-btn.mm-btn-row,
+.mm-batch-transfer-btn.mm-btn-row {
   background: transparent;
   border: none;
   cursor: pointer;
@@ -820,14 +991,28 @@
   margin-left: 8px;
 }
 
+.mm-batch-delete-btn.mm-btn-row {
+  color: var(--mm-error, #D93025);
+  margin-left: 8px;
+}
+
+.mm-batch-transfer-btn.mm-btn-row {
+  color: #F4B400;
+  margin-left: 8px;
+}
+
 .mm-batch-export-btn.mm-btn-row:hover,
-.mm-batch-merge-btn.mm-btn-row:hover {
+.mm-batch-merge-btn.mm-btn-row:hover,
+.mm-batch-delete-btn.mm-btn-row:hover,
+.mm-batch-transfer-btn.mm-btn-row:hover {
   transform: translateY(-1px);
   background-color: var(--mm-surface-variant);
 }
 
 .mm-batch-export-btn.mm-btn-row:active,
-.mm-batch-merge-btn.mm-btn-row:active {
+.mm-batch-merge-btn.mm-btn-row:active,
+.mm-batch-delete-btn.mm-btn-row:active,
+.mm-batch-transfer-btn.mm-btn-row:active {
   transform: scale(0.97);
 }
 
