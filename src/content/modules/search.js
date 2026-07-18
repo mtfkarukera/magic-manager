@@ -753,7 +753,10 @@
 
     const header = findSourcePanelHeader();
 
-    if (sourcePanel && header) {
+    // En mode mobile, forcer l'utilisation du sticky-header même si le panel-header existe
+    const isMobileLayout = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
+
+    if (sourcePanel && header && !isMobileLayout) {
       // Nettoyer l'en-tête collant mobile s'il existe (transition mobile → desktop)
       const mobileHeader = sourcePanel.querySelector('.mm-sticky-header');
       if (mobileHeader) {

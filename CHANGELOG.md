@@ -4,6 +4,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.6.5] — 2026-07-19
+
+### Optimisé & Corrigé
+- 📱 **Layout responsive mobile** :
+  - **Détection de layout réactive (JS)** : Exposition de `detectDesktopLayout()` sur `window.MM` pour forcer l'usage du `.mm-sticky-header` en mode mobile dans `search.js`, `merge.js` et `export.js` (contourne le fait que le panel-header natif de Google reste présent dans le DOM).
+  - **Repositionnement vertical & Centrage** : Passage de l'en-tête collant mobile en disposition verticale (`flex-direction: column`) pour séparer la recherche des actions. Les boutons d'action en lot sont recentrés en bas pour un look "barre d'outils mobile" symétrique et évolutif.
+  - **Ergonomie tactile & Visibilité des icônes** : Agrandissement des cibles à 40px et des icônes SVG à 20px. Désactivation des dimensions de boutons fixes (passage à `width: auto`) et ajout d'un `flex-shrink: 0` pour empêcher le flexbox d'écraser les icônes SVG à 0px lorsque le badge numérique est affiché.
+
 ## [0.6.4] — 2026-07-19
 
 ### Optimisé & Corrigé

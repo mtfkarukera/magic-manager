@@ -391,4 +391,5 @@
 
   window.MM.initPanelObserver = initPanelObserver;
   window.MM.cleanupPanelObserver = cleanupPanelObserver;
+  window.MM.detectDesktopLayout = detectDesktopLayout;
 })();

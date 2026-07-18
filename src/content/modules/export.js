@@ -635,16 +635,20 @@
     const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
     const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header, [class*="header"]') : null;
 
-    let anchor = panelHeader;
-    let isHeader = true;
+    // En mode mobile, forcer l'utilisation du sticky-header même si le panel-header existe
+    const isMobileLayout = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
+
+    let anchor = (!isMobileLayout && panelHeader) ? panelHeader : null;
+    let isHeader = !!anchor;
     let isMobileSticky = false;
 
     if (!anchor) {
-      // Tenter d'utiliser l'en-tête collant mobile
+      // Utiliser l'en-tête collant mobile
       const stickyHeader = window.MM.getOrCreateStickyHeader();
       if (stickyHeader) {
         anchor = stickyHeader.querySelector('.mm-sticky-header-actions');
         isMobileSticky = true;
+        isHeader = true;
       }
     }
 
