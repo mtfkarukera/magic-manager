@@ -16,10 +16,13 @@ magic-manager/
 │   │   ├── orchestrator.js    # Point d'entrée — orchestrateur des modules
 │   │   ├── modules/           # Sous-modules de l'extension
 │   │   │   ├── source-helpers.js # Fonctions centralisées DOM des sources
-│   │   │   ├── search.js      # Module de recherche globale
+│   │   │   ├── search.js      # Module de recherche globale & Dédoublonnage
 │   │   │   ├── merge.js       # Module de fusion intelligente
-│   │   │   ├── export.js      # Module d'exports simplifiés
-│   │   │   ├── delete.js      # Module de suppression en ligne
+│   │   │   ├── export.js      # Module d'exports simplifiés (PDF Enrichi)
+│   │   │   ├── delete.js      # Module de suppression en ligne (Studio & lot)
+│   │   │   ├── transfer.js    # Module de transfert inter-carnets
+│   │   │   ├── studio-search.js  # Module de recherche & filtrage Studio
+│   │   │   ├── shortcuts.js   # Centralisateur des raccourcis clavier
 │   │   │   ├── syntax.js      # Module de coloration syntaxique
 │   │   │   └── chatexport.js  # Module d'export du chat
 │   │   └── ui/                # Composants d'interface partagés
@@ -89,6 +92,8 @@ Chaque fonctionnalité peut être activée/désactivée individuellement via le 
 | `feature_delete` | `boolean` | `true` | Suppression en ligne |
 | `feature_syntax` | `boolean` | `true` | Coloration syntaxique |
 | `feature_chatExport` | `boolean` | `true` | Export du chat |
+| `feature_transfer` | `boolean` | `true` | Transfert inter-carnets |
+| `feature_studioSearch` | `boolean` | `true` | Recherche & filtres Studio |
 
 ## Couche de transport RPC
 

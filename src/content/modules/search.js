@@ -20,6 +20,9 @@
   /** Requête de recherche courante pour assurer la persistance lors des transitions SPA */
   let currentQuery = '';
 
+  /** Filtre pour n'afficher que les doublons potentiels */
+  let showOnlyDuplicates = false;
+
   // ═══════════════════════════════════════════════════════════════════════
   // Sélecteurs et Heuristiques DOM
   // ═══════════════════════════════════════════════════════════════════════
@@ -104,6 +107,67 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
+   * Calcule la distance de Levenshtein entre deux chaînes de caractères.
+   */
+  function levenshteinDistance(s1, s2) {
+    if (s1.length < s2.length) {
+      return levenshteinDistance(s2, s1);
+    }
+    if (s2.length === 0) {
+      return s1.length;
+    }
+    let previousRow = Array.from({ length: s2.length + 1 }, (_, i) => i);
+    for (let i = 0; i < s1.length; i++) {
+      let currentRow = [i + 1];
+      for (let j = 0; j < s2.length; j++) {
+        let insertions = previousRow[j + 1] + 1;
+        let deletions = currentRow[j] + 1;
+        let substitutions = previousRow[j] + (s1[i] === s2[j] ? 0 : 1);
+        currentRow.push(Math.min(insertions, deletions, substitutions));
+      }
+      previousRow = currentRow;
+    }
+    return previousRow[s2.length];
+  }
+
+  /**
+   * Détermine si deux titres de sources sont très similaires (seuil 85%).
+   */
+  function areSimilar(title1, title2) {
+    const t1 = title1.toLowerCase().trim();
+    const t2 = title2.toLowerCase().trim();
+    if (t1 === t2) return true;
+    const dist = levenshteinDistance(t1, t2);
+    const maxLen = Math.max(t1.length, t2.length);
+    if (maxLen === 0) return true;
+    const similarity = 1 - dist / maxLen;
+    return similarity > 0.85;
+  }
+
+  /**
+   * Identifie tous les doublons dans la liste des sources.
+   * Compare les titres des cartes.
+   */
+  function findDuplicateCards(cards) {
+    const duplicates = new Set();
+    const parsed = cards.map(card => {
+      const stretchedBtn = card.querySelector('button.source-stretched-button');
+      const title = stretchedBtn ? (stretchedBtn.getAttribute('aria-label') || '') : (card.textContent || '').trim().split('\n')[0];
+      return { card, title: title.trim() };
+    });
+
+    for (let i = 0; i < parsed.length; i++) {
+      for (let j = i + 1; j < parsed.length; j++) {
+        if (parsed[i].title && parsed[j].title && areSimilar(parsed[i].title, parsed[j].title)) {
+          duplicates.add(parsed[i].card);
+          duplicates.add(parsed[j].card);
+        }
+      }
+    }
+    return duplicates;
+  }
+
+  /**
    * Applique le filtre de recherche sur les cartes de sources.
    * @param {string} query - Requête nettoyée en minuscules.
    */
@@ -111,10 +175,24 @@
     const cards = findSourceCards();
     let visibleCount = 0;
 
+    const duplicateCards = findDuplicateCards(cards);
+
     cards.forEach(function (card) {
       const text = (card.textContent || '').trim().toLowerCase();
+      const isDup = duplicateCards.has(card);
 
-      if (text.includes(query)) {
+      if (isDup) {
+        card.classList.add('mm-source-duplicate');
+        card.setAttribute('title', 'Doublon potentiel détecté (Magic Manager)');
+      } else {
+        card.classList.remove('mm-source-duplicate');
+        card.removeAttribute('title');
+      }
+
+      const matchesQuery = !query || text.includes(query);
+      const matchesDup = !showOnlyDuplicates || isDup;
+
+      if (matchesQuery && matchesDup) {
         card.style.display = '';
         visibleCount++;
       } else {
@@ -122,7 +200,7 @@
       }
     });
 
-    if (visibleCount === 0 && query.length > 0) {
+    if (visibleCount === 0 && (query.length > 0 || showOnlyDuplicates)) {
       showNoResultsMessage();
     } else {
       hideNoResultsMessage();
@@ -180,14 +258,21 @@
    * pour focaliser la recherche de sources.
    * @param {KeyboardEvent} e
    */
+  function focusSourceSearch() {
+    const input = document.querySelector('.mm-search-input');
+    if (input) {
+      input.focus();
+      input.select();
+      return true;
+    }
+    return false;
+  }
+
   function handleGlobalShortcut(e) {
     const isCmdOrCtrl = e.metaKey || e.ctrlKey;
     if (isCmdOrCtrl && e.shiftKey && e.key.toLowerCase() === 'f') {
-      const input = document.querySelector('.mm-search-input');
-      if (input) {
+      if (focusSourceSearch()) {
         e.preventDefault();
-        input.focus();
-        input.select();
       }
     }
   }
@@ -281,9 +366,55 @@
       }
     });
 
+    const searchIcon = createElement('svg', {
+      viewBox: '0 0 24 24',
+      className: 'mm-icon-svg mm-search-icon',
+      'aria-hidden': 'true',
+      innerHTML: '<path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>'
+    });
+
+    const clearBtn = createElement('button', {
+      className: 'mm-search-clear mm-btn-icon',
+      title: t('clearSearch') || 'Vider la recherche',
+      'aria-label': t('clearSearch') || 'Vider la recherche',
+      onClick: function (e) {
+        e.stopPropagation();
+        input.value = '';
+        currentQuery = '';
+        applyFilter('');
+        input.focus();
+      }
+    }, [
+      createElement('svg', {
+        viewBox: '0 0 24 24',
+        className: 'mm-icon-svg',
+        'aria-hidden': 'true',
+        innerHTML: '<path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>'
+      })
+    ]);
+
+    const dedupBtn = createElement('button', {
+      className: 'mm-search-dedup-btn mm-btn-icon',
+      title: 'Afficher uniquement les doublons',
+      'aria-label': 'Afficher uniquement les doublons',
+      onClick: function (e) {
+        e.stopPropagation();
+        showOnlyDuplicates = !showOnlyDuplicates;
+        dedupBtn.classList.toggle('active', showOnlyDuplicates);
+        applyFilter(currentQuery);
+      }
+    }, [
+      createElement('svg', {
+        viewBox: '0 0 24 24',
+        className: 'mm-icon-svg',
+        'aria-hidden': 'true',
+        innerHTML: '<path d="M15 9H5V5H15V9M19 13H9V9H19V13M23 17H13V13H23V17M15 3H5C3.9 3 3 3.9 3 5V9C3 10.1 3.9 11 5 11H15C16.1 11 17 10.1 17 9V5C17 3.9 16.1 3 15 3Z"/>'
+      })
+    ]);
+
     searchBarContainer = createElement('div', {
       className: 'mm-search-bar'
-    }, [input]);
+    }, [searchIcon, input, clearBtn, dedupBtn]);
 
     const header = findSourcePanelHeader();
 
@@ -360,4 +491,5 @@
   window.MM.initSearch = initSearch;
   window.MM.cleanupSearch = cleanupSearch;
   window.MM.checkAndInjectSearch = checkAndInjectSearch;
+  window.MM.focusSourceSearch = focusSourceSearch;
 })();

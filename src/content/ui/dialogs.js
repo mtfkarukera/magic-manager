@@ -158,33 +158,39 @@
     // Boutons de format
     const mdBtn = createElement('button', {
       className: 'mm-btn mm-btn-secondary',
-      textContent: t('mergeFormatMd'),
+      textContent: t('mergeFormatMd') || 'Markdown',
       onClick: () => { closeDialog(); callback('md'); }
     });
 
     const pdfBtn = createElement('button', {
-      className: 'mm-btn mm-btn-primary',
-      textContent: t('mergeFormatPdf'),
+      className: 'mm-btn mm-btn-secondary',
+      textContent: t('mergeFormatPdf') || 'PDF Simple',
       onClick: () => { closeDialog(); callback('pdf'); }
     });
 
+    const pdfEnrichedBtn = createElement('button', {
+      className: 'mm-btn mm-btn-primary',
+      textContent: t('mergeFormatPdfEnriched') || 'PDF Enrichi (avec images)',
+      onClick: () => { closeDialog(); callback('pdf_enriched'); }
+    });
+
     const cancelBtn = createElement('button', {
-      className: 'mm-btn mm-btn-secondary',
-      textContent: t('dialogCancelButton'),
+      className: 'mm-btn mm-btn-secondary mm-btn-cancel',
+      textContent: t('dialogCancelButton') || 'Annuler',
       onClick: () => closeDialog()
     });
 
     const dialogTitleId = 'mm-dialog-title-' + Date.now();
     // Contenu sous forme de dialog natif
     const dialog = createElement('dialog', {
-      className: 'mm-dialog',
+      className: 'mm-dialog mm-format-dialog',
       role: 'dialog',
       'aria-modal': 'true',
       'aria-labelledby': dialogTitleId
     }, [
-      createElement('h2', { id: dialogTitleId, className: 'mm-dialog-title', textContent: t(titleKey) }),
-      createElement('p', { className: 'mm-dialog-message', textContent: t('mergeFormatLabel') }),
-      createElement('div', { className: 'mm-dialog-actions' }, [cancelBtn, mdBtn, pdfBtn])
+      createElement('h2', { id: dialogTitleId, className: 'mm-dialog-title', textContent: t(titleKey) || titleKey }),
+      createElement('p', { className: 'mm-dialog-message', textContent: t('mergeFormatLabel') || 'Choisissez le format d\'export :' }),
+      createElement('div', { className: 'mm-dialog-actions' }, [cancelBtn, mdBtn, pdfBtn, pdfEnrichedBtn])
     ]);
 
     activeDialog = dialog;

@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
   "short_name": "Magic Manager",
-  "version": "0.6.2",
+  "version": "0.7.0",
   "default_locale": "en",
 
   "description": "__MSG_extensionDescription__",
@@ -34,6 +34,9 @@
         "src/content/modules/panel-observer.js",
         "src/content/modules/syntax.js",
         "src/content/modules/chatexport.js",
+        "src/content/modules/transfer.js",
+        "src/content/modules/studio-search.js",
+        "src/content/modules/shortcuts.js",
         "src/content/orchestrator.js"
       ],
       "css": ["styles/magic-manager.css"],

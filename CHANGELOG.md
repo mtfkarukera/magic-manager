@@ -4,6 +4,27 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.7.0] — 2026-07-18
+
+### Ajouté
+- 🌐 **Raccordement API & Copie de Sources** :
+  - Support du paramètre query `source-path` dans tous les appels RPC d'écriture de NotebookLM.
+  - Implémentation du RPC `LIST_NOTEBOOKS` (`wXbhsf`) et du RPC `ADD_SOURCE` (`izAoDd`) textuel (texte brut collé) dans `rpcclient.js`.
+  - Bouton de transfert inter-carnets `|->` individuel et en lot avec modale Glassmorphism de sélection et filtrage en temps réel des carnets cibles.
+- 🔍 **Recherche & Filtres dans le Studio** :
+  - Pilule de recherche fixe et dropdown de filtres multi-sélection par type d'artéfact (audio, FAQ, chronologie, briefing/rapport, table des matières, notes utilisateur).
+  - Masquage automatique de la barre de recherche du studio en cours de lecture.
+- ⌨️ **Raccourcis Clavier Unifiés** :
+  - Création du module `shortcuts.js` centralisant les raccourcis clavier de productivité : `Ctrl+Alt+F` / `Cmd+Opt+F` (recherche studio), `Ctrl+Shift+E` / `Cmd+Shift+E` (focus chat), `Ctrl+Shift+F` / `Cmd+Shift+F` (recherche sources).
+- 🧬 **Optimisation des Sources & Dédoublonnage** :
+  - Détection de l'origine et injection d'indicateurs visuels (Drive, Web, Local) à côté du titre des sources dans `source-helpers.js`.
+  - Bouton de filtre de doublons et croix de réinitialisation dans la pilule de recherche des sources.
+  - Algorithme de dédoublonnage hybride (distance de Levenshtein à 85% de similarité + longueur textuelle) avec marquage visuel des doublons potentiels.
+- 📄 **PDF Enrichi & Suppressions en Lot** :
+  - Option "PDF Enrichi" dans les exports individuels et par lot (ZIP) via un Walker DOM récursif CSP-compliant pour extraire les images Base64.
+  - Amélioration de l'export PDF Simple pour préserver les retours à la ligne natifs.
+  - Bouton de suppression en lot dans le panneau des sources et suppression rapide directe via une corbeille au survol dans le Studio.
+
 ## [0.6.2] — 2026-07-18
 
 ### Optimisé & Corrigé

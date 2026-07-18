@@ -7,12 +7,17 @@
 
 ## ✨ Fonctionnalités
 
-- 🔍 **Recherche globale** — Recherchez instantanément parmi toutes vos sources dans un notebook.
+- 🔍 **Recherche globale** — Recherchez instantanément parmi toutes vos sources dans un notebook (avec bouton de réinitialisation rapide).
+- 🧬 **Dédoublonnage hybride** — Filtrez et identifiez visuellement les sources en double à 85% de similarité via la distance de Levenshtein.
+- 🌐 **Transfert inter-carnets** — Copiez instantanément vos sources (individuellement ou par lot) vers d'autres notebooks avec une interface de sélection premium.
+- 🎨 **Indicateurs d'origine** — Visualisez immédiatement l'origine de vos sources (Drive, Web, Local) avec des icônes sémantiques.
+- 🔍 **Recherche Studio** — Filtrez et recherchez dans vos notes et artéfacts IA par type (Audio, FAQ, Briefing, Chronologie, Table des matières).
 - 🔗 **Fusion intelligente** — Fusionnez plusieurs sources en un seul document Markdown ou PDF.
-- 📤 **Exports simplifiés** — Exportez vos sources aux formats Markdown, PDF ou ZIP en un clic.
-- 🗑️ **Suppression en ligne** — Supprimez des sources directement depuis le panneau latéral.
+- 📤 **Exports enrichis** — Exportez vos sources aux formats Markdown, PDF Simple ou PDF Enrichi (avec images Base64 via Walker DOM) individuellement ou en lot (ZIP).
+- 🗑️ **Suppression en ligne & en lot** — Supprimez des sources individuellement ou par lot dans le panneau des sources, ou via une poubelle rapide au survol dans le Studio.
 - 🎨 **Coloration syntaxique** — Mise en valeur du code dans les réponses du chat avec coloration syntaxique.
 - 💬 **Export du chat** — Sauvegardez vos conversations avec l'IA sous forme de notes.
+- ⌨️ **Raccourcis productivité** — `Ctrl+Shift+F` (recherche sources), `Ctrl+Alt+F` (recherche studio), `Ctrl+Shift+E` (focus chat).
 
 ## 📦 Installation
 

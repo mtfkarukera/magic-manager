@@ -327,17 +327,229 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // Suppression par lot
+  // ═══════════════════════════════════════════════════════════════════════
+
+  let lastBatchDeleteCount = -1;
+  let batchDeleteButton = null;
+
+  function updateBatchDeleteButtonState() {
+    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('delete')) {
+      if (batchDeleteButton) {
+        batchDeleteButton.remove();
+        batchDeleteButton = null;
+      }
+      return;
+    }
+
+    const checked = window.MM.getCheckedSourceCheckboxes();
+    const count = checked.length;
+
+    const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
+    const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header, [class*="header"]') : null;
+
+    let anchor = panelHeader;
+    let isHeader = true;
+
+    if (!anchor) {
+      const stickyHeader = window.MM.getOrCreateStickyHeader();
+      if (stickyHeader) {
+        anchor = stickyHeader.querySelector('.mm-sticky-header-actions');
+      }
+    }
+
+    if (!anchor) {
+      anchor = document.querySelector('.mm-search-bar') || window.MM.findSelectAllRow();
+      isHeader = false;
+    }
+
+    if (!anchor) return;
+
+    if (count === lastBatchDeleteCount) {
+      const buttonIsCorrect = count === 0
+        ? !batchDeleteButton
+        : (batchDeleteButton && anchor.contains(batchDeleteButton));
+      if (buttonIsCorrect) return;
+    }
+
+    lastBatchDeleteCount = count;
+
+    if (count === 0) {
+      if (batchDeleteButton) {
+        batchDeleteButton.remove();
+        batchDeleteButton = null;
+        console.log('[MM] Retrait du bouton de suppression en lot (0 source cochée).');
+      }
+      return;
+    }
+
+    if (batchDeleteButton) {
+      batchDeleteButton.remove();
+    }
+
+    batchDeleteButton = window.MM.createElement('button', {
+      className: 'mm-batch-delete-btn mm-btn-icon mm-pulse-animation',
+      title: `Supprimer les sources sélectionnées (${count})`,
+      'aria-label': `Supprimer les sources sélectionnées (${count})`,
+      onClick: function (e) {
+        e.stopPropagation();
+
+        const sourceIds = Array.from(checked).map(cb => {
+          const card = window.MM.findSourceCardFromCheckbox(cb);
+          return card ? window.MM.extractSourceId(card.card) : null;
+        }).filter(Boolean);
+
+        if (sourceIds.length === 0) return;
+
+        window.MM.showConfirmDialog(
+          'deleteConfirmTitle',
+          'deleteBatchConfirmMessage',
+          [String(count)],
+          async function () {
+            const notebookId = window.MM.getActiveNotebookId();
+            const progressDialog = window.MM.showProgressDialog(
+              'Suppression en cours...',
+              'Suppression des sources sélectionnées...'
+            );
+
+            let isCancelled = false;
+            progressDialog.addEventListener('close', () => {
+              isCancelled = true;
+            });
+
+            for (let i = 0; i < sourceIds.length; i++) {
+              if (isCancelled) break;
+
+              window.MM.updateProgressDialog(
+                progressDialog,
+                Math.round((i / sourceIds.length) * 100),
+                `Suppression de la source ${i + 1}/${sourceIds.length}`
+              );
+
+              try {
+                await window.MM.rpc.deleteSource(sourceIds[i], notebookId);
+              } catch (err) {
+                console.error(`[MM] Erreur lors de la suppression de la source ${sourceIds[i]} :`, err);
+              }
+
+              await new Promise(r => setTimeout(r, 300));
+            }
+
+            progressDialog.close();
+
+            // Masquer visuellement les sources supprimées du DOM
+            checked.forEach(cb => {
+              const cardInfo = window.MM.findSourceCardFromCheckbox(cb);
+              if (cardInfo && cardInfo.card) {
+                cardInfo.card.style.transition = 'opacity 0.4s ease';
+                cardInfo.card.style.opacity = '0';
+                setTimeout(() => cardInfo.card.remove(), 400);
+              }
+            });
+          }
+        );
+      }
+    }, [createTrashIcon(16)]);
+
+    if (isHeader) {
+      const batchExport = anchor.querySelector('.mm-batch-export-btn');
+      const batchMerge = anchor.querySelector('.mm-batch-merge-btn');
+      const searchBar = anchor.querySelector('.mm-search-bar');
+      const anchorBefore = batchExport || batchMerge || searchBar;
+
+      if (anchorBefore) {
+        anchor.insertBefore(batchDeleteButton, anchorBefore);
+      } else {
+        anchor.appendChild(batchDeleteButton);
+      }
+    } else {
+      anchor.appendChild(batchDeleteButton);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // Suppression rapide d'artéfacts et notes dans le Studio
+  // ═══════════════════════════════════════════════════════════════════════
+
+  async function deleteStudioItem(card) {
+    const moreBtn = card.querySelector('button[aria-label*="Menu"], button:has-text("more_vert"), [class*="menu-button"]');
+    if (!moreBtn) return;
+    simulateClick(moreBtn);
+
+    const deleteOption = await waitForElements(
+      '[role="menuitem"], button, .mat-mdc-menu-item, .mdc-list-item, [class*="menu-item"]',
+      ['supprimer', 'delete', 'remove', 'retirer'],
+      1500
+    );
+
+    if (deleteOption) {
+      simulateClick(deleteOption);
+    } else {
+      document.body.click(); // fermer menu
+    }
+  }
+
+  function checkAndInjectStudioDelete() {
+    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('delete')) return;
+    if (window.location.pathname.indexOf('/notebook/') === -1) return;
+
+    // Détecter si on est dans la vue Studio globale
+    const notesGrid = document.querySelector('.notes-grid, .grid-container, mat-grid-list, [class*="notes-list"]');
+    if (!notesGrid) return;
+
+    const cards = Array.from(notesGrid.querySelectorAll('mat-grid-tile, mat-card, [class*="note-card"], [class*="studio-card"]'));
+    cards.forEach(card => {
+      if (card.querySelector('.mm-studio-delete-btn')) return;
+
+      const titleEl = card.querySelector('mat-card-title, [class*="title"], [class*="header"]');
+      if (!titleEl) return;
+
+      const delBtn = document.createElement('button');
+      delBtn.className = 'mm-studio-delete-btn mm-btn-icon';
+      delBtn.title = 'Supprimer cet élément';
+      delBtn.setAttribute('aria-label', 'Supprimer cet élément');
+      delBtn.appendChild(createTrashIcon(14));
+
+      delBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+
+        const titleText = titleEl.textContent.trim();
+        window.MM.showConfirmDialog(
+          'deleteConfirmTitle',
+          'deleteConfirmMessage',
+          [titleText],
+          function () {
+            deleteStudioItem(card).then(() => {
+              card.style.transition = 'opacity 0.4s ease';
+              card.style.opacity = '0';
+              setTimeout(() => card.remove(), 400);
+            });
+          }
+        );
+      });
+
+      // Rendre le bouton absolute dans le coin supérieur droit
+      card.style.position = 'relative';
+      card.appendChild(delBtn);
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // Cycle de vie
   // ═══════════════════════════════════════════════════════════════════════
 
   function initDelete() {
-    // L'observer sur le DOM est géré de manière centralisée dans panel-observer.js
-    // On se contente d'exposer les fonctions d'injection et de cleanup
+    updateBatchDeleteButtonState();
     console.log('[MM] Module suppression initialisé (v19 — panel header suppression)');
   }
 
   function cleanupDelete() {
-    document.querySelectorAll('.mm-individual-delete-btn').forEach(
+    if (batchDeleteButton) {
+      batchDeleteButton.remove();
+      batchDeleteButton = null;
+    }
+    lastBatchDeleteCount = -1;
+    document.querySelectorAll('.mm-individual-delete-btn, .mm-studio-delete-btn').forEach(
       function (b) { b.remove(); }
     );
     console.log('[MM] Module suppression nettoyé');
@@ -345,6 +557,7 @@
 
   window.MM.initDelete = initDelete;
   window.MM.cleanupDelete = cleanupDelete;
-  // Exposé pour panel-observer.js
   window.MM.checkAndInjectIndividualDelete = checkAndInjectIndividualDelete;
+  window.MM.updateBatchDeleteButtonState = updateBatchDeleteButtonState;
+  window.MM.checkAndInjectStudioDelete = checkAndInjectStudioDelete;
 })();

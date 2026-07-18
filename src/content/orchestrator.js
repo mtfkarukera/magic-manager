@@ -23,7 +23,9 @@
     export: 'feature_export',
     delete: 'feature_delete',
     syntax: 'feature_syntax',
-    chatExport: 'feature_chatExport'
+    chatExport: 'feature_chatExport',
+    transfer: 'feature_transfer',
+    studioSearch: 'feature_studioSearch'
   };
 
   /** Préférences par défaut (toutes actives) */
@@ -109,8 +111,17 @@
       }
     }
 
-    // Panel observer centralisé : actif si export OU delete est activé
-    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete)) {
+    // Initialiser les raccourcis clavier globaux
+    if (window.MM.shortcuts && typeof window.MM.shortcuts.init === 'function') {
+      try {
+        window.MM.shortcuts.init();
+      } catch (err) {
+        console.error('[MM] ERREUR lors de l\'init des raccourcis clavier :', err);
+      }
+    }
+
+    // Panel observer centralisé : actif si export, delete ou transfer est activé
+    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.transfer)) {
       try {
         window.MM.initPanelObserver();
       } catch (err) {
@@ -131,7 +142,10 @@
       { name: 'Export', fn: window.MM.cleanupExport },
       { name: 'Delete', fn: window.MM.cleanupDelete },
       { name: 'Syntax', fn: window.MM.cleanupSyntax },
-      { name: 'ChatExport', fn: window.MM.cleanupChatExport }
+      { name: 'ChatExport', fn: window.MM.cleanupChatExport },
+      { name: 'Transfer', fn: window.MM.transfer ? window.MM.transfer.cleanup : null },
+      { name: 'StudioSearch', fn: window.MM.studioSearch ? window.MM.studioSearch.cleanup : null },
+      { name: 'Shortcuts', fn: window.MM.shortcuts ? window.MM.shortcuts.cleanup : null }
     ];
 
     modules.forEach(function (m) {

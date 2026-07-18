@@ -610,6 +610,36 @@
     return noteId;
   }
 
+  /**
+   * Récupère la liste de tous les notebooks/carnets de l'utilisateur (RPC wXbhsf).
+   *
+   * @returns {Promise<Array<{id: string, title: string}>>} Resolves to list of notebooks.
+   */
+  async function listNotebooks() {
+    const rpcId = 'wXbhsf';
+    const params = [
+      null,
+      1,
+      null,
+      [2, null, null, [1, null, null, null, null, null, null, null, null, null, [1]]],
+      null,
+      [[null, null, []], [[]], [null, []]]
+    ];
+
+    console.log('[MM] Appel RPC listNotebooks (wXbhsf)');
+    const result = await sendBatchExecute(rpcId, params, null);
+    if (!Array.isArray(result) || !Array.isArray(result[0])) {
+      return [];
+    }
+
+    return result[0]
+      .filter(nb => Array.isArray(nb) && typeof nb[0] === 'string')
+      .map(nb => ({
+        id: nb[0],
+        title: nb[1]
+      }));
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // EXPOSITION PUBLIQUE
   // ═══════════════════════════════════════════════════════════════════════
@@ -620,7 +650,8 @@
     uploadBlob: uploadBlob,
     getSourceContent: getSourceContent,
     getNotebookSources: getNotebookSources,
-    createNoteRpc: createNoteRpc
+    createNoteRpc: createNoteRpc,
+    listNotebooks: listNotebooks
   };
 
   // Exposition des classes d'erreurs pour diagnostics
