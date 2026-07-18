@@ -20,6 +20,11 @@
   let globalPageObserver = null;
   let resizeObserver = null;
   let currentObservedPanel = null;
+  let globalObservedTarget = null;
+
+  // Références des handlers filtrés pour permettre le removeEventListener
+  let panelClickHandler = null;
+  let panelChangeHandler = null;
 
   /** État courant du layout (true = desktop 3 colonnes, false = onglets mobile) */
   let isDesktopLayout = null;
@@ -52,19 +57,20 @@
     }
   }, 150);
 
-  /**
-   * Gère le clic dans le panneau des sources pour mettre à jour les boutons batch.
-   * Utilise un debounce au lieu d'un setTimeout pour regrouper les interactions rapides.
-   */
-  function onPanelInteraction() {
-    debouncedPanelInteraction();
-  }
+  /** Sélecteurs CSS des checkboxes natives Gemini Notebook (Angular Material) */
+  const CHECKBOX_SELECTOR = 'mat-pseudo-checkbox, .mat-pseudo-checkbox, [role="checkbox"], input[type="checkbox"]';
 
   /**
    * Callback exécuté à chaque mutation d'enfants dans section.source-panel.
    * Détecte l'apparition/disparition de source-viewer pour injecter les boutons individuels.
    */
-  function onPanelMutation() {
+  /**
+   * Callback exécuté à chaque mutation dans section.source-panel.
+   * Détecte l'apparition/disparition de source-viewer pour injecter les boutons individuels,
+   * ainsi que les changements d'état des checkboxes pour les boutons de lot.
+   * @param {MutationRecord[]} [mutations] - Liste des mutations (undefined lors de l'appel initial).
+   */
+  function onPanelMutation(mutations) {
     const sourceViewer = document.querySelector('source-viewer');
 
     if (sourceViewer) {
@@ -79,6 +85,34 @@
       // source-viewer absent → nettoyer les boutons orphelins
       cleanupPanelButtons();
     }
+
+    // Détecter si la mutation est pertinente pour un recalcul des boutons batch.
+    // Cela évite la surécoute CPU en ignorant les mutations cosmétiques (survol souris, scroll).
+    let shouldRecalculate = false;
+    if (mutations) {
+      for (let i = 0; i < mutations.length; i++) {
+        const m = mutations[i];
+        if (m.type === 'childList') {
+          // Ajout ou suppression de nœuds (cartes de sources, chargement initial, etc.)
+          shouldRecalculate = true;
+          break;
+        } else if (m.type === 'attributes') {
+          const target = m.target;
+          // Si le changement concerne une checkbox (Angular Material mat-pseudo-checkbox)
+          if (target && (target.matches(CHECKBOX_SELECTOR) || target.closest(CHECKBOX_SELECTOR))) {
+            shouldRecalculate = true;
+            break;
+          }
+        }
+      }
+    } else {
+      // Pas de mutations passées (appel initial/fallback) → recalculer par sécurité
+      shouldRecalculate = true;
+    }
+
+    if (shouldRecalculate) {
+      debouncedPanelInteraction();
+    }
   }
 
   /**
@@ -92,37 +126,28 @@
       if (panelObserver) {
         panelObserver.disconnect();
       }
-      if (currentObservedPanel) {
-        currentObservedPanel.removeEventListener('click', onPanelInteraction);
-        currentObservedPanel.removeEventListener('change', onPanelInteraction);
-      }
 
-      // Observer local léger : uniquement childList de premier niveau (pas subtree, pas d'attributes)
+      // Observer local du panneau avec subtree pour capter l'apparition des sources
+      // et attributes avec attributeFilter pour capter l'état des checkboxes Angular en temps réel.
       panelObserver = new MutationObserver(onPanelMutation);
       panelObserver.observe(sourcePanel, {
-        childList: true
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'aria-checked']
       });
 
-      // Écouter les interactions de clic/changement pour mettre à jour les boutons batch
-      sourcePanel.addEventListener('click', onPanelInteraction);
-      sourcePanel.addEventListener('change', onPanelInteraction);
-
       currentObservedPanel = sourcePanel;
-      console.log('[MM] Panel observer connecté à la nouvelle instance de section.source-panel (mode léger + events)');
+      console.log('[MM] Panel observer connecté (childList + attributes checkboxes)');
       
       // Exécuter une première vérification des éléments
       onPanelMutation();
-      onPanelInteraction();
     }
     // Cas 2 : Le panneau a été détruit/retiré du DOM actif
     else if (!sourcePanel && currentObservedPanel) {
       if (panelObserver) {
         panelObserver.disconnect();
         panelObserver = null;
-      }
-      if (currentObservedPanel) {
-        currentObservedPanel.removeEventListener('click', onPanelInteraction);
-        currentObservedPanel.removeEventListener('change', onPanelInteraction);
       }
       currentObservedPanel = null;
       cleanupPanelButtons();
@@ -147,7 +172,7 @@
     // Déconnecter les observers AVANT toute modification du DOM
     // — les mutations générées par nos injections seront ainsi silencieuses
     const observeOptions = { childList: true, subtree: true };
-    const panelObserveOptions = { childList: true };
+    const panelObserveOptions = { childList: true, subtree: true };
     if (globalPageObserver) globalPageObserver.disconnect();
     if (panelObserver && currentObservedPanel) panelObserver.disconnect();
 
@@ -180,21 +205,11 @@
           window.MM.checkAndInjectIndividualExport();
         }
       }
-
-      // 6. Mise à jour des boutons batch (export + merge)
-      // Protégé contre la boucle par le disconnect/reconnect des observers ci-dessus.
-      // L'idempotence interne des fonctions évite toute mutation DOM redondante.
-      if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
-        window.MM.updateBatchExportButtonState();
-      }
-      if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
-        window.MM.updateBatchMergeButtonState();
-      }
     } catch (err) {
       console.error('[MM] Erreur lors des injections globales :', err);
     } finally {
       // Reconnecter les observers APRÈS toutes les modifications
-      if (globalPageObserver) globalPageObserver.observe(document.body, observeOptions);
+      if (globalPageObserver && globalObservedTarget) globalPageObserver.observe(globalObservedTarget, observeOptions);
       if (panelObserver && currentObservedPanel) panelObserver.observe(currentObservedPanel, panelObserveOptions);
       isDispatching = false;
     }
@@ -269,9 +284,34 @@
     }
   }, 500);
 
+
+
   // ═══════════════════════════════════════════════════════════════════════
-  // Cycle de vie
+  // Cycle de vie et gestion des onglets
   // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Gère les clics sur les onglets mobiles pour forcer une réévaluation de l'UI.
+   * Angular Material modifie les classes de visibilité des conteneurs sans
+   * muter la structure globale d'enfants (invisible pour l'observer global).
+   * @param {MouseEvent} e - L'événement de clic.
+   */
+  function handleTabClick(e) {
+    const tab = e.target.closest('.mat-mdc-tab, [role="tab"], .mat-tab-label');
+    if (tab) {
+      console.log('[MM] Clic onglet détecté (mobile), planification du rafraîchissement UI...');
+      // Laisser Angular effectuer la transition d'onglet et hydrater le DOM
+      setTimeout(function () {
+        dispatchCentralInjections();
+        if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
+          window.MM.updateBatchExportButtonState();
+        }
+        if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
+          window.MM.updateBatchMergeButtonState();
+        }
+      }, 300);
+    }
+  }
 
   function initPanelObserver() {
     if (globalPageObserver) return;
@@ -279,15 +319,19 @@
     // Initialiser l'état du layout courant
     isDesktopLayout = detectDesktopLayout();
 
-    // MutationObserver central et unique sur document.body
+    // MutationObserver central et ciblé sur la racine de l'application
     globalPageObserver = new MutationObserver(window.MM.debounce(function () {
       dispatchCentralInjections();
     }, DEBOUNCE_DELAY));
 
-    globalPageObserver.observe(document.body, {
+    globalObservedTarget = document.querySelector('app-root, [class*="app-root"]') || document.body;
+    globalPageObserver.observe(globalObservedTarget, {
       childList: true,
       subtree: true
     });
+
+    // Écouter explicitement les clics sur les onglets mobiles
+    document.addEventListener('click', handleTabClick);
 
     // ResizeObserver pour détecter les basculements de layout responsive
     if (typeof ResizeObserver !== 'undefined') {
@@ -319,16 +363,18 @@
       lateDispatchTimer = null;
     }
     if (currentObservedPanel) {
-      currentObservedPanel.removeEventListener('click', onPanelInteraction);
-      currentObservedPanel.removeEventListener('change', onPanelInteraction);
       currentObservedPanel = null;
     }
+    document.removeEventListener('click', handleTabClick);
+    panelClickHandler = null;
+    panelChangeHandler = null;
     cleanupPanelButtons();
     const mobileHeader = document.querySelector('.mm-sticky-header');
     if (mobileHeader) {
       mobileHeader.remove();
     }
     isDesktopLayout = null;
+    globalObservedTarget = null;
     console.log('[MM] Observer global de page centralisé nettoyé');
   }
 

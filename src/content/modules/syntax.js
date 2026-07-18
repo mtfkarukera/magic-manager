@@ -11,8 +11,7 @@
   // État interne
   // ═══════════════════════════════════════════════════════════════════════
 
-  /** MutationObserver pour guetter les nouveaux messages de chat */
-  let chatObserver = null;
+
 
   // ═══════════════════════════════════════════════════════════════════════
   // Parseur DOM Sécurisé (Coloration de syntaxe sans innerHTML)

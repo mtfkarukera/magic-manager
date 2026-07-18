@@ -29,25 +29,9 @@
    * @returns {Element|null}
    */
   function findSourcesListContainer() {
-    // Heuristique 1 : Classe contenant source-list ou sources-list
-    let el = document.querySelector(
-      '[data-sources-list], [class*="source-list"], [class*="sources-list"], [class*="sourceList"], [class*="sourcesList"]'
-    );
-    if (el) return el;
-
-    // Heuristique 2 : Recherche par contenu sémantique du panneau Sources
-    const panels = Array.from(document.querySelectorAll('div, aside, section'));
-    for (let i = 0; i < panels.length; i++) {
-      const panel = panels[i];
-      const text = panel.textContent || '';
-      if (text.includes('Sources') && text.includes('Ajouter des sources')) {
-        const scrollable = panel.querySelector('[class*="scroll"], div[style*="overflow"]');
-        if (scrollable) return scrollable;
-        return panel;
-      }
-    }
-
-    return null;
+    return typeof window.MM.findSourcesListContainer === 'function'
+      ? window.MM.findSourcesListContainer()
+      : null;
   }
 
   /**
@@ -228,6 +212,20 @@
       return;
     }
 
+    // Détecter si le panneau des sources est présent et visible, ou s'il est minimisé/replié.
+    const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
+    if (sourcePanel) {
+      const rect = sourcePanel.getBoundingClientRect();
+      // Si la largeur physique est trop petite (< 120px), le panneau est replié.
+      // On masque la barre de recherche pour éviter qu'elle ne déborde.
+      if (rect.width < 120) {
+        if (searchBarContainer) {
+          searchBarContainer.style.display = 'none';
+        }
+        return;
+      }
+    }
+
     // 1. Détecter si l'utilisateur consulte une source active (mode lecture)
     const isViewingSource = document.querySelector('source-viewer, [class*="source-viewer"]') !== null;
 
@@ -287,7 +285,6 @@
     }, [input]);
 
     const header = findSourcePanelHeader();
-    const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
 
     if (sourcePanel && header) {
       // Nettoyer l'en-tête collant mobile s'il existe (transition mobile → desktop)
@@ -298,9 +295,7 @@
 
       // Injecter juste après le header (hors zone scrollable, fixe dans le flux flexbox)
       header.parentNode.insertBefore(searchBarContainer, header.nextSibling);
-      searchBarContainer.style.position = 'relative';
-      searchBarContainer.style.margin = '8px 16px';
-      searchBarContainer.style.zIndex = '99';
+      searchBarContainer.classList.add('mm-desktop-header');
       console.log('[MM] Barre de recherche injectée de façon fixe après le header');
     } else {
       // Mode mobile / sans-header : utilisation de l'en-tête collant MM (.mm-sticky-header)
@@ -309,10 +304,8 @@
         const searchWrapper = stickyHeader.querySelector('.mm-sticky-header-search');
         if (searchWrapper && !searchWrapper.contains(searchBarContainer)) {
           searchWrapper.appendChild(searchBarContainer);
-          // Réinitialiser les styles de fallback obsolètes
-          searchBarContainer.style.position = '';
-          searchBarContainer.style.margin = '0';
-          searchBarContainer.style.zIndex = '';
+          // Réinitialiser la classe desktop pour le mode mobile
+          searchBarContainer.classList.remove('mm-desktop-header');
           searchBarContainer.style.backgroundColor = 'transparent';
           console.log('[MM] Barre de recherche injectée dans l\'en-tête collant mobile');
         }

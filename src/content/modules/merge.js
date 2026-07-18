@@ -8,144 +8,12 @@
   const { t, createElement } = window.MM;
 
   let batchMergeButton = null;
-  let stylesElement = null;
 
   /** Dernier nombre de sources cochées connu — sert de verrou d'idempotence */
   let lastBatchMergeCount = -1;
 
 
-  // CSS injecté pour la modale de fusion et les animations
-  const CSS_STYLES = `
-    .mm-merge-dialog::backdrop {
-      background: rgba(0, 0, 0, 0.6);
-      backdrop-filter: blur(4px);
-      -webkit-backdrop-filter: blur(4px);
-    }
-    .mm-merge-dialog {
-      background: var(--mm-surface, #1e1e1e);
-      border: 1px solid var(--mm-border, #333);
-      border-radius: var(--mm-radius-md, 12px);
-      padding: 24px;
-      width: 400px;
-      max-width: 90%;
-      color: var(--mm-on-surface, #e3e3e3);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-      margin: auto;
-      display: block;
-      animation: mmSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-    }
-    .mm-merge-title {
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: var(--mm-primary, #4285F4);
-    }
-    .mm-merge-field {
-      margin-bottom: 16px;
-    }
-    .mm-merge-label {
-      display: block;
-      font-size: 12px;
-      color: #aaa;
-      margin-bottom: 6px;
-    }
-    .mm-merge-input {
-      width: 100%;
-      padding: 10px 12px;
-      border-radius: 6px;
-      border: 1px solid #444;
-      background: #2b2b2b;
-      color: #fff;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-    .mm-merge-input:focus {
-      border-color: var(--mm-primary, #4285F4);
-      outline: none;
-    }
-    .mm-merge-formats {
-      display: flex;
-      gap: 12px;
-      margin-top: 8px;
-    }
-    .mm-merge-format-btn {
-      flex: 1;
-      padding: 10px;
-      border-radius: 6px;
-      border: 1px solid #444;
-      background: #2b2b2b;
-      color: #ccc;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-      transition: all 0.2s;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-    }
-    .mm-merge-format-btn.active {
-      border-color: var(--mm-primary, #4285F4);
-      background: rgba(66, 133, 244, 0.1);
-      color: var(--mm-primary, #4285F4);
-    }
-    .mm-merge-buttons {
-      display: flex;
-      justify-content: flex-end;
-      gap: 12px;
-      margin-top: 24px;
-    }
-    .mm-merge-btn-cancel {
-      padding: 8px 16px;
-      border-radius: 6px;
-      border: 1px solid #444;
-      background: transparent;
-      color: #ccc;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    .mm-merge-btn-confirm {
-      padding: 8px 16px;
-      border-radius: 6px;
-      border: none;
-      background: var(--mm-primary, #4285F4);
-      color: #fff;
-      cursor: pointer;
-      font-size: 13px;
-      font-weight: 500;
-    }
-    .mm-merge-btn-confirm:hover {
-      background: #357ae8;
-    }
-    .mm-merge-progress-container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px 0;
-      text-align: center;
-    }
-    .mm-merge-spinner {
-      border: 3px solid rgba(255, 255, 255, 0.1);
-      border-top: 3px solid var(--mm-primary, #4285F4);
-      border-radius: 50%;
-      width: 28px;
-      height: 28px;
-      animation: mmSpin 1s linear infinite;
-      margin-bottom: 16px;
-    }
-    @keyframes mmFadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-    @keyframes mmSlideUp {
-      from { transform: translateY(20px); opacity: 0; }
-      to { transform: translateY(0); opacity: 1; }
-    }
-    @keyframes mmSpin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  `;
+
 
   // ═══════════════════════════════════════════════════════════════════════
   // Fonctions DOM centralisées — fournies par source-helpers.js (window.MM.*)
@@ -653,7 +521,6 @@
 
     const checked = window.MM.getCheckedSourceCheckboxes();
     const count = checked.length;
-    console.debug(`[MM] updateBatchMergeButtonState : ${count} source(s) cochée(s) détectée(s).`);
     
     // Ancre prioritaire : le panel-header du panneau des sources de NotebookLM
     const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
@@ -692,6 +559,9 @@
       if (buttonIsCorrect) return;
     }
     lastBatchMergeCount = count;
+
+    // Log uniquement après le verrou — ne loguer que les changements réels
+    console.debug(`[MM] updateBatchMergeButtonState : ${count} source(s) cochée(s) détectée(s).`);
 
     if (count >= 2) {
       if (!batchMergeButton || !anchor.contains(batchMergeButton)) {
@@ -749,13 +619,6 @@
   }
 
   function initMerge() {
-    if (!stylesElement) {
-      stylesElement = document.createElement('style');
-      stylesElement.id = 'mm-merge-styles';
-      stylesElement.textContent = CSS_STYLES;
-      document.head.appendChild(stylesElement);
-    }
-
     updateBatchMergeButtonState();
     console.log('[MM] Module merge initialisé');
   }
@@ -766,10 +629,6 @@
       batchMergeButton = null;
     }
     lastBatchMergeCount = -1;
-    if (stylesElement) {
-      stylesElement.remove();
-      stylesElement = null;
-    }
     console.log('[MM] Module merge nettoyé');
   }
 

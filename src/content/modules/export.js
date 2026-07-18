@@ -623,7 +623,6 @@
   function updateBatchExportButtonState() {
     const checked = window.MM.getCheckedSourceCheckboxes();
     const count = checked.length;
-    console.debug(`[MM] updateBatchExportButtonState : ${count} source(s) cochée(s) détectée(s).`);
     
     // Ancre prioritaire : le panel-header du panneau des sources de NotebookLM (desktop)
     const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
@@ -663,6 +662,9 @@
       if (buttonIsCorrect) return;
     }
     lastBatchExportCount = count;
+
+    // Log uniquement après le verrou — ne loguer que les changements réels
+    console.debug(`[MM] updateBatchExportButtonState : ${count} source(s) cochée(s) détectée(s).`);
 
     if (count > 0) {
       if (!batchExportButton || !anchor.contains(batchExportButton)) {

@@ -6,6 +6,7 @@
 'use strict';
 
 (function () {
+  let _stickyHeaderRef = null;
   // ═══════════════════════════════════════════════════════════════════════
   // Détection du conteneur de la liste des sources
   // ═══════════════════════════════════════════════════════════════════════
@@ -16,10 +17,32 @@
    * @returns {Element|null}
    */
   function findSourcesListContainer() {
-    return document.querySelector(
-      'section.source-panel, .source-panel, .sources-panel, ' +
-      '[class*="source-panel"], [class*="sources-panel"], [class*="source-list"]'
+    // Heuristique 1 : Classe contenant source-list ou sources-list
+    let el = document.querySelector(
+      '[data-sources-list], [class*="source-list"], [class*="sources-list"], [class*="sourceList"], [class*="sourcesList"]'
     );
+    if (el) return el;
+
+    // Heuristique 2 : Recherche structurelle par sélecteur CSS commun
+    el = document.querySelector(
+      'section.source-panel, .source-panel, .sources-panel, ' +
+      '[class*="source-panel"], [class*="sources-panel"]'
+    );
+    if (el) return el;
+
+    // Heuristique 3 : Recherche par contenu sémantique du panneau Sources
+    const panels = Array.from(document.querySelectorAll('div, aside, section'));
+    for (let i = 0; i < panels.length; i++) {
+      const panel = panels[i];
+      const text = panel.textContent || '';
+      if (text.includes('Sources') && text.includes('Ajouter des sources')) {
+        const scrollable = panel.querySelector('[class*="scroll"], div[style*="overflow"]');
+        if (scrollable) return scrollable;
+        return panel;
+      }
+    }
+
+    return null;
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -155,38 +178,6 @@
     return null;
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // En-tête collant mobile (barre de recherche + actions)
-  // ═══════════════════════════════════════════════════════════════════════
-
-  /**
-   * Crée ou retourne l'en-tête collant mobile Magic Manager.
-   * Cet en-tête reste fixe en haut du flux de défilement des sources.
-   * @returns {Element|null}
-   */
-  function getOrCreateStickyHeader() {
-    const sourcePanel = findSourcesListContainer();
-    if (!sourcePanel) return null;
-
-    let stickyHeader = sourcePanel.querySelector('.mm-sticky-header');
-    if (!stickyHeader) {
-      stickyHeader = document.createElement('div');
-      stickyHeader.className = 'mm-sticky-header';
-
-      const searchWrapper = document.createElement('div');
-      searchWrapper.className = 'mm-sticky-header-search';
-
-      const actionsWrapper = document.createElement('div');
-      actionsWrapper.className = 'mm-sticky-header-actions';
-
-      stickyHeader.appendChild(searchWrapper);
-      stickyHeader.appendChild(actionsWrapper);
-
-      // Insérer tout au début du panneau de sources
-      sourcePanel.insertBefore(stickyHeader, sourcePanel.firstChild);
-    }
-    return stickyHeader;
-  }
 
   // ═══════════════════════════════════════════════════════════════════════
   // Bouton de fermeture/retour du document ouvert
@@ -297,6 +288,44 @@
     const words = rawText.split(/\s+/);
     const filtered = words.filter(function (w) { return !MATERIAL_ICON_NAMES.has(w); });
     return filtered.join(' ').trim();
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // En-tête collant mobile (barre de recherche + actions)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Crée ou retourne l'en-tête collant mobile Magic Manager.
+   * Cet en-tête reste fixe en haut du flux de défilement des sources.
+   * @returns {Element|null}
+   */
+  function getOrCreateStickyHeader() {
+    if (_stickyHeaderRef && document.contains(_stickyHeaderRef)) {
+      return _stickyHeaderRef;
+    }
+
+    const sourcePanelSection = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
+    if (!sourcePanelSection) return null;
+
+    let stickyHeader = sourcePanelSection.querySelector('.mm-sticky-header');
+    if (!stickyHeader) {
+      stickyHeader = document.createElement('div');
+      stickyHeader.className = 'mm-sticky-header';
+
+      const searchWrapper = document.createElement('div');
+      searchWrapper.className = 'mm-sticky-header-search';
+
+      const actionsWrapper = document.createElement('div');
+      actionsWrapper.className = 'mm-sticky-header-actions';
+
+      stickyHeader.appendChild(searchWrapper);
+      stickyHeader.appendChild(actionsWrapper);
+
+      // Insérer tout au début du panneau de sources
+      sourcePanelSection.insertBefore(stickyHeader, sourcePanelSection.firstChild);
+    }
+    _stickyHeaderRef = stickyHeader;
+    return stickyHeader;
   }
 
   // ═══════════════════════════════════════════════════════════════════════

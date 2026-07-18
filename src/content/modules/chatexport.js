@@ -15,8 +15,8 @@
 
   // Référence au bouton injecté (un seul à la fois)
   let exportChatBtn = null;
-  // Observer pour surveiller l'apparition du panneau Discussion
-  let chatHeaderObserver = null;
+  // Stockage des timers d'initialisation pour éviter les fuites de ressources
+  let initTimers = [];
 
   // ═══════════════════════════════════════════════════════════════════════
   // 1. SCRAPER DU THREAD DE CONVERSATION — Approche robuste
@@ -613,7 +613,7 @@
   function tryInjectButton() {
     // Garde-fou préférence active
     if (typeof window.MM.isFeatureEnabled === 'function') {
-      if (!window.MM.isFeatureEnabled('feature_chatExport')) {
+      if (!window.MM.isFeatureEnabled('chatExport')) {
         if (exportChatBtn) {
           exportChatBtn.remove();
           exportChatBtn = null;
@@ -622,34 +622,49 @@
       }
     }
 
-    // Bouton déjà présent et dans le DOM → rien à faire
-    if (exportChatBtn && document.contains(exportChatBtn)) return;
+    // Bouton déjà présent dans le DOM → on applique quand même le contrôle de visibilité
+    let justCreated = false;
+    if (!exportChatBtn || !document.contains(exportChatBtn)) {
+      if (exportChatBtn) exportChatBtn = null;
 
-    // Nettoyer une référence orpheline
-    if (exportChatBtn) exportChatBtn = null;
+      const header = findChatPanelHeader();
+      if (!header) {
+        console.warn('[MM] [ChatExport] En-tête de Discussion introuvable dans la page.');
+        return;
+      }
 
-    const header = findChatPanelHeader();
-    if (!header) {
-      console.warn('[MM] [ChatExport] En-tête de Discussion introuvable dans la page.');
-      return;
+      console.log('[MM] [ChatExport] Bouton injecté dans :', header.tagName + '.' + header.className);
+      ensureSpinnerCss();
+
+      exportChatBtn = createElement('button', {
+        className: 'mm-chat-export-btn mm-btn-icon',
+        title: t('chatExportButton') || 'Exporter toute la conversation en note',
+        onClick: function (e) {
+          e.stopPropagation();
+          handleExportChat();
+        }
+      }, [createExportIcon()]);
+
+      // Insérer au début de l'en-tête (avant les icônes natives de Google)
+      header.insertBefore(exportChatBtn, header.firstChild);
+      console.log('[MM] ChatExport : bouton injecté dans l\'en-tête du panneau Discussion.');
+      justCreated = true;
     }
 
-    console.log('[MM] [ChatExport] Bouton injecté dans :', header.tagName + '.' + header.className);
-    ensureSpinnerCss();
-
-    exportChatBtn = createElement('button', {
-      className: 'mm-chat-export-btn mm-btn-icon',
-      title: t('chatExportButton') || 'Exporter toute la conversation en note',
-      onClick: function (e) {
-        e.stopPropagation();
-        handleExportChat();
+    // Gestion de la visibilité en mode mobile (onglet actif uniquement)
+    const isMobileTabHeader = exportChatBtn.closest('mat-tab-header, .mat-mdc-tab-header');
+    if (isMobileTabHeader) {
+      const activeTab = document.querySelector('div[role="tab"][aria-selected="true"], .mat-mdc-tab-active');
+      const isChatActive = activeTab && /discussion|chat/i.test(activeTab.textContent || '');
+      if (!isChatActive) {
+        exportChatBtn.style.setProperty('display', 'none', 'important');
+      } else {
+        exportChatBtn.style.setProperty('display', '', '');
       }
-    }, [createExportIcon()]);
-
-
-    // Insérer au début de l'en-tête (avant les icônes natives de Google)
-    header.insertBefore(exportChatBtn, header.firstChild);
-    console.log('[MM] ChatExport : bouton injecté dans l\'en-tête du panneau Discussion.');
+    } else {
+      // Sur desktop, toujours visible dans l'en-tête dédié
+      exportChatBtn.style.setProperty('display', '', '');
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -660,10 +675,14 @@
    * Initialise le module d'export chat.
    */
   function initChatExport() {
+    // Nettoyer les timers en cours avant de réinitialiser
+    initTimers.forEach(clearTimeout);
+    initTimers = [];
+
     // Tentative immédiate + différées pour laisser le DOM se stabiliser au chargement
     tryInjectButton();
-    setTimeout(tryInjectButton, 500);
-    setTimeout(tryInjectButton, 1500);
+    initTimers.push(setTimeout(tryInjectButton, 500));
+    initTimers.push(setTimeout(tryInjectButton, 1500));
 
     console.log('[MM] Module chatExport initialisé');
   }
@@ -672,6 +691,10 @@
    * Nettoie les éléments UI.
    */
   function cleanupChatExport() {
+    // Annuler tous les timers d'initialisation programmés
+    initTimers.forEach(clearTimeout);
+    initTimers = [];
+
     document.querySelectorAll('.mm-chat-export-btn').forEach(function (btn) {
       btn.remove();
     });

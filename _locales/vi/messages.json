@@ -1,10 +1,10 @@
 {
   "extensionName": {
-    "message": "Magic Manager cho NotebookLM",
+    "message": "Magic Manager cho Gemini Notebook",
     "description": "Nom de l'extension affiché dans le navigateur"
   },
   "extensionDescription": {
-    "message": "Nâng cao NotebookLM với tìm kiếm toàn cục, hợp nhất thông minh, xuất đơn giản, xóa trực tiếp, tô sáng cú pháp mã và xuất cuộc trò chuyện.",
+    "message": "Nâng cao Gemini Notebook với tìm kiếm toàn cục, hợp nhất thông minh, xuất đơn giản, xóa trực tiếp, tô sáng cú pháp mã và xuất cuộc trò chuyện.",
     "description": "Description de l'extension pour le store"
   },
   "searchPlaceholder": {

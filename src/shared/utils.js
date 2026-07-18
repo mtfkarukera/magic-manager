@@ -118,24 +118,35 @@ function debounce(fn, delay) {
   };
 }
 
-/**
- * Recherche récursivement des éléments correspondant au sélecteur,
- * y compris à l'intérieur de tous les Shadow Roots.
- * @param {string} selector - Sélecteur CSS.
- * @param {Element|Document} [root=document] - Point de départ de la recherche.
- * @returns {Array<Element>}
- */
 function findElementsInShadows(selector, root = document) {
-  let elements = Array.from(root.querySelectorAll(selector));
-  const children = root.querySelectorAll('*');
+  const elements = [];
 
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i];
-    if (child.shadowRoot) {
-      elements = elements.concat(findElementsInShadows(selector, child.shadowRoot));
+  function walk(node) {
+    if (!node) return;
+
+    // 1. Ajouter les correspondances directes sur ce niveau
+    const matched = node.querySelectorAll(selector);
+    for (let i = 0; i < matched.length; i++) {
+      elements.push(matched[i]);
+    }
+
+    // 2. Traverser récursivement uniquement les hôtes de Shadow Roots
+    const walker = document.createTreeWalker(
+      node,
+      NodeFilter.SHOW_ELEMENT,
+      null,
+      false
+    );
+
+    let el;
+    while ((el = walker.nextNode())) {
+      if (el.shadowRoot) {
+        walk(el.shadowRoot);
+      }
     }
   }
 
+  walk(root);
   return elements;
 }
 

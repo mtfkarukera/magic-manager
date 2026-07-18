@@ -4,15 +4,20 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
-## [0.5.9] — 2026-07-17
+## [0.5.9] — 2026-07-18
 
 ### Ajouté
+- 🤖 **Transition vers Gemini Notebook** : Prise en charge du renommage officiel de NotebookLM en Gemini Notebook (mises à jour des métadonnées, documentations, et clés i18n sans changer les directives réseau d'origine).
 - 🔒 **Garde-fou anti-leak de compilation (`build.sh`)** : Interruption automatique du build en cas de détection de variables de débogage (`DEBUG = true`) dans le code source de production.
 - ♿ **Indicateur de focus clavier universel** : Ajout d'une règle `:focus-visible` contrastée sur l'ensemble des boutons injectés pour améliorer la navigation au clavier.
 - 🎨 **Glassmorphism Premium** : Application d'un effet visuel de dépolissage de verre cristallin (`backdrop-filter: blur(16px) saturate(190%)`) sur les popovers et boîtes de dialogue modales.
 - 🎨 **Micro-animations tactiles** : Transitions de survol (`hover` avec translation) et de clic (`active` avec compression à 97%) sur tous les boutons pour un rendu premium et réactif.
 
 ### Corrigé
+- ⚡ **Performance & CPU - Suppression Définitive Surécoute** : Remplacement des event listeners `click` et `change` génériques sur le panneau sources par un MutationObserver d'attributs ciblé sur les checkboxes Angular Material (`class` et `aria-checked`), éliminant 100% de la charge CPU inutile au survol ou au défilement.
+- 🛠️ **Décompte Checkboxes & Affichage Initial** : Résolution de la race condition d'Angular ; les boutons Export et Fusion par lot s'affichent instantanément au démarrage avec le bon compte de sources et ne souffrent plus d'oscillations de valeurs au clic.
+- 🛠️ **Ergonomie - Repli de la Barre de Recherche** : Masquage automatique (`display: none`) de la barre de recherche MM si la largeur du panneau sources descend sous 120px, évitant les débordements visuels inesthétiques.
+- 📱 **Mode Mobile - Restauration Injection Post-Onglets** : Ajout d'un écouteur explicite de clics sur les onglets mobiles (`[role="tab"]`) pour forcer le rafraîchissement des injections et le recalcul des boutons batch 300ms après transition, résolvant la régression mobile.
 - 🔒 **Sécurité - Dialogues bloquants (Règle 14)** : Élimination complète de `window.alert()` et `confirm()` au profit de modales non bloquantes personnalisées (`showConfirmDialog`, `showAlertDialog`).
 - 🛠️ **Robustesse - Protection Anti-Processus Fantôme** : Ajout d'un témoin d'annulation (`isCancelled`) écoutant la fermeture du dialogue de progression lors de la fusion de sources, coupant immédiatement le thread RPC.
 - ♿ **Accessibilité WCAG 2.1 AA du popover de réglages** : Gestion complète de la fermeture au clavier (touche *Échap* et *focusout*) et ajouts des attributs sémantiques ARIA (`role="dialog"`, `aria-haspopup`, `aria-expanded`).

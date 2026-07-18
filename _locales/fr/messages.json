@@ -1,10 +1,10 @@
 {
   "extensionName": {
-    "message": "Magic Manager pour NotebookLM",
+    "message": "Magic Manager pour Gemini Notebook",
     "description": "Nom de l'extension affiché dans le navigateur"
   },
   "extensionDescription": {
-    "message": "Enrichissez NotebookLM avec recherche globale, fusion intelligente, exports simplifiés, suppression en ligne, coloration syntaxique du code et export du chat.",
+    "message": "Enrichissez Gemini Notebook avec recherche globale, fusion intelligente, exports simplifiés, suppression en ligne, coloration syntaxique du code et export du chat.",
     "description": "Description de l'extension pour le store"
   },
   "searchPlaceholder": {

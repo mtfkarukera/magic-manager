@@ -10,7 +10,7 @@ if grep -rqE "const\s+DEBUG\s*=\s*true|DEBUG\s*=\s*true" src/; then
 fi
 
 VERSION=$(node -p "require('./manifest.json').version")
-NAME="magic_manager_for_notebooklm"
+NAME="magic_manager_for_gemini_notebook"
 DIST="dist"
 
 

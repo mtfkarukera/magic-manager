@@ -1,9 +1,9 @@
-# 🧩 Magic Manager for NotebookLM
+# 🧩 Magic Manager for Gemini Notebook
 
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/mtfkarukera/magic-manager?color=green)
 ![GitHub license](https://img.shields.io/github/license/mtfkarukera/magic-manager?color=blue)
 
-**Magic Manager** est une extension Firefox qui enrichit l'interface de [Google NotebookLM](https://notebooklm.google.com/) avec des fonctionnalités avancées de productivité.
+**Magic Manager** est une extension Firefox qui enrichit l'interface de **Google Gemini Notebook** (anciennement NotebookLM) sur [notebooklm.google.com](https://notebooklm.google.com/) avec des fonctionnalités avancées de productivité.
 
 ## ✨ Fonctionnalités
 
@@ -20,7 +20,7 @@
 
 1. Rendez-vous sur la page de l'extension sur [addons.mozilla.org](https://addons.mozilla.org/).
 2. Cliquez sur « Ajouter à Firefox ».
-3. Ouvrez [NotebookLM](https://notebooklm.google.com/) et profitez des nouvelles fonctionnalités.
+3. Ouvrez [Gemini Notebook](https://notebooklm.google.com/) et profitez des nouvelles fonctionnalités.
 
 ### Depuis les sources
 
@@ -47,7 +47,7 @@
 
 ## 🤝 Crédits
 
-Ce projet s'appuie grandement sur l'analyse et l'ingénierie inverse de l'API interne de NotebookLM réalisées par le projet open-source [notebooklm-py](https://github.com/teng-lin/notebooklm-py). Un grand merci à ses contributeurs pour leur travail remarquable de documentation et d'exploration !
+Ce projet s'appuie grandement sur l'analyse et l'ingénierie inverse de l'API interne de Gemini Notebook (anciennement NotebookLM) réalisées par le projet open-source [notebooklm-py](https://github.com/teng-lin/notebooklm-py). Un grand merci à ses contributeurs pour leur travail remarquable de documentation et d'exploration !
 
 ## 📄 Licence
 
