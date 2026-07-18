@@ -152,6 +152,7 @@
     if (!noResultsElement) {
       noResultsElement = createElement('div', {
         className: 'mm-search-no-results',
+        role: 'status',
         textContent: t('searchNoResults')
       });
     }

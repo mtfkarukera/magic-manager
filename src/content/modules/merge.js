@@ -186,10 +186,15 @@
 
     const dialogTitleId = 'mm-merge-title-' + Date.now();
     const dialog = createElement('dialog', {
-      className: 'mm-merge-dialog',
+      className: 'mm-merge-dialog mm-dialog',
       role: 'dialog',
       'aria-modal': 'true',
       'aria-labelledby': dialogTitleId
+    });
+
+    // Centralisation de la suppression du DOM à la fermeture native
+    dialog.addEventListener('close', () => {
+      dialog.remove();
     });
     
     const titleEl = createElement('div', { 
@@ -219,29 +224,22 @@
     
     const mdBtn = createElement('button', {
       className: 'mm-merge-format-btn active',
-      'aria-pressed': 'true',
-      textContent: 'Markdown (.txt)'
+      textContent: 'Markdown',
+      onClick: () => {
+        selectedFormat = 'Markdown';
+        mdBtn.classList.add('active');
+        pdfBtn.classList.remove('active');
+      }
     });
     const pdfBtn = createElement('button', {
       className: 'mm-merge-format-btn',
-      'aria-pressed': 'false',
-      textContent: 'PDF (.pdf)'
+      textContent: 'PDF (jsPDF)',
+      onClick: () => {
+        selectedFormat = 'PDF';
+        pdfBtn.classList.add('active');
+        mdBtn.classList.remove('active');
+      }
     });
-
-    mdBtn.onclick = () => {
-      mdBtn.classList.add('active');
-      mdBtn.setAttribute('aria-pressed', 'true');
-      pdfBtn.classList.remove('active');
-      pdfBtn.setAttribute('aria-pressed', 'false');
-      selectedFormat = 'Markdown';
-    };
-    pdfBtn.onclick = () => {
-      pdfBtn.classList.add('active');
-      pdfBtn.setAttribute('aria-pressed', 'true');
-      mdBtn.classList.remove('active');
-      mdBtn.setAttribute('aria-pressed', 'false');
-      selectedFormat = 'PDF';
-    };
 
 
     const formatField = createElement('div', { className: 'mm-merge-field' }, [
@@ -254,7 +252,6 @@
       textContent: 'Annuler',
       onClick: () => {
         dialog.close();
-        dialog.remove();
       }
     });
     const btnConfirm = createElement('button', {
@@ -341,7 +338,6 @@
     if (!notebookId) {
       window.MM.showAlertDialog('mergeError', 'notebookIdNotFound');
       dialog.close();
-      dialog.remove();
       return;
     }
 
@@ -464,7 +460,6 @@
         textContent: 'Fermer',
         onClick: () => {
           dialog.close();
-          dialog.remove();
         }
       });
       progressContainer.appendChild(btnClose);
@@ -485,7 +480,6 @@
         textContent: 'Fermer',
         onClick: () => {
           dialog.close();
-          dialog.remove();
         }
       });
       progressContainer.appendChild(btnClose);
@@ -502,6 +496,7 @@
     svg.setAttribute('width', '16');
     svg.setAttribute('height', '16');
     svg.setAttribute('fill', 'currentColor');
+    svg.setAttribute('aria-hidden', 'true');
     svg.style.display = 'block';
     svg.style.pointerEvents = 'none';
 
@@ -571,6 +566,7 @@
         batchMergeButton = createElement('button', {
           className: isHeader ? 'mm-batch-merge-btn mm-btn-icon' : 'mm-batch-merge-btn mm-btn-row',
           title: `${t('mergeButton') || 'Fusionner'} (${count})`,
+          'aria-label': `${t('mergeButton') || 'Fusionner'} (${count})`,
           onClick: () => showMergeDialog(checked)
         }, [
           createMergeIcon(),
@@ -608,6 +604,7 @@
         const span = batchMergeButton.querySelector('span');
         if (span) span.textContent = `(${count})`;
         batchMergeButton.title = `${t('mergeButton') || 'Fusionner'} (${count})`;
+        batchMergeButton.setAttribute('aria-label', `${t('mergeButton') || 'Fusionner'} (${count})`);
       }
     } else {
       if (batchMergeButton) {

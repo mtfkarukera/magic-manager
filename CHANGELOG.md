@@ -4,6 +4,24 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.6.1] — 2026-07-18
+
+### Optimisé & Corrigé
+- ♿ **Accessibilité WCAG 2.1 AA** :
+  - **Ajustement de contrastes** : Renforcement du bleu primaire (`--mm-primary` à HSL 50% de luminosité en mode clair) pour atteindre un ratio de 4.5:1. Remplacement de la couleur de survol rouge de suppression en mode sombre par la variable dynamique `--mm-error-light` pour respecter le ratio de 3:1.
+  - **Gestion du Focus** : Focalisation automatique sur le premier commutateur lors de l'ouverture du popover de réglages. Sauvegarde et restauration automatique du focus clavier sur l'élément déclencheur à la fermeture des boîtes de dialogue de confirmation et de choix de format.
+  - **Sémantique & ARIA** : Remplacement des double-labels implicites des toggles par un span neutre. Ajout d'attributs `aria-hidden="true"` sur toutes les icônes SVG décoratives de boutons et d'un attribut `aria-label` identique au titre sur tous les boutons iconiques.
+  - **Recherche vocalisée** : Ajout du rôle `status` sur le message d'absence de résultats dans la barre de recherche.
+- 🧹 **Robustesse & Performance** :
+  - **Résolution de fuites mémoire** : Annulation systématique des timers `setTimeout` orphelins (dans `delete.js`, `export.js` et `panel-observer.js` pour les transitions d'onglets) lors du nettoyage ou du changement de préférences utilisateur.
+  - **Résolution de fuite DOM** : Centralisation du retrait du DOM (`dialog.remove()`) dans l'événement natif `close` du composant `<dialog>` dans `merge.js`, nettoyant proprement le body après chaque fusion.
+  - **Sécurisation de l'Orchestrateur** : Encapsulation des fonctions de nettoyage des modules dans des try/catch avec validation d'existence pour empêcher qu'un module non instancié ne bloque le nettoyage général.
+  - **Prévention de condition de course** : Interruption immédiate du processus d'exportation par lot en cas de changement de carnet ou d'URL détecté pendant le téléchargement des sources.
+- 🎨 **Design UI/UX Premium** :
+  - **Look Glassmorphism** : Application de flous de fond accrus à `20px`, d'ombres complexes à diffusion multiple (`--mm-shadow-3`), et d'une bordure fine semi-transparente pour simuler la réfraction physique du verre (Rim Lighting) sur le bouton de réglage et les modales.
+  - **Animations fluides** : Utilisation d'une courbe de transition cinématique Ease-Out Expo (`cubic-bezier(0.16, 1, 0.3, 1)`) et micro-mises à l'échelle au survol (`scale(1.02)`) et clic (`scale(0.98)`) sur les boutons.
+  - **Unification thématique** : Intégration de la modale de fusion à la classe générique `.mm-dialog` et remplacement des couleurs codées en dur par des variables HSL pour une adaptation parfaite au mode clair.
+
 ## [0.6.0] — 2026-07-18
 
 ### Ajouté

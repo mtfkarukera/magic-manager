@@ -9,10 +9,10 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* Couleurs primaires HSL (Bleu NotebookLM) */
+  /* Couleurs primaires HSL (Bleu NotebookLM renforcé pour le contraste WCAG 4.5:1) */
   --mm-primary-h: 217;
   --mm-primary-s: 89%;
-  --mm-primary-l: 61%;
+  --mm-primary-l: 50%;
 
   --mm-primary: hsl(var(--mm-primary-h), var(--mm-primary-s), var(--mm-primary-l));
   --mm-primary-hover: hsl(var(--mm-primary-h), var(--mm-primary-s), calc(var(--mm-primary-l) - 8%));
@@ -28,17 +28,18 @@
   /* Couleurs d'erreur / danger */
   --mm-error: #D93025;
   --mm-error-hover: #C5221F;
+  --mm-error-light: rgba(217, 48, 37, 0.15);
   --mm-on-error: #FFFFFF;
 
   /* Couleurs de succès */
   --mm-success: #0D652D;
 
-  /* Bordures et ombres */
+  /* Bordures et ombres premium */
   --mm-outline: #DADCE0;
   --mm-outline-variant: #E8EAED;
-  --mm-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.08);
-  --mm-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.12), 0 2px 4px rgba(0, 0, 0, 0.08);
-  --mm-shadow-3: 0 8px 32px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.04);
+  --mm-shadow-1: 0 2px 4px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+  --mm-shadow-2: 0 10px 20px -10px rgba(0, 0, 0, 0.1), 0 1px 3px rgba(0, 0, 0, 0.05);
+  --mm-shadow-3: 0 20px 40px -15px rgba(0, 0, 0, 0.15), 0 1px 5px rgba(0, 0, 0, 0.05);
 
   /* Espacement */
   --mm-spacing-xs: 4px;
@@ -53,10 +54,11 @@
   --mm-radius-lg: 12px;
   --mm-radius-full: 9999px;
 
-  /* Transitions */
-  --mm-transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --mm-transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --mm-transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* Transitions cinématiques premium */
+  --mm-transition-fast: 150ms cubic-bezier(0.16, 1, 0.3, 1);
+  --mm-transition-normal: 250ms cubic-bezier(0.16, 1, 0.3, 1);
+  --mm-transition-slow: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+  --mm-transition-premium: 350ms cubic-bezier(0.16, 1, 0.3, 1);
 
   /* Typographie */
   --mm-font-family: 'Google Sans', 'Roboto', system-ui, -apple-system, sans-serif;
@@ -94,15 +96,16 @@
 
     --mm-error: #F28B82;
     --mm-error-hover: #EE675C;
+    --mm-error-light: rgba(242, 139, 130, 0.15);
     --mm-on-error: #202124;
 
     --mm-success: #81C995;
 
     --mm-outline: #5F6368;
     --mm-outline-variant: #3C4043;
-    --mm-shadow-1: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
-    --mm-shadow-2: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
-    --mm-shadow-3: 0 8px 32px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.2);
+    --mm-shadow-1: 0 2px 4px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.15);
+    --mm-shadow-2: 0 10px 20px -10px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.2);
+    --mm-shadow-3: 0 20px 40px -15px rgba(0, 0, 0, 0.5), 0 1px 5px rgba(0, 0, 0, 0.2);
 
     /* Coloration syntaxique (contrastes conformes WCAG AA sur fond sombre #35363A) */
     --mm-token-keyword: #9CDCFE;
@@ -202,22 +205,34 @@
   z-index: 9999;
   width: 44px;
   height: 44px;
-  background: var(--mm-surface);
-  border: 1px solid var(--mm-outline);
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
   box-shadow: var(--mm-shadow-2);
-  opacity: 0.85;
+  opacity: 0.9;
   transition: opacity var(--mm-transition-fast), background var(--mm-transition-fast), box-shadow var(--mm-transition-fast), transform var(--mm-transition-fast);
 }
 
 .mm-settings-btn-fixed:hover {
   opacity: 1;
-  background: var(--mm-surface-variant);
+  background: rgba(255, 255, 255, 0.85);
   box-shadow: var(--mm-shadow-3);
-  transform: translateY(-1px);
+  transform: translateY(-2px) scale(1.04);
 }
 
 .mm-settings-btn-fixed:active {
-  transform: scale(0.97);
+  transform: translateY(0) scale(0.98);
+}
+
+@media (prefers-color-scheme: dark) {
+  .mm-settings-btn-fixed {
+    background: rgba(30, 41, 59, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  }
+  .mm-settings-btn-fixed:hover {
+    background: rgba(30, 41, 59, 0.85);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -229,20 +244,20 @@
   z-index: 10000;
   min-width: 240px;
   background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(16px) saturate(190%);
-  -webkit-backdrop-filter: blur(16px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: var(--mm-radius-lg);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+  box-shadow: var(--mm-shadow-3);
   padding: var(--mm-spacing-md);
-  animation: mm-slideIn var(--mm-transition-normal) ease-out;
+  animation: mm-slideIn var(--mm-transition-premium) ease-out;
 }
 
 @media (prefers-color-scheme: dark) {
   .mm-settings-popover {
     background: rgba(30, 41, 59, 0.75);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: var(--mm-shadow-3);
   }
 }
 
@@ -348,32 +363,32 @@
 }
 
 .mm-dialog {
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(16px) saturate(190%);
-  -webkit-backdrop-filter: blur(16px) saturate(190%);
-  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(20px) saturate(190%);
+  -webkit-backdrop-filter: blur(20px) saturate(190%);
+  border: 1px solid rgba(255, 255, 255, 0.45);
   border-radius: var(--mm-radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--mm-shadow-3);
   padding: var(--mm-spacing-lg);
   min-width: 320px;
   max-width: 480px;
   color: var(--mm-on-surface);
   margin: auto;
-  animation: mm-scaleInElastic 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+  animation: mm-scaleInElastic 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
 }
 
 @media (prefers-color-scheme: dark) {
   .mm-dialog {
-    background: rgba(41, 42, 45, 0.85);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    background: rgba(30, 41, 59, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: var(--mm-shadow-3);
   }
 }
 
 .mm-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(15, 23, 42, 0.3); /* Base ardoise foncée translucide */
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   animation: mm-fadeIn var(--mm-transition-fast);
 }
 
@@ -682,8 +697,8 @@
 }
 
 .mm-individual-delete-btn:hover {
-  background-color: rgba(217, 48, 37, 0.15) !important;
-  color: #D93025 !important;
+  background-color: var(--mm-error-light) !important;
+  color: var(--mm-error) !important;
 }
 
 
@@ -834,29 +849,15 @@
 }
 
 /* Styles de la modale de fusion (Merge Dialog) */
-.mm-merge-dialog::backdrop {
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
 .mm-merge-dialog {
-  background: var(--mm-surface, #1e1e1e);
-  border: 1px solid var(--mm-border, #333);
-  border-radius: var(--mm-radius-md, 12px);
-  padding: 24px;
   width: 400px;
   max-width: 90%;
-  color: var(--mm-on-surface, #e3e3e3);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
-  margin: auto;
-  display: block;
-  animation: mmSlideUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 .mm-merge-title {
   font-size: 18px;
   font-weight: 600;
   margin-bottom: 16px;
-  color: var(--mm-primary, #4285F4);
+  color: var(--mm-primary);
 }
 .mm-merge-field {
   margin-bottom: 16px;
@@ -864,21 +865,23 @@
 .mm-merge-label {
   display: block;
   font-size: 12px;
-  color: #aaa;
+  color: var(--mm-on-surface-variant);
   margin-bottom: 6px;
 }
 .mm-merge-input {
   width: 100%;
   padding: 10px 12px;
-  border-radius: 6px;
-  border: 1px solid #444;
-  background: #2b2b2b;
-  color: #fff;
+  border-radius: var(--mm-radius-sm);
+  border: 1px solid var(--mm-outline);
+  background: var(--mm-surface-variant);
+  color: var(--mm-on-surface);
   font-size: 14px;
   box-sizing: border-box;
+  transition: border-color var(--mm-transition-fast), box-shadow var(--mm-transition-fast);
 }
 .mm-merge-input:focus {
-  border-color: var(--mm-primary, #4285F4);
+  border-color: var(--mm-primary);
+  box-shadow: 0 0 0 2px var(--mm-primary-light);
   outline: none;
 }
 .mm-merge-formats {
@@ -889,23 +892,23 @@
 .mm-merge-format-btn {
   flex: 1;
   padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #444;
-  background: #2b2b2b;
-  color: #ccc;
+  border-radius: var(--mm-radius-sm);
+  border: 1px solid var(--mm-outline);
+  background: var(--mm-surface-variant);
+  color: var(--mm-on-surface-variant);
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
-  transition: all 0.2s;
+  transition: all var(--mm-transition-fast);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
 }
 .mm-merge-format-btn.active {
-  border-color: var(--mm-primary, #4285F4);
-  background: rgba(66, 133, 244, 0.1);
-  color: var(--mm-primary, #4285F4);
+  border-color: var(--mm-primary);
+  background: var(--mm-primary-light);
+  color: var(--mm-primary);
 }
 .mm-merge-buttons {
   display: flex;
@@ -915,25 +918,30 @@
 }
 .mm-merge-btn-cancel {
   padding: 8px 16px;
-  border-radius: 6px;
-  border: 1px solid #444;
+  border-radius: var(--mm-radius-sm);
+  border: 1px solid var(--mm-outline);
   background: transparent;
-  color: #ccc;
+  color: var(--mm-on-surface-variant);
   cursor: pointer;
   font-size: 13px;
+  transition: background-color var(--mm-transition-fast);
+}
+.mm-merge-btn-cancel:hover {
+  background-color: var(--mm-surface-variant);
 }
 .mm-merge-btn-confirm {
   padding: 8px 16px;
-  border-radius: 6px;
+  border-radius: var(--mm-radius-sm);
   border: none;
-  background: var(--mm-primary, #4285F4);
-  color: #fff;
+  background: var(--mm-primary);
+  color: var(--mm-on-primary);
   cursor: pointer;
   font-size: 13px;
   font-weight: 500;
+  transition: background-color var(--mm-transition-fast), transform var(--mm-transition-fast);
 }
 .mm-merge-btn-confirm:hover {
-  background: #357ae8;
+  background: var(--mm-primary-hover);
 }
 .mm-merge-progress-container {
   display: flex;

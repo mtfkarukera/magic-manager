@@ -32,6 +32,9 @@
   /** Timer du second dispatch retardé pour éviter les doublons */
   let lateDispatchTimer = null;
 
+  /** Timer du clic sur onglet mobile pour nettoyage */
+  let tabClickTimer = null;
+
   /** Indique si un dispatch est déjà en cours d'exécution (protection anti-réentrance synchrone) */
   let isDispatching = false;
 
@@ -300,8 +303,12 @@
     const tab = e.target.closest('.mat-mdc-tab, [role="tab"], .mat-tab-label');
     if (tab) {
       console.log('[MM] Clic onglet détecté (mobile), planification du rafraîchissement UI...');
+      if (tabClickTimer) {
+        clearTimeout(tabClickTimer);
+      }
       // Laisser Angular effectuer la transition d'onglet et hydrater le DOM
-      setTimeout(function () {
+      tabClickTimer = setTimeout(function () {
+        tabClickTimer = null;
         dispatchCentralInjections();
         if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
           window.MM.updateBatchExportButtonState();
@@ -361,6 +368,10 @@
     if (lateDispatchTimer) {
       clearTimeout(lateDispatchTimer);
       lateDispatchTimer = null;
+    }
+    if (tabClickTimer) {
+      clearTimeout(tabClickTimer);
+      tabClickTimer = null;
     }
     if (currentObservedPanel) {
       currentObservedPanel = null;

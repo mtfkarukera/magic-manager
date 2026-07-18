@@ -305,55 +305,7 @@
   }
 
 
-  /**
-   * Attend l'apparition d'un élément correspondant à l'un des sélecteurs.
-   * Utilise un MutationObserver limité au container si fourni.
-   * @param {string[]} selectors - Liste de sélecteurs CSS à tester.
-   * @param {number} timeoutMs - Délai maximum en millisecondes.
-   * @param {Element|Document} [container=document] - Le conteneur dans lequel chercher.
-   * @returns {Promise<Element|null>} L'élément trouvé ou null si timeout.
-   */
-  function waitForElement(selectors, timeoutMs, container = document) {
-    return new Promise(function (resolve) {
 
-      function findNow() {
-        for (const sel of selectors) {
-          try {
-            const el = container.querySelector(sel);
-            if (el) return el;
-          } catch (e) { /* sélecteur invalide */ }
-        }
-        return null;
-      }
-
-      const existing = findNow();
-      if (existing) {
-        resolve(existing);
-        return;
-      }
-
-      const observer = new MutationObserver(function () {
-        const found = findNow();
-        if (found) {
-          observer.disconnect();
-          clearTimeout(timer);
-          resolve(found);
-        }
-      });
-
-      observer.observe(container === document ? document.body : container, {
-        childList: true,
-        subtree: true,
-        attributes: true,
-        attributeFilter: ['contenteditable', 'role', 'aria-label']
-      });
-
-      const timer = setTimeout(function () {
-        observer.disconnect();
-        resolve(null);
-      }, timeoutMs);
-    });
-  }
 
   // ═══════════════════════════════════════════════════════════════════════
   // 4. ACTION PRINCIPALE D'EXPORT
@@ -434,6 +386,7 @@
     svg.setAttribute('width', '18');
     svg.setAttribute('height', '18');
     svg.setAttribute('fill', 'currentColor');
+    svg.setAttribute('aria-hidden', 'true');
     svg.style.display = 'block';
     svg.style.pointerEvents = 'none';
     svg.style.flexShrink = '0';
@@ -639,6 +592,7 @@
       exportChatBtn = createElement('button', {
         className: 'mm-chat-export-btn mm-btn-icon',
         title: t('chatExportButton') || 'Exporter toute la conversation en note',
+        'aria-label': t('chatExportButton') || 'Exporter toute la conversation en note',
         onClick: function (e) {
           e.stopPropagation();
           handleExportChat();

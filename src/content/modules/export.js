@@ -371,6 +371,7 @@
     svg.setAttribute('width', '16');
     svg.setAttribute('height', '16');
     svg.setAttribute('fill', 'currentColor');
+    svg.setAttribute('aria-hidden', 'true');
     svg.style.display = 'block';
     svg.style.pointerEvents = 'none';
 
@@ -468,6 +469,10 @@
     const activeNotebookName = getActiveNotebookName();
 
     for (let i = 0; i < checkboxes.length; i++) {
+      if (window.MM.getActiveNotebookId() !== notebookId) {
+        console.log('[MM] Export par lot interrompu : changement de notebook détecté.');
+        break;
+      }
       const cb = checkboxes[i];
 
       // Remonter depuis la checkbox vers la carte source parente
@@ -547,6 +552,7 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   function checkAndInjectIndividualExport() {
+    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('export')) return;
     // Vérifier que source-viewer est actif avant toute chose
     const sourceViewer = document.querySelector('source-viewer');
     if (!sourceViewer) return;
@@ -594,6 +600,7 @@
     const exportBtn = createElement('button', {
       className: 'mm-individual-export-btn mm-btn-icon',
       title: t('exportButton'),
+      'aria-label': t('exportButton'),
       onClick: function (e) {
         e.stopPropagation();
 
@@ -675,6 +682,7 @@
         batchExportButton = createElement('button', {
           className: isHeader ? 'mm-batch-export-btn mm-btn-icon' : 'mm-batch-export-btn mm-btn-row',
           title: `${t('exportButton')} (${count})`,
+          'aria-label': `${t('exportButton')} (${count})`,
           onClick: triggerBatchExport
         }, [
           createDownloadIcon(),
@@ -710,6 +718,7 @@
         const span = batchExportButton.querySelector('span');
         if (span) span.textContent = `(${count})`;
         batchExportButton.title = `${t('exportButton')} (${count})`;
+        batchExportButton.setAttribute('aria-label', `${t('exportButton')} (${count})`);
       }
     } else {
       if (batchExportButton) {

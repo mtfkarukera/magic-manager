@@ -124,13 +124,25 @@
    */
   function cleanupAllModules() {
     console.log('[MM] Nettoyage de tous les modules');
-    window.MM.cleanupPanelObserver();
-    window.MM.cleanupSearch();
-    window.MM.cleanupMerge();
-    window.MM.cleanupExport();
-    window.MM.cleanupDelete();
-    window.MM.cleanupSyntax();
-    window.MM.cleanupChatExport();
+    const modules = [
+      { name: 'PanelObserver', fn: window.MM.cleanupPanelObserver },
+      { name: 'Search', fn: window.MM.cleanupSearch },
+      { name: 'Merge', fn: window.MM.cleanupMerge },
+      { name: 'Export', fn: window.MM.cleanupExport },
+      { name: 'Delete', fn: window.MM.cleanupDelete },
+      { name: 'Syntax', fn: window.MM.cleanupSyntax },
+      { name: 'ChatExport', fn: window.MM.cleanupChatExport }
+    ];
+
+    modules.forEach(function (m) {
+      if (typeof m.fn === 'function') {
+        try {
+          m.fn();
+        } catch (err) {
+          console.error('[MM] Erreur lors du nettoyage de ' + m.name + ' :', err);
+        }
+      }
+    });
   }
 
   // ═══════════════════════════════════════════════════════════════════════

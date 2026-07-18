@@ -60,6 +60,7 @@
     svg.setAttribute('width', '20');
     svg.setAttribute('height', '20');
     svg.setAttribute('fill', 'currentColor');
+    svg.setAttribute('aria-hidden', 'true');
 
     const path = document.createElementNS(NS, 'path');
     path.setAttribute('d',
@@ -100,8 +101,8 @@
     // Piste visuelle du toggle
     const track = createElement('span', { className: 'mm-toggle-track' });
 
-    // Conteneur du toggle
-    const toggle = createElement('label', { className: 'mm-toggle' }, [input, track]);
+    // Conteneur du toggle (span pour éviter la double labellisation)
+    const toggle = createElement('span', { className: 'mm-toggle' }, [input, track]);
 
     // Label textuel
     const label = createElement('label', {
@@ -173,9 +174,15 @@
 
     // Positionner dynamiquement après insertion dans le DOM
     if (settingsButton) {
-      var rect = settingsButton.getBoundingClientRect();
+      const rect = settingsButton.getBoundingClientRect();
       popoverElement.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
       popoverElement.style.left = rect.left + 'px';
+    }
+
+    // Focaliser le premier commutateur pour l'accessibilité
+    const firstCheckbox = popoverElement.querySelector('input[type="checkbox"]');
+    if (firstCheckbox) {
+      firstCheckbox.focus();
     }
 
     // Fermeture avec la touche Echap

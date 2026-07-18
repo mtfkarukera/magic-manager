@@ -151,6 +151,7 @@
     svg.setAttribute('width', String(size));
     svg.setAttribute('height', String(size));
     svg.setAttribute('fill', 'currentColor');
+    svg.setAttribute('aria-hidden', 'true');
     svg.style.display = 'block';
     svg.style.pointerEvents = 'none';
 
@@ -172,6 +173,7 @@
    * Le conteneur source est identifié avant l'injection pour éviter tout problème de timing.
    */
   function checkAndInjectIndividualDelete() {
+    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('delete')) return;
     if (window.location.pathname.indexOf('/notebook/') === -1) return;
 
     // 1. Détecter si un source-viewer est actif (preuve que la vue est ouverte)

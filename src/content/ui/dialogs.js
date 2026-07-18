@@ -19,6 +19,9 @@
   /** Référence à la modale active (null si aucune) */
   let activeDialog = null;
 
+  /** Référence à l'élément qui avait le focus avant l'ouverture de la modale */
+  let lastFocusedElement = null;
+
   // ═══════════════════════════════════════════════════════════════════════
   // Fonctions internes
   // ═══════════════════════════════════════════════════════════════════════
@@ -35,6 +38,16 @@
       }
       activeDialog.remove();
       activeDialog = null;
+
+      // Restauration du focus clavier sur l'élément déclencheur
+      if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
+        try {
+          lastFocusedElement.focus();
+        } catch (err) {
+          // Ignorer si l'élément n'est plus disponible
+        }
+        lastFocusedElement = null;
+      }
     }
   }
 
@@ -52,6 +65,9 @@
    * @param {Function} [onCancel]          - Callback exécuté sur annulation.
    */
   function showConfirmDialog(titleKey, messageKey, messageSubstitutions, onConfirm, onCancel) {
+    // Mémoriser l'élément déclencheur
+    lastFocusedElement = document.activeElement;
+
     // Fermer toute modale précédente
     closeDialog();
 
@@ -123,6 +139,9 @@
    * @param {Function}        [onChoice]      - Callback appelé avec 'md' ou 'pdf' (si titre fourni).
    */
   function showFormatChoiceDialog(titleOrCallback, onChoice) {
+    // Mémoriser l'élément déclencheur
+    lastFocusedElement = document.activeElement;
+
     // Fermer toute modale précédente
     closeDialog();
 
