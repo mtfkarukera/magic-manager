@@ -4,6 +4,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.6.0] — 2026-07-18
+
+### Ajouté
+- 🎨 **Identité Visuelle - Nouveau Logo** : Intégration du tout nouveau logo officiel du projet représentant l'essence de la boîte à outils de productivité (icônes de recherche, fusion, export, suppression et chat) intégré sous le format standardisé PNG (dimensions 16, 32, 48, 128) en remplacement de l'ancienne icône SVG.
+
 ## [0.5.9] — 2026-07-18
 
 ### Ajouté
