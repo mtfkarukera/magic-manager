@@ -42,7 +42,7 @@
    * Supprime les boutons MM injectés dans le panel-header.
    */
   function cleanupPanelButtons() {
-    document.querySelectorAll('.mm-individual-delete-btn, .mm-individual-export-btn, .mm-individual-transfer-btn').forEach(
+    document.querySelectorAll('.mm-individual-delete-btn, .mm-individual-export-btn').forEach(
       function (btn) { btn.remove(); }
     );
   }
@@ -57,12 +57,6 @@
     }
     if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
       window.MM.updateBatchMergeButtonState();
-    }
-    if (window.MM.isFeatureEnabled('transfer') && window.MM.transfer && typeof window.MM.transfer.updateBatchTransferButtonState === 'function') {
-      window.MM.transfer.updateBatchTransferButtonState();
-    }
-    if (window.MM.isFeatureEnabled('delete') && typeof window.MM.updateBatchDeleteButtonState === 'function') {
-      window.MM.updateBatchDeleteButtonState();
     }
   }, 150);
 
@@ -204,32 +198,14 @@
         window.MM.scanAndHighlight();
       }
 
-      // 5. Recherche Studio
-      if (window.MM.isFeatureEnabled('studioSearch') && window.MM.studioSearch && typeof window.MM.studioSearch.checkAndInjectStudioSearch === 'function') {
-        window.MM.studioSearch.checkAndInjectStudioSearch();
-      }
-
-      // 6. Indicateurs d'origine
-      if (typeof window.MM.injectOriginIndicators === 'function') {
-        window.MM.injectOriginIndicators();
-      }
-
-      // 6b. Suppression rapide Studio
-      if (window.MM.isFeatureEnabled('delete') && typeof window.MM.checkAndInjectStudioDelete === 'function') {
-        window.MM.checkAndInjectStudioDelete();
-      }
-
-      // 7. Injections individuelles (Poubelle, Export, Transfert) s'il y a un source-viewer actif
-      const sourceViewer = document.querySelector('source-viewer, [class*="source-viewer"]');
+      // 5. Injections individuelles (Poubelle & Export) s'il y a un source-viewer actif
+      const sourceViewer = document.querySelector('source-viewer');
       if (sourceViewer) {
         if (window.MM.isFeatureEnabled('delete') && typeof window.MM.checkAndInjectIndividualDelete === 'function') {
           window.MM.checkAndInjectIndividualDelete();
         }
         if (window.MM.isFeatureEnabled('export') && typeof window.MM.checkAndInjectIndividualExport === 'function') {
           window.MM.checkAndInjectIndividualExport();
-        }
-        if (window.MM.isFeatureEnabled('transfer') && window.MM.transfer && typeof window.MM.transfer.checkAndInjectIndividualTransfer === 'function') {
-          window.MM.transfer.checkAndInjectIndividualTransfer();
         }
       }
     } catch (err) {

@@ -7,17 +7,13 @@
 
 ## ✨ Fonctionnalités
 
-- 🔍 **Recherche globale** — Recherchez instantanément parmi toutes vos sources dans un notebook (avec bouton de réinitialisation rapide).
-- 🧬 **Dédoublonnage hybride** — Filtrez et identifiez visuellement les sources en double à 85% de similarité via la distance de Levenshtein.
-- 🌐 **Transfert inter-carnets** — Copiez instantanément vos sources (individuellement ou par lot) vers d'autres notebooks avec une interface de sélection premium.
-- 🎨 **Indicateurs d'origine** — Visualisez immédiatement l'origine de vos sources (Drive, Web, Local) avec des icônes sémantiques.
-- 🔍 **Recherche Studio** — Filtrez et recherchez dans vos notes et artéfacts IA par type (Audio, FAQ, Briefing, Chronologie, Table des matières).
+- 🔍 **Recherche globale & Doublons** — Recherchez parmi toutes vos sources (avec bouton de réinitialisation croix ×) et filtrez les doublons potentiels (similarité de titre + checksum du contenu).
 - 🔗 **Fusion intelligente** — Fusionnez plusieurs sources en un seul document Markdown ou PDF.
-- 📤 **Exports enrichis** — Exportez vos sources aux formats Markdown, PDF Simple ou PDF Enrichi (avec images Base64 via Walker DOM) individuellement ou en lot (ZIP).
-- 🗑️ **Suppression en ligne & en lot** — Supprimez des sources individuellement ou par lot dans le panneau des sources, ou via une poubelle rapide au survol dans le Studio.
+- 📤 **Exports simplifiés** — Exportez vos sources aux formats Markdown, PDF ou ZIP en un clic.
+- 🗑️ **Suppression en ligne** — Supprimez des sources directement depuis le panneau latéral.
 - 🎨 **Coloration syntaxique** — Mise en valeur du code dans les réponses du chat avec coloration syntaxique.
 - 💬 **Export du chat** — Sauvegardez vos conversations avec l'IA sous forme de notes.
-- ⌨️ **Raccourcis productivité** — `Ctrl+Shift+F` (recherche sources), `Ctrl+Alt+F` (recherche studio), `Ctrl+Shift+E` (focus chat).
+- ⌨️ **Raccourcis clavier** — Accélérez votre navigation avec des raccourcis dédiés (`Cmd/Ctrl+Shift+F` pour focaliser la recherche, `Cmd/Ctrl+Shift+E` pour le chat).
 
 ## 📦 Installation
 

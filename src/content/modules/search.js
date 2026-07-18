@@ -20,9 +20,6 @@
   /** Requête de recherche courante pour assurer la persistance lors des transitions SPA */
   let currentQuery = '';
 
-  /** Filtre pour n'afficher que les doublons potentiels */
-  let showOnlyDuplicates = false;
-
   // ═══════════════════════════════════════════════════════════════════════
   // Sélecteurs et Heuristiques DOM
   // ═══════════════════════════════════════════════════════════════════════
@@ -107,67 +104,6 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
-   * Calcule la distance de Levenshtein entre deux chaînes de caractères.
-   */
-  function levenshteinDistance(s1, s2) {
-    if (s1.length < s2.length) {
-      return levenshteinDistance(s2, s1);
-    }
-    if (s2.length === 0) {
-      return s1.length;
-    }
-    let previousRow = Array.from({ length: s2.length + 1 }, (_, i) => i);
-    for (let i = 0; i < s1.length; i++) {
-      let currentRow = [i + 1];
-      for (let j = 0; j < s2.length; j++) {
-        let insertions = previousRow[j + 1] + 1;
-        let deletions = currentRow[j] + 1;
-        let substitutions = previousRow[j] + (s1[i] === s2[j] ? 0 : 1);
-        currentRow.push(Math.min(insertions, deletions, substitutions));
-      }
-      previousRow = currentRow;
-    }
-    return previousRow[s2.length];
-  }
-
-  /**
-   * Détermine si deux titres de sources sont très similaires (seuil 85%).
-   */
-  function areSimilar(title1, title2) {
-    const t1 = title1.toLowerCase().trim();
-    const t2 = title2.toLowerCase().trim();
-    if (t1 === t2) return true;
-    const dist = levenshteinDistance(t1, t2);
-    const maxLen = Math.max(t1.length, t2.length);
-    if (maxLen === 0) return true;
-    const similarity = 1 - dist / maxLen;
-    return similarity > 0.85;
-  }
-
-  /**
-   * Identifie tous les doublons dans la liste des sources.
-   * Compare les titres des cartes.
-   */
-  function findDuplicateCards(cards) {
-    const duplicates = new Set();
-    const parsed = cards.map(card => {
-      const stretchedBtn = card.querySelector('button.source-stretched-button');
-      const title = stretchedBtn ? (stretchedBtn.getAttribute('aria-label') || '') : (card.textContent || '').trim().split('\n')[0];
-      return { card, title: title.trim() };
-    });
-
-    for (let i = 0; i < parsed.length; i++) {
-      for (let j = i + 1; j < parsed.length; j++) {
-        if (parsed[i].title && parsed[j].title && areSimilar(parsed[i].title, parsed[j].title)) {
-          duplicates.add(parsed[i].card);
-          duplicates.add(parsed[j].card);
-        }
-      }
-    }
-    return duplicates;
-  }
-
-  /**
    * Applique le filtre de recherche sur les cartes de sources.
    * @param {string} query - Requête nettoyée en minuscules.
    */
@@ -175,24 +111,10 @@
     const cards = findSourceCards();
     let visibleCount = 0;
 
-    const duplicateCards = findDuplicateCards(cards);
-
     cards.forEach(function (card) {
       const text = (card.textContent || '').trim().toLowerCase();
-      const isDup = duplicateCards.has(card);
 
-      if (isDup) {
-        card.classList.add('mm-source-duplicate');
-        card.setAttribute('title', 'Doublon potentiel détecté (Magic Manager)');
-      } else {
-        card.classList.remove('mm-source-duplicate');
-        card.removeAttribute('title');
-      }
-
-      const matchesQuery = !query || text.includes(query);
-      const matchesDup = !showOnlyDuplicates || isDup;
-
-      if (matchesQuery && matchesDup) {
+      if (text.includes(query)) {
         card.style.display = '';
         visibleCount++;
       } else {
@@ -200,7 +122,7 @@
       }
     });
 
-    if (visibleCount === 0 && (query.length > 0 || showOnlyDuplicates)) {
+    if (visibleCount === 0 && query.length > 0) {
       showNoResultsMessage();
     } else {
       hideNoResultsMessage();
@@ -250,31 +172,286 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Raccourci clavier de recherche
+  // Détection de doublons
   // ═══════════════════════════════════════════════════════════════════════
 
+  /** État du mode doublons */
+  let isDuplicateMode = false;
+
   /**
-   * Gère le raccourci global Cmd+Shift+F (Mac) ou Ctrl+Shift+F (Linux/Windows)
-   * pour focaliser la recherche de sources.
-   * @param {KeyboardEvent} e
+   * Calcule le coefficient de Sørensen-Dice sur les bigrammes de deux chaînes.
+   * @param {string} a
+   * @param {string} b
+   * @returns {number} Score entre 0 et 1.
    */
-  function focusSourceSearch() {
-    const input = document.querySelector('.mm-search-input');
-    if (input) {
-      input.focus();
-      input.select();
-      return true;
-    }
-    return false;
+  function diceCoefficient(a, b) {
+    a = a.toLowerCase().trim();
+    b = b.toLowerCase().trim();
+    if (a === b) return 1;
+    if (a.length < 2 || b.length < 2) return 0;
+
+    const bigramsA = new Set();
+    for (let i = 0; i < a.length - 1; i++) bigramsA.add(a.substring(i, i + 2));
+
+    const bigramsB = new Set();
+    for (let i = 0; i < b.length - 1; i++) bigramsB.add(b.substring(i, i + 2));
+
+    let intersection = 0;
+    bigramsA.forEach(function (bg) { if (bigramsB.has(bg)) intersection++; });
+
+    return (2 * intersection) / (bigramsA.size + bigramsB.size);
   }
 
-  function handleGlobalShortcut(e) {
-    const isCmdOrCtrl = e.metaKey || e.ctrlKey;
-    if (isCmdOrCtrl && e.shiftKey && e.key.toLowerCase() === 'f') {
-      if (focusSourceSearch()) {
-        e.preventDefault();
+  /**
+   * Extrait le titre propre d'une carte source.
+   * Réutilise le helper centralisé si disponible.
+   * @param {Element} card
+   * @returns {string}
+   */
+  function getCardTitle(card) {
+    if (typeof window.MM.getSourceTitle === 'function') {
+      return window.MM.getSourceTitle(card);
+    }
+    if (typeof window.MM.findSourceCardFromCheckbox === 'function') {
+      // Tenter de récupérer le titre propre de la source via la checkbox
+      const cb = card.querySelector('input[type="checkbox"], [role="checkbox"]');
+      if (cb) {
+        const info = window.MM.findSourceCardFromCheckbox(cb);
+        if (info && info.title) return info.title;
       }
     }
+    // Fallback : extraire le texte principal en excluant les icônes Material
+    const MATERIAL_ICON_NAMES = ['check_box', 'check_box_outline_blank',
+      'more_vert', 'more_horiz', 'delete', 'edit', 'close'];
+    let text = (card.textContent || '').trim();
+    MATERIAL_ICON_NAMES.forEach(function (icon) {
+      text = text.replace(new RegExp(icon, 'gi'), '');
+    });
+    return text.trim().split('\n')[0].trim();
+  }
+
+  /**
+   * Passe 1 : Regroupe les sources dont les titres sont similaires (Dice ≥ 0.8).
+   * @returns {Map<Element, {group: number, score: number}>}
+   */
+  function findTitleDuplicates() {
+    const cards = findSourceCards();
+    const titles = cards.map(getCardTitle);
+    const groups = new Map(); // card → { group, score }
+    let groupId = 0;
+
+    for (let i = 0; i < cards.length; i++) {
+      if (groups.has(cards[i])) continue;
+      let hasMatch = false;
+
+      for (let j = i + 1; j < cards.length; j++) {
+        if (groups.has(cards[j]) && groups.get(cards[j]).group !== groupId) continue;
+
+        const score = diceCoefficient(titles[i], titles[j]);
+        if (score >= 0.8) {
+          if (!hasMatch) {
+            groups.set(cards[i], { group: groupId, score: 1.0 });
+            hasMatch = true;
+          }
+          groups.set(cards[j], { group: groupId, score: score });
+        }
+      }
+
+      if (hasMatch) groupId++;
+    }
+
+    return groups;
+  }
+
+  /**
+   * Passe 2 : Calcule le checksum SHA-256 des premiers 2000 caractères du contenu
+   * pour les groupes candidats. Exécute les appels RPC de manière séquentielle.
+   * @param {Map<Element, {group: number, score: number}>} groups
+   * @returns {Promise<Map<Element, {group: number, score: number}>>}
+   */
+  async function refineDuplicatesWithChecksum(groups) {
+    // Regrouper les cards par groupId
+    const groupMap = new Map(); // groupId → [{ card, sourceId }]
+    groups.forEach(function (info, card) {
+      if (!groupMap.has(info.group)) groupMap.set(info.group, []);
+      // Extraire le sourceId depuis le DOM (data-source-id ou parsing)
+      const sourceId = card.getAttribute('data-source-id') ||
+                       (card.querySelector('[data-source-id]') || {}).dataset?.sourceId || null;
+      groupMap.get(info.group).push({ card, sourceId });
+    });
+
+    // Pour chaque groupe, récupérer le contenu et calculer le hash
+    for (const [gId, members] of groupMap) {
+      const hashes = [];
+      for (const member of members) {
+        if (!member.sourceId) {
+          hashes.push(null);
+          continue;
+        }
+        try {
+          // Récupérer les 2000 premiers caractères via le RPC existant
+          const notebookId = window.MM._currentNotebookId ||
+            window.location.pathname.split('/notebook/')[1]?.split('/')[0];
+          const content = await window.MM.getSourceContent(member.sourceId, notebookId);
+          const snippet = (content || '').substring(0, 2000);
+          // Hash SHA-256 via Web Crypto API
+          const encoder = new TextEncoder();
+          const data = encoder.encode(snippet);
+          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+          const hashArray = Array.from(new Uint8Array(hashBuffer));
+          const hashHex = hashArray.map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
+          hashes.push(hashHex);
+        } catch (err) {
+          console.warn('[MM] Erreur checksum pour source', member.sourceId, err);
+          hashes.push(null);
+        }
+      }
+
+      // Comparer les hashes pour affiner les scores
+      for (let i = 0; i < members.length; i++) {
+        for (let j = i + 1; j < members.length; j++) {
+          if (hashes[i] && hashes[j] && hashes[i] === hashes[j]) {
+            // Même contenu → score 1.0 (doublon confirmé)
+            groups.get(members[i].card).score = 1.0;
+            groups.get(members[j].card).score = 1.0;
+          }
+        }
+      }
+    }
+
+    return groups;
+  }
+
+  // Couleurs associées aux niveaux de similarité
+  const DUPE_COLORS = [
+    'hsl(0, 80%, 60%)',    // Groupe 0 : rouge
+    'hsl(30, 80%, 55%)',   // Groupe 1 : orange
+    'hsl(270, 60%, 55%)',  // Groupe 2 : violet
+    'hsl(180, 60%, 45%)',  // Groupe 3 : cyan
+    'hsl(120, 50%, 45%)',  // Groupe 4 : vert
+    'hsl(330, 70%, 55%)',  // Groupe 5 : rose
+  ];
+
+  /**
+   * Applique le mode visuel doublons : masque les non-doublons, ajoute un badge coloré.
+   * @param {Map<Element, {group: number, score: number}>} groups
+   */
+  function applyDuplicateView(groups) {
+    const cards = findSourceCards();
+    let dupeCount = 0;
+
+    cards.forEach(function (card) {
+      // Nettoyer les badges précédents
+      const oldBadge = card.querySelector('.mm-dupe-badge');
+      if (oldBadge) oldBadge.remove();
+
+      if (groups.has(card)) {
+        card.style.display = '';
+        const info = groups.get(card);
+        const color = DUPE_COLORS[info.group % DUPE_COLORS.length];
+        const pct = Math.round(info.score * 100);
+
+        const badge = createElement('span', {
+          className: 'mm-dupe-badge',
+          textContent: pct + '%',
+          title: t('searchDupeScore', [String(pct)])
+        });
+        badge.style.setProperty('--mm-dupe-color', color);
+        card.style.setProperty('--mm-dupe-border-color', color);
+        card.classList.add('mm-dupe-highlight');
+        // Injecter le badge au début de la carte
+        card.insertBefore(badge, card.firstChild);
+        dupeCount++;
+      } else {
+        card.style.display = 'none';
+      }
+    });
+
+    if (dupeCount === 0 && groups.size === 0) {
+      showNoResultsMessage();
+      // Remplacer le texte par le message "aucun doublon"
+      if (noResultsElement) {
+        noResultsElement.textContent = t('searchNoDuplicates');
+      }
+    }
+  }
+
+  /**
+   * Nettoie le mode visuel doublons et restaure l'affichage normal.
+   */
+  function clearDuplicateView() {
+    const cards = findSourceCards();
+    cards.forEach(function (card) {
+      card.style.display = '';
+      card.classList.remove('mm-dupe-highlight');
+      card.style.removeProperty('--mm-dupe-border-color');
+      const badge = card.querySelector('.mm-dupe-badge');
+      if (badge) badge.remove();
+    });
+    hideNoResultsMessage();
+  }
+
+  /**
+   * Handler du clic sur le bouton de détection de doublons.
+   */
+  async function handleDuplicateSearch() {
+    if (isDuplicateMode) {
+      // Désactiver le mode doublons → restaurer la vue normale
+      isDuplicateMode = false;
+      clearDuplicateView();
+      // Ré-appliquer le filtre texte courant
+      applyFilter(currentQuery);
+      // Retirer la classe active du bouton
+      const btn = searchBarContainer?.querySelector('.mm-search-dupes-btn');
+      if (btn) btn.classList.remove('mm-active');
+      return;
+    }
+
+    isDuplicateMode = true;
+    const btn = searchBarContainer?.querySelector('.mm-search-dupes-btn');
+    if (btn) btn.classList.add('mm-active');
+
+    // Passe 1 : Similarité de titre (instantané)
+    const groups = findTitleDuplicates();
+
+    if (groups.size === 0) {
+      applyDuplicateView(groups); // Affiche "aucun doublon"
+      return;
+    }
+
+    // Afficher la vue préliminaire (titres similaires)
+    applyDuplicateView(groups);
+
+    // Passe 2 : Checksum de contenu (asynchrone, ciblé)
+    try {
+      await refineDuplicatesWithChecksum(groups);
+      // Ré-appliquer avec les scores affinés
+      applyDuplicateView(groups);
+    } catch (err) {
+      console.warn('[MM] Passe 2 checksum échouée, conservation des résultats de la passe 1', err);
+    }
+  }
+
+  /**
+   * Crée l'icône SVG du bouton doublons (content_copy Material).
+   * @returns {SVGElement}
+   */
+  function createDupeIcon() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '16');
+    svg.setAttribute('height', '16');
+    svg.setAttribute('fill', 'currentColor');
+    svg.setAttribute('aria-hidden', 'true');
+
+    const path = document.createElementNS(NS, 'path');
+    path.setAttribute('d',
+      'M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 ' +
+      '1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z'
+    );
+    svg.appendChild(path);
+    return svg;
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -354,67 +531,50 @@
       placeholder: t('searchPlaceholder'),
       'aria-label': t('searchPlaceholder'),
       value: currentQuery, // Pré-remplir avec la requête courante (persistance)
-      onInput: performSearch,
+      onInput: function () {
+        clearBtn.classList.toggle('mm-visible', input.value.length > 0);
+        performSearch();
+      },
 
       onKeydown: function (e) {
         if (e.key === 'Escape') {
           input.value = '';
           currentQuery = '';
           applyFilter('');
+          clearBtn.classList.remove('mm-visible');
           input.blur();
         }
       }
     });
 
-    const searchIcon = createElement('svg', {
-      viewBox: '0 0 24 24',
-      className: 'mm-icon-svg mm-search-icon',
-      'aria-hidden': 'true',
-      innerHTML: '<path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>'
-    });
-
+    // Bouton de réinitialisation (croix)
     const clearBtn = createElement('button', {
-      className: 'mm-search-clear mm-btn-icon',
-      title: t('clearSearch') || 'Vider la recherche',
-      'aria-label': t('clearSearch') || 'Vider la recherche',
-      onClick: function (e) {
-        e.stopPropagation();
+      className: 'mm-search-clear' + (currentQuery ? ' mm-visible' : ''),
+      type: 'button',
+      'aria-label': t('searchClearLabel'),
+      textContent: '×',
+      onClick: function () {
         input.value = '';
         currentQuery = '';
         applyFilter('');
+        clearBtn.classList.remove('mm-visible');
         input.focus();
       }
-    }, [
-      createElement('svg', {
-        viewBox: '0 0 24 24',
-        className: 'mm-icon-svg',
-        'aria-hidden': 'true',
-        innerHTML: '<path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>'
-      })
-    ]);
+    });
 
-    const dedupBtn = createElement('button', {
-      className: 'mm-search-dedup-btn mm-btn-icon',
-      title: 'Afficher uniquement les doublons',
-      'aria-label': 'Afficher uniquement les doublons',
-      onClick: function (e) {
-        e.stopPropagation();
-        showOnlyDuplicates = !showOnlyDuplicates;
-        dedupBtn.classList.toggle('active', showOnlyDuplicates);
-        applyFilter(currentQuery);
-      }
-    }, [
-      createElement('svg', {
-        viewBox: '0 0 24 24',
-        className: 'mm-icon-svg',
-        'aria-hidden': 'true',
-        innerHTML: '<path d="M15 9H5V5H15V9M19 13H9V9H19V13M23 17H13V13H23V17M15 3H5C3.9 3 3 3.9 3 5V9C3 10.1 3.9 11 5 11H15C16.1 11 17 10.1 17 9V5C17 3.9 16.1 3 15 3Z"/>'
-      })
-    ]);
+    // Bouton de détection des doublons
+    const dupeBtn = createElement('button', {
+      className: 'mm-search-dupes-btn' + (isDuplicateMode ? ' mm-active' : ''),
+      type: 'button',
+      'aria-label': t('searchDupesLabel'),
+      title: t('searchDupesLabel'),
+      onClick: handleDuplicateSearch
+    });
+    dupeBtn.appendChild(createDupeIcon());
 
     searchBarContainer = createElement('div', {
       className: 'mm-search-bar'
-    }, [searchIcon, input, clearBtn, dedupBtn]);
+    }, [input, clearBtn, dupeBtn]);
 
     const header = findSourcePanelHeader();
 
@@ -455,10 +615,6 @@
     // 1. Effectuer une détection et injection immédiate
     checkAndInjectSearch();
 
-    // 2. Ajouter l'écouteur de raccourci clavier global
-    window.removeEventListener('keydown', handleGlobalShortcut);
-    window.addEventListener('keydown', handleGlobalShortcut);
-
     console.log('[MM] Module recherche initialisé');
   }
 
@@ -466,7 +622,9 @@
    * Nettoie les éléments injectés par le module.
    */
   function cleanupSearch() {
-    window.removeEventListener('keydown', handleGlobalShortcut);
+    // Réinitialiser le mode doublons
+    isDuplicateMode = false;
+    clearDuplicateView();
 
     // Réinitialiser la requête de recherche courante
     currentQuery = '';
@@ -491,5 +649,4 @@
   window.MM.initSearch = initSearch;
   window.MM.cleanupSearch = cleanupSearch;
   window.MM.checkAndInjectSearch = checkAndInjectSearch;
-  window.MM.focusSourceSearch = focusSourceSearch;
 })();

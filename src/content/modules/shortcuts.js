@@ -1,113 +1,105 @@
-// shortcuts.js — Centralisation et écouteurs des raccourcis clavier
+// shortcuts.js — Module centralisé de raccourcis clavier
 // Auteur : MTF Karukera | Licence : MPL-2.0
+// Dépendance : window.MM (utils.js chargé avant)
 
-(function() {
-  'use strict';
+'use strict';
 
-  // Namespace global
-  window.MM = window.MM || {};
-
-  let isInitialized = false;
-
-  console.log('[MM] Module shortcuts chargé.');
+(function () {
+  // Sélecteurs CSS pour les champs cibles
+  const SEARCH_INPUT = '.mm-search-input';
+  const STUDIO_SEARCH_INPUT = '.mm-studio-search-input';
+  const CHAT_INPUT_SELECTORS = [
+    'chat-input textarea',
+    'section.chat-panel textarea',
+    '.ql-editor[contenteditable="true"]',
+    'textarea[placeholder*="question"]',
+    'textarea[placeholder*="Posez"]',
+    'textarea[placeholder*="Ask"]',
+    'textarea[placeholder*="typing"]',
+    'textarea[aria-label*="typing"]',
+    'textarea' // Fallback général
+  ];
 
   /**
-   * Focus le champ de saisie du chat central de NotebookLM.
+   * Tente de focaliser le premier élément correspondant à un sélecteur CSS.
+   * @param {string|string[]} selectors
+   * @param {boolean} shouldSelect - Si true, sélectionne tout le texte
+   * @returns {boolean} true si un élément a été focalisé
    */
-  function focusChatInput() {
-    const selectors = [
-      'section.chat-panel textarea',
-      'chat-input textarea',
-      'textarea[placeholder*="notebook"]',
-      'textarea[placeholder*="carnet"]',
-      'textarea[placeholder*="Ask"]',
-      'textarea[placeholder*="Poser"]',
-      'textarea' // Fallback général
-    ];
-
-    for (const sel of selectors) {
-      const input = document.querySelector(sel);
-      if (input && input.offsetParent !== null) { // Vérifier que l'élément est visible
-        input.focus();
-        // Placer le curseur à la fin du texte si nécessaire
-        const len = input.value.length;
-        input.setSelectionRange(len, len);
-        console.log('[MM] Focus placé sur le champ de saisie du chat.');
+  function focusFirst(selectors, shouldSelect = false) {
+    const list = Array.isArray(selectors) ? selectors : [selectors];
+    for (const sel of list) {
+      const el = document.querySelector(sel);
+      if (el) {
+        el.focus();
+        if (shouldSelect && typeof el.select === 'function') {
+          el.select();
+        } else if (el.tagName === 'TEXTAREA') {
+          // Placer le curseur à la fin
+          const len = el.value.length;
+          if (typeof el.setSelectionRange === 'function') {
+            el.setSelectionRange(len, len);
+          }
+        }
         return true;
       }
     }
-    console.warn('[MM] Impossible de localiser le champ de saisie du chat central.');
     return false;
   }
 
   /**
-   * Gère les événements clavier globaux (keydown).
+   * Handler global keydown.
+   * @param {KeyboardEvent} e
    */
-  function handleKeyDown(e) {
-    const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
+  function handleShortcut(e) {
+    // Si la feature n'est pas activée, on ne fait rien
+    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('shortcuts')) {
+      return;
+    }
 
-    // Raccourci 1 : Recherche dans le Studio (Ctrl+Alt+F ou Cmd+Option+F)
-    const matchesStudioSearch = (e.ctrlKey && e.altKey && e.key.toLowerCase() === 'f') ||
-                                (isMac && e.metaKey && e.altKey && e.key.toLowerCase() === 'f');
+    const isMac = /Mac|iPhone|iPad/.test(navigator.platform || '');
+    const cmdOrCtrl = isMac ? e.metaKey : e.ctrlKey;
+    const key = e.key.toLowerCase();
 
-    if (matchesStudioSearch) {
-      e.preventDefault();
-      if (typeof window.MM.studioSearch.focusStudioSearch === 'function') {
-        window.MM.studioSearch.focusStudioSearch();
+    // Cmd/Ctrl + Shift + F → Focus recherche sources
+    if (cmdOrCtrl && e.shiftKey && !e.altKey && key === 'f') {
+      if (focusFirst(SEARCH_INPUT, true)) {
+        e.preventDefault();
+        e.stopPropagation();
       }
       return;
     }
 
-    // Raccourci 2 : Focus sur le chat central (Ctrl+Shift+E ou Cmd+Shift+E)
-    const matchesChatFocus = (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'e') ||
-                             (isMac && e.metaKey && e.shiftKey && e.key.toLowerCase() === 'e');
-
-    if (matchesChatFocus) {
-      e.preventDefault();
-      focusChatInput();
+    // Option/Alt + Shift + F → Focus recherche Studio (Sprint 4)
+    if (e.altKey && e.shiftKey && !cmdOrCtrl && key === 'f') {
+      if (focusFirst(STUDIO_SEARCH_INPUT, true)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
       return;
     }
 
-    // Raccourci 3 : Recherche de sources (Ctrl+Shift+F ou Cmd+Shift+F)
-    const matchesSourceSearch = (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'f') ||
-                                (isMac && e.metaKey && e.shiftKey && e.key.toLowerCase() === 'f');
-
-    if (matchesSourceSearch) {
-      e.preventDefault();
-      if (typeof window.MM.focusSourceSearch === 'function') {
-        window.MM.focusSourceSearch();
+    // Cmd/Ctrl + Shift + E → Focus saisie chat
+    if (cmdOrCtrl && e.shiftKey && !e.altKey && key === 'e') {
+      if (focusFirst(CHAT_INPUT_SELECTORS, false)) {
+        e.preventDefault();
+        e.stopPropagation();
       }
       return;
     }
   }
 
-  /**
-   * Initialise les écouteurs de raccourcis clavier.
-   */
   function initShortcuts() {
-    if (isInitialized) return;
-
-    window.addEventListener('keydown', handleKeyDown, true);
-    isInitialized = true;
-    console.log('[MM] Raccourcis clavier globaux activés.');
+    document.removeEventListener('keydown', handleShortcut, true);
+    document.addEventListener('keydown', handleShortcut, true);
+    console.log('[MM] Module raccourcis clavier initialisé');
   }
 
-  /**
-   * Désactive proprement les écouteurs.
-   */
   function cleanupShortcuts() {
-    if (!isInitialized) return;
-
-    window.removeEventListener('keydown', handleKeyDown, true);
-    isInitialized = false;
-    console.log('[MM] Raccourcis clavier globaux désactivés.');
+    document.removeEventListener('keydown', handleShortcut, true);
+    console.log('[MM] Module raccourcis clavier nettoyé');
   }
 
-  // Exposition publique pour l'orchestrateur
-  window.MM.shortcuts = {
-    init: initShortcuts,
-    cleanup: cleanupShortcuts,
-    focusChatInput: focusChatInput
-  };
-
+  window.MM.initShortcuts = initShortcuts;
+  window.MM.cleanupShortcuts = cleanupShortcuts;
 })();

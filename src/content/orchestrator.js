@@ -18,14 +18,13 @@
 
   /** Clés des features */
   const FEATURES = {
+    shortcuts: 'feature_shortcuts',
     search: 'feature_search',
     merge: 'feature_merge',
     export: 'feature_export',
     delete: 'feature_delete',
     syntax: 'feature_syntax',
-    chatExport: 'feature_chatExport',
-    transfer: 'feature_transfer',
-    studioSearch: 'feature_studioSearch'
+    chatExport: 'feature_chatExport'
   };
 
   /** Préférences par défaut (toutes actives) */
@@ -93,6 +92,7 @@
     // Chaque module est isolé dans un try-catch pour qu'un crash
     // dans l'un n'empêche pas l'initialisation des suivants.
     const modules = [
+      { key: FEATURES.shortcuts, init: 'initShortcuts', label: 'Raccourcis' },
       { key: FEATURES.search, init: 'initSearch', label: 'Recherche' },
       { key: FEATURES.merge,  init: 'initMerge',  label: 'Fusion' },
       { key: FEATURES.export, init: 'initExport', label: 'Export' },
@@ -111,17 +111,8 @@
       }
     }
 
-    // Initialiser les raccourcis clavier globaux
-    if (window.MM.shortcuts && typeof window.MM.shortcuts.init === 'function') {
-      try {
-        window.MM.shortcuts.init();
-      } catch (err) {
-        console.error('[MM] ERREUR lors de l\'init des raccourcis clavier :', err);
-      }
-    }
-
-    // Panel observer centralisé : actif si export, delete ou transfer est activé
-    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.transfer)) {
+    // Panel observer centralisé : actif si export OU delete est activé
+    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete)) {
       try {
         window.MM.initPanelObserver();
       } catch (err) {
@@ -136,16 +127,14 @@
   function cleanupAllModules() {
     console.log('[MM] Nettoyage de tous les modules');
     const modules = [
+      { name: 'Shortcuts', fn: window.MM.cleanupShortcuts },
       { name: 'PanelObserver', fn: window.MM.cleanupPanelObserver },
       { name: 'Search', fn: window.MM.cleanupSearch },
       { name: 'Merge', fn: window.MM.cleanupMerge },
       { name: 'Export', fn: window.MM.cleanupExport },
       { name: 'Delete', fn: window.MM.cleanupDelete },
       { name: 'Syntax', fn: window.MM.cleanupSyntax },
-      { name: 'ChatExport', fn: window.MM.cleanupChatExport },
-      { name: 'Transfer', fn: window.MM.transfer ? window.MM.transfer.cleanup : null },
-      { name: 'StudioSearch', fn: window.MM.studioSearch ? window.MM.studioSearch.cleanup : null },
-      { name: 'Shortcuts', fn: window.MM.shortcuts ? window.MM.shortcuts.cleanup : null }
+      { name: 'ChatExport', fn: window.MM.cleanupChatExport }
     ];
 
     modules.forEach(function (m) {

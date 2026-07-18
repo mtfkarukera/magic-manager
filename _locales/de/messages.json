@@ -189,22 +189,27 @@
     "message": "Inhalt der ausgewählten Quellen konnte nicht gelesen werden.",
     "description": "Traduction pour exportFailedNoContent"
   },
-  "settingsFeatureTransfer": {
-    "message": "Kopieren zwischen Notebooks",
-    "description": "Libellé de la copie de sources inter-carnets dans les paramètres"
+  "settingsFeatureShortcuts": {
+    "message": "Tastenkürzel",
+    "description": "Libellé du toggle de raccourcis clavier dans les paramètres"
   },
-  "settingsFeatureStudioSearch": {
-    "message": "Studio-Suche & Filter",
-    "description": "Libellé de la recherche et des filtres Studio dans les paramètres"
+  "searchClearLabel": {
+    "message": "Suche löschen",
+    "description": "Aria-label du bouton croix de réinitialisation de la recherche"
   },
-  "deleteBatchConfirmMessage": {
-    "message": "Sind Sie sicher, dass Sie die ausgewählten $count$ Quellen löschen möchten? Diese Aktion ist unwiderruflich.",
-    "description": "Message de confirmation de suppression en lot",
+  "searchDupesLabel": {
+    "message": "Duplikate finden",
+    "description": "Label du bouton de détection de doublons"
+  },
+  "searchNoDuplicates": {
+    "message": "Keine Duplikate gefunden",
+    "description": "Message affiché quand kein Duplikat entdeckt wird"
+  },
+  "searchDupeScore": {
+    "message": "$score$% Übereinstimmung",
+    "description": "Infobulle du badge de score de similarité",
     "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "3"
-      }
+      "score": { "content": "$1", "example": "85" }
     }
   }
 }

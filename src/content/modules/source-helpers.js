@@ -328,58 +328,6 @@
     return stickyHeader;
   }
 
-  /**
-   * Injecte des indicateurs visuels d'origine (Drive, Web, Local) à côté du titre des sources.
-   */
-  function injectOriginIndicators() {
-    const list = findSourcesListContainer();
-    if (!list) return;
-
-    const cards = list.querySelectorAll('.single-source-container, [class*="source-card"], [class*="source-item"]');
-    cards.forEach(card => {
-      if (card.querySelector('.mm-source-origin')) return;
-
-      const titleEl = card.querySelector('button.source-stretched-button, [class*="title"], [class*="name"]');
-      if (!titleEl) return;
-
-      const nativeIcon = card.querySelector('mat-icon, svg, [class*="icon"]');
-      const iconName = nativeIcon ? (nativeIcon.textContent || nativeIcon.getAttribute('aria-label') || '').toLowerCase() : '';
-      const cardText = (card.textContent || '').toLowerCase();
-
-      let origin = 'local';
-      let svgPath = '';
-      let originTitle = '';
-
-      if (iconName.includes('drive') || cardText.includes('google drive') || cardText.includes('gdrive')) {
-        origin = 'drive';
-        originTitle = 'Synchronisé avec Google Drive';
-        svgPath = '<path d="M12,18A6,6 0 0,1 6,12C6,11 6.25,10.07 6.69,9.25L5.22,8.08C4.45,9.23 4,10.57 4,12A8,8 0 0,0 12,20V18M12,4V6A6,6 0 0,1 18,12C18,13 17.75,13.93 17.31,14.75L18.78,15.92C19.55,14.77 20,13.43 20,12A8,8 0 0,0 12,4M12,8A4,4 0 0,0 8,12H10A2,2 0 0,1 12,10V8M12,16V14A2,2 0 0,1 14,12H16A4,4 0 0,0 12,16Z"/>';
-      } else if (iconName.includes('link') || iconName.includes('public') || iconName.includes('language') || cardText.includes('http://') || cardText.includes('https://') || cardText.includes('.com') || cardText.includes('.fr') || cardText.includes('.org')) {
-        origin = 'web';
-        originTitle = 'Source Web / Lien externe';
-        svgPath = '<path d="M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2M19.93,11H17.24C17.07,8.23 16.29,5.69 15.08,3.58C17.7,4.8 19.46,7.5 19.93,11M12,4.04C12.83,5.92 13.44,8.32 13.56,11H10.44C10.56,8.32 11.17,5.92 12,4.04M4.07,13H6.76C6.93,15.77 7.71,18.31 8.92,20.42C6.3,19.2 4.54,16.5 4.07,13M4.07,11C4.54,8.5 6.3,5.8 8.92,4.58C7.71,6.69 6.93,9.23 6.76,11H4.07M12,19.96C11.17,18.08 10.56,15.68 10.44,13H13.56C13.44,15.68 12.83,18.08 12,19.96M17.24,13H19.93C19.46,15.5 17.7,18.2 15.08,19.42C16.29,17.31 17.07,14.77 17.24,13M15.53,11H8.47C8.4,9.22 8.87,7.21 9.77,5.5H14.23C15.13,7.21 15.6,9.22 15.53,11M8.47,13H15.53C15.6,14.78 15.13,16.79 14.23,18.5H9.77C8.87,16.79 8.4,14.78 8.47,13Z"/>';
-      } else {
-        origin = 'local';
-        originTitle = 'Document importé localement';
-        svgPath = '<path d="M18.5,19H5.5A1.5,1.5 0 0,1 4.14,16.89L8.14,6.89A1.5,1.5 0 0,1 9.5,6H14.5A1.5,1.5 0 0,1 15.86,6.89L19.86,16.89A1.5,1.5 0 0,1 18.5,19M9.5,8L5.5,18H18.5L14.5,8H9.5Z"/>';
-      }
-
-      const iconEl = window.MM.createElement('span', {
-        className: `mm-source-origin mm-origin-${origin}`,
-        title: originTitle
-      }, [
-        window.MM.createElement('svg', {
-          viewBox: '0 0 24 24',
-          className: 'mm-origin-icon-svg',
-          'aria-hidden': 'true',
-          innerHTML: svgPath
-        })
-      ]);
-
-      titleEl.insertBefore(iconEl, titleEl.firstChild);
-    });
-  }
-
   // ═══════════════════════════════════════════════════════════════════════
   // Exposition dans le namespace global MM
   // ═══════════════════════════════════════════════════════════════════════
@@ -393,5 +341,4 @@
   window.MM.findSourceViewerCloseButton = findSourceViewerCloseButton;
   window.MM.findSourceViewerTitle = findSourceViewerTitle;
   window.MM.findSourceViewerTitleText = findSourceViewerTitleText;
-  window.MM.injectOriginIndicators = injectOriginIndicators;
 })();

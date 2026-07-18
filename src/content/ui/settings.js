@@ -19,16 +19,15 @@
   /** Préfixe de stockage pour les préférences */
   const STORAGE_PREFIX = 'mm_';
 
-  /** Configuration des features avec clé de stockage et clé i18n */
+  /** Configuration des 6 features avec clé de stockage et clé i18n */
   const FEATURE_TOGGLES = [
-    { key: 'feature_search',       i18nKey: 'settingsFeatureSearch' },
-    { key: 'feature_merge',        i18nKey: 'settingsFeatureMerge' },
-    { key: 'feature_export',       i18nKey: 'settingsFeatureExport' },
-    { key: 'feature_delete',       i18nKey: 'settingsFeatureDelete' },
-    { key: 'feature_syntax',       i18nKey: 'settingsFeatureSyntax' },
-    { key: 'feature_chatExport',   i18nKey: 'settingsFeatureChatExport' },
-    { key: 'feature_transfer',     i18nKey: 'settingsFeatureTransfer' },
-    { key: 'feature_studioSearch', i18nKey: 'settingsFeatureStudioSearch' }
+    { key: 'feature_shortcuts',  i18nKey: 'settingsFeatureShortcuts' },
+    { key: 'feature_search',     i18nKey: 'settingsFeatureSearch' },
+    { key: 'feature_merge',      i18nKey: 'settingsFeatureMerge' },
+    { key: 'feature_export',     i18nKey: 'settingsFeatureExport' },
+    { key: 'feature_delete',     i18nKey: 'settingsFeatureDelete' },
+    { key: 'feature_syntax',     i18nKey: 'settingsFeatureSyntax' },
+    { key: 'feature_chatExport', i18nKey: 'settingsFeatureChatExport' }
   ];
 
   // ═══════════════════════════════════════════════════════════════════════

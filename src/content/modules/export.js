@@ -168,7 +168,7 @@
 
     for (const file of files) {
       const nameBytes = enc.encode(file.name);
-      const dataBytes = typeof file.data === 'string' ? enc.encode(file.data) : file.data;
+      const dataBytes = enc.encode(file.data);
       const crc      = crc32(dataBytes);
       const size     = dataBytes.length;
       const now      = new Date();
@@ -329,22 +329,21 @@
       doc.setFont('Helvetica', 'normal');
       doc.setFontSize(11);
 
-      const linesRaw = content.split('\n');
-      linesRaw.forEach(function (lineText) {
-        const cleanLine = lineText.trim();
-        if (!cleanLine) {
-          y += 3;
-          return;
-        }
-        const lines = doc.splitTextToSize(cleanLine, maxLineWidth);
+      const paragraphs = content.split('\n\n');
+      paragraphs.forEach(function (p) {
+        const pText = p.replace(/\s+/g, ' ').trim();
+        if (!pText) return;
+        const lines = doc.splitTextToSize(pText, maxLineWidth);
         lines.forEach(function (line) {
           if (y > pageHeight - margin) { doc.addPage(); y = 20; }
           doc.text(line, margin, y);
           y += 6;
         });
+        y += 4; // Espace inter-paragraphe
       });
 
-      // Téléchargement via blob
+      // Téléchargement via blob (méthode fiable en content script Firefox)
+      // doc.output('blob') retourne un vrai Blob PDF sans étape intermédiaire
       const pdfBlob = doc.output('blob');
       const pdfUrl  = URL.createObjectURL(pdfBlob);
       const a = document.createElement('a');
@@ -353,181 +352,12 @@
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+      // Libérer l'URL après un délai (le clic est asynchrone)
       setTimeout(function () { URL.revokeObjectURL(pdfUrl); }, 1000);
       console.log('[MM] Fichier PDF téléchargé :', cleanFilename);
 
     } catch (err) {
       console.error('[MM] Erreur lors de la génération PDF :', err);
-    }
-  }
-
-  function downloadPDFEnriched(filename, sourceViewer) {
-    const jspdfLib = window.jspdf
-      || (typeof globalThis !== 'undefined' && globalThis.jspdf)
-      || (typeof self !== 'undefined' && self.jspdf);
-
-    if (!jspdfLib || !jspdfLib.jsPDF) {
-      console.error('[MM] jsPDF non résolu. Export PDF Enrichi annulé.');
-      return;
-    }
-
-    const baseName = stripSourceExtension(filename || 'source');
-    const cleanFilename = baseName.replace(/[\/\\?%*:|"<>\s]/g, '_') + '.pdf';
-
-    try {
-      const { jsPDF } = jspdfLib;
-      const doc = new jsPDF({
-        orientation: 'portrait',
-        unit: 'mm',
-        format: 'a4'
-      });
-
-      const margin = 20;
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const maxWidth = pageWidth - margin * 2;
-      const bottomMargin = 20;
-      const lineHeight = 6;
-      let cursorY = 25;
-
-      const headingSizes = { H1: 20, H2: 16, H3: 13, H4: 11 };
-
-      function ensureSpace(neededHeight) {
-        if (cursorY + neededHeight > pageHeight - bottomMargin) {
-          doc.addPage();
-          cursorY = margin;
-        }
-      }
-
-      function processNode(node, indent = 0, listIndex = 0) {
-        if (node.nodeType === Node.TEXT_NODE) {
-          const text = node.textContent.trim();
-          if (!text) return;
-          const lines = doc.splitTextToSize(text, maxWidth - indent);
-          ensureSpace(lines.length * lineHeight);
-          lines.forEach(function (line) {
-            if (cursorY + lineHeight > pageHeight - bottomMargin) {
-              doc.addPage();
-              cursorY = margin;
-            }
-            doc.text(line, margin + indent, cursorY);
-            cursorY += lineHeight;
-          });
-          return;
-        }
-
-        if (node.nodeType !== Node.ELEMENT_NODE) return;
-
-        const tag = node.tagName;
-
-        if (headingSizes[tag]) {
-          ensureSpace(lineHeight * 2);
-          cursorY += 4;
-          doc.setFontSize(headingSizes[tag]);
-          doc.setFont("Helvetica", "bold");
-          const lines = doc.splitTextToSize(node.textContent.trim(), maxWidth);
-          ensureSpace(lines.length * lineHeight);
-          lines.forEach(function (line) {
-            if (cursorY + lineHeight > pageHeight - bottomMargin) {
-              doc.addPage();
-              cursorY = margin;
-            }
-            doc.text(line, margin, cursorY);
-            cursorY += lineHeight;
-          });
-          cursorY += 3;
-          doc.setFont("Helvetica", "normal");
-          doc.setFontSize(11);
-          return;
-        }
-
-        if (tag === "IMG") {
-          const imgData = node.getAttribute("src");
-          if (!imgData || !imgData.startsWith("data:image")) return;
-
-          const naturalW = node.naturalWidth || 200;
-          const naturalH = node.naturalHeight || 150;
-          const ratio = naturalH / naturalW;
-          const drawWidth = Math.min(maxWidth, naturalW * 0.264583);
-          const drawHeight = drawWidth * ratio;
-
-          ensureSpace(drawHeight + 4);
-          try {
-            doc.addImage(imgData, "JPEG", margin + indent, cursorY, drawWidth, drawHeight);
-          } catch (e) {
-            console.warn("[Custom Walker] Image ignorée :", e.message);
-          }
-          cursorY += drawHeight + 4;
-          return;
-        }
-
-        if (tag === "UL") {
-          for (const child of node.children) {
-            processNode(child, indent + 6, 0);
-          }
-          cursorY += 2;
-          return;
-        }
-
-        if (tag === "OL") {
-          let idx = 1;
-          for (const child of node.children) {
-            processNode(child, indent + 6, idx++);
-          }
-          cursorY += 2;
-          return;
-        }
-
-        if (tag === "LI") {
-          const bullet = listIndex > 0 ? `${listIndex}. ` : "• ";
-          const text = node.textContent.trim();
-          const lines = doc.splitTextToSize(bullet + text, maxWidth - indent);
-          ensureSpace(lines.length * lineHeight);
-          lines.forEach(function (line) {
-            if (cursorY + lineHeight > pageHeight - bottomMargin) {
-              doc.addPage();
-              cursorY = margin;
-            }
-            doc.text(line, margin + indent, cursorY);
-            cursorY += lineHeight;
-          });
-          return;
-        }
-
-        if (tag === "BLOCKQUOTE") {
-          doc.setFont("Helvetica", "italic");
-          const barX = margin + indent + 1;
-          for (const child of node.childNodes) {
-            processNode(child, indent + 8, 0);
-          }
-          doc.setDrawColor(180);
-          doc.setLineWidth(0.8);
-          doc.line(barX, cursorY - lineHeight, barX, cursorY);
-          doc.setFont("Helvetica", "normal");
-          doc.setDrawColor(0);
-          return;
-        }
-
-        for (const child of node.childNodes) {
-          processNode(child, indent, 0);
-        }
-      }
-
-      processNode(sourceViewer);
-
-      const pdfBlob = doc.output('blob');
-      const pdfUrl  = URL.createObjectURL(pdfBlob);
-      const a = document.createElement('a');
-      a.href     = pdfUrl;
-      a.download = cleanFilename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(function () { URL.revokeObjectURL(pdfUrl); }, 1000);
-      console.log('[MM] Fichier PDF Enrichi téléchargé :', cleanFilename);
-
-    } catch (err) {
-      console.error('[MM] Erreur lors de la génération PDF Enrichi :', err);
     }
   }
 
@@ -560,95 +390,25 @@
     const checked = window.MM.getCheckedSourceCheckboxes();
     if (checked.length === 0) return;
 
+    // Fermer le dialogue global de paramétrage s'il est ouvert
     const settings = document.getElementById('mm-settings-menu');
     if (settings) settings.style.display = 'none';
 
+    // Si une seule source est cochée : export direct en Markdown, pas de ZIP ni de modale
     if (checked.length === 1) {
       startBatchProcess(checked, 'Markdown');
       return;
     }
 
-    // Dialogue d'exportation en lot ZIP premium
-    const dialog = createElement('dialog', {
-      className: 'mm-dialog mm-batch-export-dialog',
-      role: 'dialog',
-      'aria-modal': 'true'
-    });
-
-    const titleId = 'mm-batch-export-title';
-    const header = createElement('div', { className: 'mm-dialog-header' }, [
-      createElement('h3', { id: titleId, textContent: 'Exportation en lot (' + checked.length + ' sources)' }),
-      createElement('button', {
-        className: 'mm-btn-icon mm-dialog-close-btn',
-        title: 'Fermer',
-        onClick: () => dialog.close()
-      }, [
-        createElement('svg', {
-          viewBox: '0 0 24 24',
-          className: 'mm-icon-svg',
-          innerHTML: '<path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>'
-        })
-      ])
-    ]);
-
-    const selectFormat = (fmt) => {
-      dialog.close();
-      startBatchProcess(checked, fmt);
-    };
-
-    const body = createElement('div', { className: 'mm-dialog-body' }, [
-      createElement('p', {
-        className: 'mm-dialog-description',
-        textContent: 'Choisissez le format d\'archive ZIP à générer pour vos sources :'
-      }),
-      createElement('div', { className: 'mm-export-options-list' }, [
-        createElement('div', {
-          className: 'mm-export-option-card',
-          onClick: () => selectFormat('ZIP')
-        }, [
-          createElement('div', { className: 'mm-export-option-icon md-icon', innerHTML: '<svg viewBox="0 0 24 24" className="mm-icon-svg"><path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.9 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2M18 20H6V4H13V9H18V20Z"/></svg>' }),
-          createElement('div', { className: 'mm-export-option-text' }, [
-            createElement('div', { className: 'mm-export-option-title', textContent: 'Archive ZIP de Markdown (.md)' }),
-            createElement('div', { className: 'mm-export-option-desc', textContent: 'Format textuel universel, idéal pour réimportation ou édition.' })
-          ])
-        ]),
-        createElement('div', {
-          className: 'mm-export-option-card',
-          onClick: () => selectFormat('ZIP_PDF_Simple')
-        }, [
-          createElement('div', { className: 'mm-export-option-icon pdf-icon', innerHTML: '<svg viewBox="0 0 24 24" className="mm-icon-svg"><path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3M19 19H5V5H19V19M11 7H13V9H11V7M11 11H13V17H11V11Z"/></svg>' }),
-          createElement('div', { className: 'mm-export-option-text' }, [
-            createElement('div', { className: 'mm-export-option-title', textContent: 'Archive ZIP de PDF Simples (.pdf)' }),
-            createElement('div', { className: 'mm-export-option-desc', textContent: 'Fichiers PDF textuels paginés, parfaits pour l\'archivage et le partage.' })
-          ])
-        ]),
-        createElement('div', {
-          className: 'mm-export-option-card',
-          onClick: () => selectFormat('ZIP_PDF_Enriched')
-        }, [
-          createElement('div', { className: 'mm-export-option-icon pdf-enriched-icon', innerHTML: '<svg viewBox="0 0 24 24" className="mm-icon-svg"><path d="M19 3H5C3.9 3 3 3.9 3 5V19C3 20.1 3.9 21 5 21H19C20.1 21 21 20.1 21 19V5C21 3.9 20.1 3 19 3M19 19H5V5H19V19M13.5 13H15V16H18V17.5H15V20.5H13.5V17.5H10.5V16H13.5V13M9 8.5C9 9.3 8.3 10 7.5 10S6 9.3 6 8.5 6.7 7 7.5 7 9 7.7 9 8.5M17 12L14.5 9.5L12.5 11.5L9.5 8L6 12H17Z"/></svg>' }),
-          createElement('div', { className: 'mm-export-option-text' }, [
-            createElement('div', { className: 'mm-export-option-title', textContent: 'Archive ZIP de PDF Enrichis (.pdf)' }),
-            createElement('div', { className: 'mm-export-option-desc', textContent: 'Intègre les images et diagrammes de la source active dans vos PDF.' })
-          ])
-        ])
-      ])
-    ]);
-
-    const footer = createElement('div', { className: 'mm-dialog-footer' }, [
-      createElement('button', {
-        className: 'mm-btn mm-btn-secondary',
-        textContent: 'Annuler',
-        onClick: () => dialog.close()
-      })
-    ]);
-
-    dialog.appendChild(header);
-    dialog.appendChild(body);
-    dialog.appendChild(footer);
-
-    document.body.appendChild(dialog);
-    dialog.showModal();
+    // Plusieurs sources : proposer un ZIP via la modale de confirmation
+    // showConfirmDialog(titleKey, messageKey, substitutions, onConfirm, onCancel)
+    window.MM.showConfirmDialog(
+      'exportButton',
+      'batchExportDescription',
+      [],
+      () => startBatchProcess(checked, 'ZIP'),
+      null
+    );
   }
 
   /**
@@ -696,6 +456,8 @@
       return;
     }
 
+
+    // Récupérer toutes les sources du carnet via RPC pour le fallback de matching
     let allSources = [];
     try {
       allSources = await window.MM.rpc.getNotebookSources(notebookId);
@@ -706,277 +468,75 @@
     const zipFiles = [];
     const activeNotebookName = getActiveNotebookName();
 
-    // Dialogue de progression
-    const progressDialog = window.MM.showProgressDialog(
-      'Exportation en cours...',
-      'Préparation de vos fichiers...'
-    );
+    for (let i = 0; i < checkboxes.length; i++) {
+      if (window.MM.getActiveNotebookId() !== notebookId) {
+        console.log('[MM] Export par lot interrompu : changement de notebook détecté.');
+        break;
+      }
+      const cb = checkboxes[i];
 
-    let isCancelled = false;
-    progressDialog.addEventListener('close', () => {
-      isCancelled = true;
-    });
+      // Remonter depuis la checkbox vers la carte source parente
+      const sourceInfo = window.MM.findSourceCardFromCheckbox(cb);
+      if (!sourceInfo) {
+        console.warn(`[MM] Export batch : impossible de remonter au conteneur pour la checkbox ${i}`);
+        continue;
+      }
 
-    try {
-      for (let i = 0; i < checkboxes.length; i++) {
-        if (isCancelled) break;
-        if (window.MM.getActiveNotebookId() !== notebookId) {
-          console.log('[MM] Export par lot interrompu : changement de notebook détecté.');
-          break;
-        }
-        const cb = checkboxes[i];
-        const sourceInfo = window.MM.findSourceCardFromCheckbox(cb);
-        if (!sourceInfo) continue;
+      const title = cleanSourceTitle(sourceInfo.title);
+      console.log(`[MM] Export batch : traitement de "${title.slice(0, 50)}" (${i+1}/${checkboxes.length})`);
 
-        const title = cleanSourceTitle(sourceInfo.title);
-        
-        window.MM.updateProgressDialog(
-          progressDialog,
-          Math.round((i / checkboxes.length) * 100),
-          `Traitement de : "${title.slice(0, 40)}"`
-        );
+      // 1. Extraire l'ID de la source (DOM puis RPC fallback)
+      let sourceId = window.MM.extractSourceId(sourceInfo.card);
+      if (!sourceId && allSources.length > 0) {
+        sourceId = findSourceIdByTitle(title, allSources);
+      }
 
-        let sourceId = window.MM.extractSourceId(sourceInfo.card);
-        if (!sourceId && allSources.length > 0) {
-          sourceId = findSourceIdByTitle(title, allSources);
-        }
+      if (!sourceId) {
+        console.error(`[MM] Impossible de trouver l'identifiant de la source pour "${title}"`);
+        continue;
+      }
 
-        if (!sourceId) continue;
-
+      // 2. Récupérer le contenu brut via RPC
+      try {
         const content = await window.MM.rpc.getSourceContent(sourceId, notebookId);
         if (content) {
-          const baseName = stripSourceExtension(title || `Source_${i+1}`);
-          
           if (format === 'Markdown') {
             downloadMarkdown(title, content);
           } else if (format === 'PDF') {
             downloadPDF(title, content);
           } else if (format === 'ZIP') {
-            const cleanTitle = baseName.replace(/[\/\\?%*:|"<>\s]/g, '_') + '.md';
+            const cleanTitle = (title || `Source_${i+1}`).replace(/[\/\\?%*:|"<>\s]/g, '_') + '.md';
             zipFiles.push({ name: cleanTitle, data: content });
-          } else if (format === 'ZIP_PDF_Simple') {
-            const cleanTitle = baseName.replace(/[\/\\?%*:|"<>\s]/g, '_') + '.pdf';
-            const pdfBytes = generatePDFData(title, content);
-            if (pdfBytes) zipFiles.push({ name: cleanTitle, data: pdfBytes });
-          } else if (format === 'ZIP_PDF_Enriched') {
-            const cleanTitle = baseName.replace(/[\/\\?%*:|"<>\s]/g, '_') + '.pdf';
-            
-            // Si la source traitée est celle ouverte dans le viewer, on profite de ses images !
-            const viewer = document.querySelector('source-viewer, [class*="source-viewer"]');
-            const viewerTitleText = viewer ? window.MM.findSourceViewerTitleText(viewer) : '';
-            
-            let pdfBytes = null;
-            if (viewer && viewerTitleText && cleanSourceTitle(viewerTitleText).toLowerCase() === title.toLowerCase()) {
-              pdfBytes = generatePDFEnrichedData(title, viewer);
-            } else {
-              pdfBytes = generatePDFData(title, content);
-            }
-            if (pdfBytes) zipFiles.push({ name: cleanTitle, data: pdfBytes });
           }
+        } else {
+          console.warn(`[MM] Contenu vide reçu pour "${title}"`);
         }
-
-        if (i < checkboxes.length - 1) {
-          await new Promise(r => setTimeout(r, 300));
-        }
+      } catch (err) {
+        console.error(`[MM] Échec de la récupération du contenu pour "${title}" :`, err);
       }
 
-      progressDialog.close();
-
-      if (format.startsWith('ZIP') && zipFiles.length > 0 && !isCancelled) {
-        let zipExt = '.zip';
-        const zipName = (activeNotebookName || 'Notebook_Sources').replace(/[\/\\?%*:|"<>\s]/g, '_') + zipExt;
-        const zipBlob = buildZipBlob(zipFiles);
-
-        const url = URL.createObjectURL(zipBlob);
-        const a   = document.createElement('a');
-        a.href     = url;
-        a.download = zipName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
-        console.log(`[MM] Package ZIP téléchargé : ${zipName} (${zipFiles.length} fichiers)`);
+      // Espacement temporel de sécurité pour éviter le rate limiting (429)
+      if (i < checkboxes.length - 1) {
+        await new Promise(r => setTimeout(r, 200));
       }
+    }
 
-    } catch (e) {
-      console.error('[MM] Erreur lors de l\'export en lot :', e);
-      progressDialog.close();
+    if (format === 'ZIP' && zipFiles.length > 0) {
+      const zipName = (activeNotebookName || 'Notebook_Sources').replace(/[\/\\?%*:|"<>\s]/g, '_') + '.zip';
+      const zipBlob = buildZipBlob(zipFiles);
+
+      const url = URL.createObjectURL(zipBlob);
+      const a   = document.createElement('a');
+      a.href     = url;
+      a.download = zipName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+      console.log(`[MM] Package ZIP téléchargé : ${zipName} (${zipFiles.length} fichiers)`);
     }
 
     console.log('[MM] Exportation par lot terminée');
-  }
-
-  // Fonctions internes d'octets ZIP
-  function generatePDFData(filename, content) {
-    const jspdfLib = window.jspdf
-      || (typeof globalThis !== 'undefined' && globalThis.jspdf)
-      || (typeof self !== 'undefined' && self.jspdf);
-    if (!jspdfLib || !jspdfLib.jsPDF) return null;
-    const { jsPDF } = jspdfLib;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const maxLineWidth = pageWidth - (margin * 2);
-
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(16);
-    const titleLines = doc.splitTextToSize(filename || 'Document', maxLineWidth);
-    let y = 25;
-    titleLines.forEach(function (line) {
-      if (y > pageHeight - margin) { doc.addPage(); y = 20; }
-      doc.text(line, margin, y);
-      y += 8;
-    });
-    y += 4;
-
-    doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(11);
-    const linesRaw = content.split('\n');
-    linesRaw.forEach(function (lineText) {
-      const cleanLine = lineText.trim();
-      if (!cleanLine) { y += 3; return; }
-      const lines = doc.splitTextToSize(cleanLine, maxLineWidth);
-      lines.forEach(function (line) {
-        if (y > pageHeight - margin) { doc.addPage(); y = 20; }
-        doc.text(line, margin, y);
-        y += 6;
-      });
-    });
-
-    return new Uint8Array(doc.output('arraybuffer'));
-  }
-
-  function generatePDFEnrichedData(filename, sourceViewer) {
-    const jspdfLib = window.jspdf
-      || (typeof globalThis !== 'undefined' && globalThis.jspdf)
-      || (typeof self !== 'undefined' && self.jspdf);
-    if (!jspdfLib || !jspdfLib.jsPDF) return null;
-    const { jsPDF } = jspdfLib;
-    const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const maxWidth = pageWidth - margin * 2;
-    const bottomMargin = 20;
-    const lineHeight = 6;
-    let cursorY = 25;
-    const headingSizes = { H1: 20, H2: 16, H3: 13, H4: 11 };
-
-    function ensureSpace(neededHeight) {
-      if (cursorY + neededHeight > pageHeight - bottomMargin) {
-        doc.addPage();
-        cursorY = margin;
-      }
-    }
-
-    function processNode(node, indent = 0, listIndex = 0) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        const text = node.textContent.trim();
-        if (!text) return;
-        const lines = doc.splitTextToSize(text, maxWidth - indent);
-        ensureSpace(lines.length * lineHeight);
-        lines.forEach(function (line) {
-          if (cursorY + lineHeight > pageHeight - bottomMargin) {
-            doc.addPage();
-            cursorY = margin;
-          }
-          doc.text(line, margin + indent, cursorY);
-          cursorY += lineHeight;
-        });
-        return;
-      }
-
-      if (node.nodeType !== Node.ELEMENT_NODE) return;
-      const tag = node.tagName;
-
-      if (headingSizes[tag]) {
-        ensureSpace(lineHeight * 2);
-        cursorY += 4;
-        doc.setFontSize(headingSizes[tag]);
-        doc.setFont("Helvetica", "bold");
-        const lines = doc.splitTextToSize(node.textContent.trim(), maxWidth);
-        ensureSpace(lines.length * lineHeight);
-        lines.forEach(function (line) {
-          if (cursorY + lineHeight > pageHeight - bottomMargin) {
-            doc.addPage();
-            cursorY = margin;
-          }
-          doc.text(line, margin, cursorY);
-          cursorY += lineHeight;
-        });
-        cursorY += 3;
-        doc.setFont("Helvetica", "normal");
-        doc.setFontSize(11);
-        return;
-      }
-
-      if (tag === "IMG") {
-        const imgData = node.getAttribute("src");
-        if (!imgData || !imgData.startsWith("data:image")) return;
-        const naturalW = node.naturalWidth || 200;
-        const naturalH = node.naturalHeight || 150;
-        const ratio = naturalH / naturalW;
-        const drawWidth = Math.min(maxWidth, naturalW * 0.264583);
-        const drawHeight = drawWidth * ratio;
-        ensureSpace(drawHeight + 4);
-        try {
-          doc.addImage(imgData, "JPEG", margin + indent, cursorY, drawWidth, drawHeight);
-        } catch (e) {
-          console.warn("[Custom Walker] Image ignorée :", e.message);
-        }
-        cursorY += drawHeight + 4;
-        return;
-      }
-
-      if (tag === "UL") {
-        for (const child of node.children) { processNode(child, indent + 6, 0); }
-        cursorY += 2;
-        return;
-      }
-
-      if (tag === "OL") {
-        let idx = 1;
-        for (const child of node.children) { processNode(child, indent + 6, idx++); }
-        cursorY += 2;
-        return;
-      }
-
-      if (tag === "LI") {
-        const bullet = listIndex > 0 ? `${listIndex}. ` : "• ";
-        const text = node.textContent.trim();
-        const lines = doc.splitTextToSize(bullet + text, maxWidth - indent);
-        ensureSpace(lines.length * lineHeight);
-        lines.forEach(function (line) {
-          if (cursorY + lineHeight > pageHeight - bottomMargin) {
-            doc.addPage();
-            cursorY = margin;
-          }
-          doc.text(line, margin + indent, cursorY);
-          cursorY += lineHeight;
-        });
-        return;
-      }
-
-      if (tag === "BLOCKQUOTE") {
-        doc.setFont("Helvetica", "italic");
-        const barX = margin + indent + 1;
-        for (const child of node.childNodes) { processNode(child, indent + 8, 0); }
-        doc.setDrawColor(180);
-        doc.setLineWidth(0.8);
-        doc.line(barX, cursorY - lineHeight, barX, cursorY);
-        doc.setFont("Helvetica", "normal");
-        doc.setDrawColor(0);
-        return;
-      }
-
-      for (const child of node.childNodes) {
-        processNode(child, indent, 0);
-      }
-    }
-
-    processNode(sourceViewer);
-    return new Uint8Array(doc.output('arraybuffer'));
   }
 
   function getActiveNotebookName() {
@@ -1048,18 +608,10 @@
         const currentData = findIndividualSourceData();
         if (!currentData) return;
 
-        // Utiliser showFormatChoiceDialog avec le titre "Exporter"
+        // Utiliser showFormatChoiceDialog avec le titre "Exporter" (pas "Fusionner")
         window.MM.showFormatChoiceDialog('exportButton', function (format) {
           if (format === 'pdf') {
             downloadPDF(currentData.title, currentData.content);
-          } else if (format === 'pdf_enriched') {
-            const viewer = document.querySelector('source-viewer, [class*="source-viewer"]');
-            if (viewer) {
-              downloadPDFEnriched(currentData.title, viewer);
-            } else {
-              // Fallback simple si pas de viewer trouvé
-              downloadPDF(currentData.title, currentData.content);
-            }
           } else {
             downloadMarkdown(currentData.title, currentData.content);
           }

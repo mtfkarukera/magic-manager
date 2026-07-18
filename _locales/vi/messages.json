@@ -189,22 +189,27 @@
     "message": "Không thể đọc nội dung của các nguồn đã chọn.",
     "description": "Traduction pour exportFailedNoContent"
   },
-  "settingsFeatureTransfer": {
-    "message": "Sao chép giữa các sổ ghi chép",
-    "description": "Libellé de la copie de sources inter-carnets dans les paramètres"
+  "settingsFeatureShortcuts": {
+    "message": "Phím tắt",
+    "description": "Libellé du toggle de raccourcis clavier dans les paramètres"
   },
-  "settingsFeatureStudioSearch": {
-    "message": "Tìm kiếm và bộ lọc Studio",
-    "description": "Libellé de la recherche et des filtres Studio dans les paramètres"
+  "searchClearLabel": {
+    "message": "Xóa tìm kiếm",
+    "description": "Aria-label du bouton croix de réinitialisation de la recherche"
   },
-  "deleteBatchConfirmMessage": {
-    "message": "Bạn có chắc chắn muốn xóa $count$ nguồn đã chọn không? Hành động này không thể hoàn tác.",
-    "description": "Message de confirmation de suppression en lot",
+  "searchDupesLabel": {
+    "message": "Tìm bản sao",
+    "description": "Label du bouton de détection de doublons"
+  },
+  "searchNoDuplicates": {
+    "message": "Không tìm thấy bản sao",
+    "description": "Message affiché quand aucun bản sao n'est détecté"
+  },
+  "searchDupeScore": {
+    "message": "Tương tự: $score$%",
+    "description": "Infobulle du badge de score de similarité",
     "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "3"
-      }
+      "score": { "content": "$1", "example": "85" }
     }
   }
 }

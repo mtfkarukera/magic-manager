@@ -16,13 +16,10 @@ magic-manager/
 │   │   ├── orchestrator.js    # Point d'entrée — orchestrateur des modules
 │   │   ├── modules/           # Sous-modules de l'extension
 │   │   │   ├── source-helpers.js # Fonctions centralisées DOM des sources
-│   │   │   ├── search.js      # Module de recherche globale & Dédoublonnage
+│   │   │   ├── search.js      # Module de recherche globale
 │   │   │   ├── merge.js       # Module de fusion intelligente
-│   │   │   ├── export.js      # Module d'exports simplifiés (PDF Enrichi)
-│   │   │   ├── delete.js      # Module de suppression en ligne (Studio & lot)
-│   │   │   ├── transfer.js    # Module de transfert inter-carnets
-│   │   │   ├── studio-search.js  # Module de recherche & filtrage Studio
-│   │   │   ├── shortcuts.js   # Centralisateur des raccourcis clavier
+│   │   │   ├── export.js      # Module d'exports simplifiés
+│   │   │   ├── delete.js      # Module de suppression en ligne
 │   │   │   ├── syntax.js      # Module de coloration syntaxique
 │   │   │   └── chatexport.js  # Module d'export du chat
 │   │   └── ui/                # Composants d'interface partagés
@@ -61,6 +58,7 @@ magic-manager/
 graph TD
     A["Gemini Notebook charge"] -->|"content_scripts"| B["orchestrator.js"]
     B --> C["Verification parametres"]
+    B --> K2["shortcuts.js"]
     C -->|"browser.storage.local"| D["Chargement preferences"]
     D --> E["Initialisation modules actifs"]
     E --> F["search.js"]
@@ -86,14 +84,13 @@ Chaque fonctionnalité peut être activée/désactivée individuellement via le 
 
 | Clé | Type | Défaut | Description |
 |---|---|---|---|
+| `feature_shortcuts` | `boolean` | `true` | Raccourcis clavier |
 | `feature_search` | `boolean` | `true` | Recherche globale |
 | `feature_merge` | `boolean` | `true` | Fusion intelligente |
 | `feature_export` | `boolean` | `true` | Exports simplifiés |
 | `feature_delete` | `boolean` | `true` | Suppression en ligne |
 | `feature_syntax` | `boolean` | `true` | Coloration syntaxique |
 | `feature_chatExport` | `boolean` | `true` | Export du chat |
-| `feature_transfer` | `boolean` | `true` | Transfert inter-carnets |
-| `feature_studioSearch` | `boolean` | `true` | Recherche & filtres Studio |
 
 ## Couche de transport RPC
 
@@ -125,6 +122,12 @@ Pour garantir une expérience utilisateur fluide sur la SPA Gemini Notebook sans
   - **Gestion Réactive des Onglets** : Pour capter le basculement d'onglet mobile (géré de façon interne par Angular), l'extension écoute les clics sur les onglets (`[role="tab"]`) et planifie une réinjection complète et un recalcul de l'UI 300ms après la transition.
   - **Ancrage Individuel Résilient** : Si le header de section est masqué, les boutons individuels d'export et de suppression s'ancrent automatiquement sur le bouton natif de retour/fermeture (`button[mattooltip="Close source view"]`) du document ouvert.
 - **Loi de Repli de la Barre de Recherche** : Pour éviter que la barre de recherche MM ne déborde lorsque l'utilisateur replie/minimise le panneau sources en mode bureau, l'extension mesure la largeur réelle de `section.source-panel`. Si `width < 120px`, la barre de recherche est automatiquement masquée (`display: none`). Elle réapparaît dès que le panneau est déplié.
+- **Raccourcis Clavier Globaux et Captures Clavier (v0.6.3)** : Un écouteur unique d'événements `keydown` est enregistré globalement sur `document` en phase de capture (`true`) par le module `shortcuts.js`. Cela permet d'intercepter les raccourcis de productivité (`Cmd/Ctrl+Shift+F`, `Cmd/Ctrl+Shift+E`, `Option/Alt+Shift+F`) avant qu'ils ne soient consommés par NotebookLM.
+- **Dédoublonnage Hybride Local et Réseau (v0.6.3)** : La recherche de doublons s'exécute au clic utilisateur en deux passes : 
+  1. Passe locale via le coefficient de Sørensen-Dice sur les bigrammes des titres (Dice score ≥ 0.8) pour identifier les groupes de candidats.
+  2. Passe réseau asynchrone par requêtes RPC `getSourceContent` (`hizoJc`) sur les seuls candidats, calculant un checksum SHA-256 (via Web Crypto API) sur les 2000 premiers caractères pour valider la similarité de contenu et l'afficher sous forme de badge de pourcentage coloré.
+- **Bouton de Réinitialisation Croix (×)** : Intégration d'un bouton croix positionné en absolute dans la barre de recherche. Sa visibilité est liée dynamiquement à la présence de texte dans le champ de recherche par toggles de classe CSS.
+
 
 ## Conventions
 

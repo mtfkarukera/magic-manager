@@ -189,22 +189,27 @@
     "message": "Unable to read the content of the selected sources.",
     "description": "Traduction pour exportFailedNoContent"
   },
-  "settingsFeatureTransfer": {
-    "message": "Inter-notebook transfer",
-    "description": "Label of inter-notebook source transfer in settings"
+  "settingsFeatureShortcuts": {
+    "message": "Keyboard shortcuts",
+    "description": "Libellé du toggle de raccourcis clavier dans les paramètres"
   },
-  "settingsFeatureStudioSearch": {
-    "message": "Studio search",
-    "description": "Label of studio search and filters in settings"
+  "searchClearLabel": {
+    "message": "Clear search",
+    "description": "Aria-label du bouton croix de réinitialisation de la recherche"
   },
-  "deleteBatchConfirmMessage": {
-    "message": "Are you sure you want to delete the $count$ selected sources? This action is irreversible.",
-    "description": "Message to confirm batch deletion",
+  "searchDupesLabel": {
+    "message": "Find duplicates",
+    "description": "Label du bouton de détection de doublons"
+  },
+  "searchNoDuplicates": {
+    "message": "No duplicates found",
+    "description": "Message affiché quand aucun doublon n'est détecté"
+  },
+  "searchDupeScore": {
+    "message": "$score$% match",
+    "description": "Infobulle du badge de score de similarité",
     "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "3"
-      }
+      "score": { "content": "$1", "example": "85" }
     }
   }
 }

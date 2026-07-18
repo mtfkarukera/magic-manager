@@ -189,22 +189,27 @@
     "message": "選択したソースのコンテンツを読み取れませんでした。",
     "description": "Traduction pour exportFailedNoContent"
   },
-  "settingsFeatureTransfer": {
-    "message": "ノートブック間コピー",
-    "description": "Libellé de la copie de sources inter-carnets dans les paramètres"
+  "settingsFeatureShortcuts": {
+    "message": "キーボードショートカット",
+    "description": "Libellé du toggle de raccourcis clavier dans les paramètres"
   },
-  "settingsFeatureStudioSearch": {
-    "message": "Studio検索とフィルター",
-    "description": "Libellé de la recherche et des filtres Studio dans les paramètres"
+  "searchClearLabel": {
+    "message": "検索をクリア",
+    "description": "Aria-label du bouton croix de réinitialisation de la recherche"
   },
-  "deleteBatchConfirmMessage": {
-    "message": "選択した $count$ 個のソースを削除してもよろしいですか？この操作は取り消せません。",
-    "description": "Message de confirmation de suppression en lot",
+  "searchDupesLabel": {
+    "message": "重複を検出",
+    "description": "Label du bouton de détection de doublons"
+  },
+  "searchNoDuplicates": {
+    "message": "重複は見つかりませんでした",
+    "description": "Message affiché quand aucun doublon n'est détecté"
+  },
+  "searchDupeScore": {
+    "message": "類似度: $score$%",
+    "description": "Infobulle du badge de score de similarité",
     "placeholders": {
-      "count": {
-        "content": "$1",
-        "example": "3"
-      }
+      "score": { "content": "$1", "example": "85" }
     }
   }
 }
