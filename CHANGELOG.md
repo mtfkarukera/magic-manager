@@ -4,6 +4,15 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.6.4] — 2026-07-19
+
+### Optimisé & Corrigé
+- 🔍 **Dédoublonnage autonome par Jaccard** :
+  - **Passe 2 autonome** : Refactoring de la détection de doublons de contenu en scannant toutes les sources du carnet de manière séquentielle, indépendamment de la similarité des titres (évite les faux négatifs si une source est renommée).
+  - **Comparaison par Jaccard** : Remplacement du hash SHA-256 (trop strict face aux variations de formatage des différents pipelines d'import Drive, URL ou PDF local) par une comparaison Jaccard sur les ensembles de mots significatifs (> 3 lettres, seuil ≥ 0.6).
+  - **Parsing RPC robuste** : Correction de la détection des sources du carnet (méthode `rLM1Ne`) pour gérer les structures de tableaux imbriqués et les identifiants wrappés retournés par l'API interne de NotebookLM.
+  - **Indicateur de progression** : Ajout d'une animation spinner (rotation CSS de l'icône) sur le bouton de recherche de doublons pendant le scan de contenu.
+
 ## [0.6.3] — 2026-07-19
 
 ### Ajouté

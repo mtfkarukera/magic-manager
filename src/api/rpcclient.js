@@ -553,14 +553,49 @@
     if (!Array.isArray(result) || !Array.isArray(result[0])) {
       return [];
     }
+
+    // Stratégie de détection robuste : la liste de sources est le premier
+    // sous-tableau dont les éléments sont eux-mêmes des tableaux contenant
+    // un string en position [0] ou [0][0] (le sourceId UUID).
+    var sourcesList = result[0];
+
+    // Tester si result[0] contient directement des source-entries
+    // en vérifiant si le premier élément array a un string UUID en position [0]
+    var firstArr = sourcesList.find(function (e) { return Array.isArray(e); });
+    if (firstArr) {
+      var probe = firstArr[0];
+      if (Array.isArray(probe)) {
+        // probe est un sous-tableau : c'est peut-être la vraie liste de sources
+        // OU c'est un sourceId wrappé [uuid]
+        if (Array.isArray(probe[0])) {
+          // probe[0] est aussi un tableau → firstArr est un conteneur de sources
+          console.log('[MM] getNotebookSources : niveau supplémentaire détecté (result[0][idx][0] est Array)');
+          sourcesList = firstArr;
+        } else if (typeof probe[0] === 'string' && probe[0].length > 10) {
+          // probe = [uuid, title, ...] → firstArr EST la liste de sources (enveloppée dans result[0])
+          console.log('[MM] getNotebookSources : sources dans result[0][0]');
+          sourcesList = firstArr;
+        }
+      }
+    }
+
+    console.log('[MM] getNotebookSources : ' + sourcesList.filter(function (s) { return Array.isArray(s); }).length + ' sources dans sourcesList');
+
     // Chaque source : [sourceId, title, ..., typeCode(slot[16])]
-    return result[0]
+    // Le sourceId peut être un string direct OU un tableau [uuid]
+    return sourcesList
       .filter(src => Array.isArray(src))
-      .map(src => ({
-        id: src[0],
-        title: src[1],
-        kind: src[16]
-      }));
+      .map(src => {
+        var rawId = src[0];
+        // Déballage si le sourceId est wrappé dans un tableau [uuid]
+        var id = Array.isArray(rawId) ? rawId[0] : rawId;
+        return {
+          id: id,
+          title: src[1],
+          kind: src[16]
+        };
+      })
+      .filter(s => typeof s.id === 'string' && s.id.length > 5);
   }
 
 

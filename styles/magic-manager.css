@@ -655,6 +655,16 @@
   outline-offset: 2px;
 }
 
+/* Spinner de scan (rotation de l'icône SVG pendant la Passe 2) */
+.mm-search-dupes-btn.mm-scanning svg {
+  animation: mm-spin 1s linear infinite;
+}
+
+@keyframes mm-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    Badges de doublons sur les cartes sources
    ═══════════════════════════════════════════════════════════════════════ */

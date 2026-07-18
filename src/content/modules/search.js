@@ -178,6 +178,9 @@
   /** État du mode doublons */
   let isDuplicateMode = false;
 
+  /** Verrou anti-double-clic pendant le scan de contenu */
+  let isScanning = false;
+
   /**
    * Calcule le coefficient de Sørensen-Dice sur les bigrammes de deux chaînes.
    * @param {string} a
@@ -264,62 +267,176 @@
   }
 
   /**
-   * Passe 2 : Calcule le checksum SHA-256 des premiers 2000 caractères du contenu
-   * pour les groupes candidats. Exécute les appels RPC de manière séquentielle.
-   * @param {Map<Element, {group: number, score: number}>} groups
+   * Extrait un ensemble de mots significatifs (> 3 lettres) d'un texte.
+   * Utilisé pour la comparaison Jaccard entre sources.
+   * @param {string} text
+   * @returns {Set<string>}
+   */
+  function extractWordSet(text) {
+    return new Set(
+      (text || '')
+        .toLowerCase()
+        .replace(/[^\w\s]/g, '')
+        .split(/\s+/)
+        .filter(function (w) { return w.length > 3; })
+    );
+  }
+
+  /**
+   * Calcule le coefficient de Jaccard entre deux ensembles de mots.
+   * Jaccard = |intersection| / |union|
+   * @param {Set<string>} setA
+   * @param {Set<string>} setB
+   * @returns {number} Score entre 0 et 1.
+   */
+  function jaccardSimilarity(setA, setB) {
+    if (setA.size === 0 && setB.size === 0) return 0;
+    var intersection = 0;
+    setA.forEach(function (w) { if (setB.has(w)) intersection++; });
+    var union = setA.size + setB.size - intersection;
+    return union === 0 ? 0 : intersection / union;
+  }
+
+  /** Seuil Jaccard pour considérer deux sources comme doublons de contenu */
+  var JACCARD_THRESHOLD = 0.6;
+
+  /**
+   * Tente d'associer une source RPC à une carte DOM.
+   * Stratégie 1 : data-source-id sur la carte.
+   * Stratégie 2 : correspondance stricte par titre (Dice ≥ 0.95).
+   * @param {Object} rpcSource - {id, title, kind}
+   * @param {Array<Element>} cards
+   * @param {Set<Element>} usedCards - Cartes déjà associées (évite les collisions).
+   * @returns {Element|null}
+   */
+  function matchRpcSourceToCard(rpcSource, cards, usedCards) {
+    // Stratégie 1 : attribut data-source-id
+    for (var i = 0; i < cards.length; i++) {
+      if (usedCards.has(cards[i])) continue;
+      var sid = cards[i].getAttribute('data-source-id') ||
+        (cards[i].querySelector('[data-source-id]') || {}).dataset?.sourceId;
+      if (sid === rpcSource.id) {
+        usedCards.add(cards[i]);
+        return cards[i];
+      }
+    }
+    // Stratégie 2 : correspondance par titre (Dice ≥ 0.95)
+    var rpcTitle = (rpcSource.title || '').toLowerCase().trim();
+    for (var j = 0; j < cards.length; j++) {
+      if (usedCards.has(cards[j])) continue;
+      var cardTitle = getCardTitle(cards[j]).toLowerCase().trim();
+      if (diceCoefficient(rpcTitle, cardTitle) >= 0.95) {
+        usedCards.add(cards[j]);
+        return cards[j];
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Passe 2 autonome : scanne TOUTES les sources du carnet par leur contenu.
+   * Compare les ensembles de mots par paires avec le coefficient de Jaccard.
+   * Regroupe les sources ayant un Jaccard ≥ JACCARD_THRESHOLD.
+   * @param {function(number, number): void} [onProgress] - Callback (current, total).
    * @returns {Promise<Map<Element, {group: number, score: number}>>}
    */
-  async function refineDuplicatesWithChecksum(groups) {
-    // Regrouper les cards par groupId
-    const groupMap = new Map(); // groupId → [{ card, sourceId }]
-    groups.forEach(function (info, card) {
-      if (!groupMap.has(info.group)) groupMap.set(info.group, []);
-      // Extraire le sourceId depuis le DOM (data-source-id ou parsing)
-      const sourceId = card.getAttribute('data-source-id') ||
-                       (card.querySelector('[data-source-id]') || {}).dataset?.sourceId || null;
-      groupMap.get(info.group).push({ card, sourceId });
-    });
+  async function findContentDuplicates(onProgress) {
+    var notebookId = window.MM._currentNotebookId ||
+      window.location.pathname.split('/notebook/')[1]?.split('/')[0];
+    if (!notebookId) return new Map();
 
-    // Pour chaque groupe, récupérer le contenu et calculer le hash
-    for (const [gId, members] of groupMap) {
-      const hashes = [];
-      for (const member of members) {
-        if (!member.sourceId) {
-          hashes.push(null);
-          continue;
-        }
-        try {
-          // Récupérer les 2000 premiers caractères via le RPC existant
-          const notebookId = window.MM._currentNotebookId ||
-            window.location.pathname.split('/notebook/')[1]?.split('/')[0];
-          const content = await window.MM.getSourceContent(member.sourceId, notebookId);
-          const snippet = (content || '').substring(0, 2000);
-          // Hash SHA-256 via Web Crypto API
-          const encoder = new TextEncoder();
-          const data = encoder.encode(snippet);
-          const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-          const hashArray = Array.from(new Uint8Array(hashBuffer));
-          const hashHex = hashArray.map(function (b) { return b.toString(16).padStart(2, '0'); }).join('');
-          hashes.push(hashHex);
-        } catch (err) {
-          console.warn('[MM] Erreur checksum pour source', member.sourceId, err);
-          hashes.push(null);
-        }
+    // 1. Lister toutes les sources du carnet via RPC
+    var rpcSources = await window.MM.rpc.getNotebookSources(notebookId);
+    if (!rpcSources || rpcSources.length < 2) return new Map();
+
+    console.log('[MM] Passe 2 contenu : ' + rpcSources.length + ' sources à scanner');
+
+    // 2. Extraire les ensembles de mots de chaque source séquentiellement
+    var wordSets = []; // [{rpcSource, words: Set}]
+    for (var i = 0; i < rpcSources.length; i++) {
+      if (onProgress) onProgress(i + 1, rpcSources.length);
+      try {
+        var content = await window.MM.rpc.getSourceContent(
+          rpcSources[i].id, notebookId
+        );
+        var words = extractWordSet(content);
+        wordSets.push({ rpcSource: rpcSources[i], words: words });
+      } catch (err) {
+        console.warn('[MM] Passe 2 : erreur pour', rpcSources[i].id, err);
+        wordSets.push({ rpcSource: rpcSources[i], words: new Set() });
       }
+    }
 
-      // Comparer les hashes pour affiner les scores
-      for (let i = 0; i < members.length; i++) {
-        for (let j = i + 1; j < members.length; j++) {
-          if (hashes[i] && hashes[j] && hashes[i] === hashes[j]) {
-            // Même contenu → score 1.0 (doublon confirmé)
-            groups.get(members[i].card).score = 1.0;
-            groups.get(members[j].card).score = 1.0;
-          }
+    // 3. Comparer chaque paire de sources avec Jaccard
+    // Union-Find simplifié pour regrouper les doublons transitifs
+    var parent = []; // parent[i] = index du représentant du groupe
+    for (var k = 0; k < wordSets.length; k++) parent[k] = k;
+
+    function find(x) {
+      while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
+      return x;
+    }
+    function unite(a, b) {
+      var ra = find(a), rb = find(b);
+      if (ra !== rb) parent[rb] = ra;
+    }
+
+    var pairScores = new Map(); // "i,j" → score (pour le badge)
+    for (var a = 0; a < wordSets.length; a++) {
+      if (wordSets[a].words.size === 0) continue;
+      for (var b = a + 1; b < wordSets.length; b++) {
+        if (wordSets[b].words.size === 0) continue;
+        var score = jaccardSimilarity(wordSets[a].words, wordSets[b].words);
+        if (score >= JACCARD_THRESHOLD) {
+          unite(a, b);
+          pairScores.set(a + ',' + b, score);
         }
       }
     }
 
-    return groups;
+    // 4. Construire les groupes de doublons et mapper vers les cartes DOM
+    var cards = findSourceCards();
+    var usedCards = new Set();
+    var groupsByRoot = new Map(); // root index → groupId
+    var contentGroups = new Map(); // card → {group, score}
+    var groupId = 0;
+
+    for (var idx = 0; idx < wordSets.length; idx++) {
+      var root = find(idx);
+      if (root === idx) {
+        // Vérifier si ce root a d'autres membres
+        var hasMembers = false;
+        for (var m = 0; m < wordSets.length; m++) {
+          if (m !== idx && find(m) === root) { hasMembers = true; break; }
+        }
+        if (!hasMembers) continue; // Source unique, pas un doublon
+      }
+
+      // Assigner un groupId au root si pas encore fait
+      if (!groupsByRoot.has(root)) {
+        groupsByRoot.set(root, groupId++);
+      }
+      var gId = groupsByRoot.get(root);
+
+      // Trouver le meilleur score Jaccard de cet index avec un autre membre du groupe
+      var bestScore = 0;
+      for (var p = 0; p < wordSets.length; p++) {
+        if (p === idx || find(p) !== root) continue;
+        var key = Math.min(idx, p) + ',' + Math.max(idx, p);
+        var s = pairScores.get(key) || 0;
+        if (s > bestScore) bestScore = s;
+      }
+
+      var card = matchRpcSourceToCard(wordSets[idx].rpcSource, cards, usedCards);
+      if (card) {
+        contentGroups.set(card, { group: gId, score: bestScore });
+      } else {
+        console.warn('[MM] Passe 2 : aucune carte DOM pour "' + wordSets[idx].rpcSource.title + '"');
+      }
+    }
+
+    console.log('[MM] Passe 2 terminée : ' + contentGroups.size + ' doublons de contenu détectés');
+    return contentGroups;
   }
 
   // Couleurs associées aux niveaux de similarité
@@ -392,9 +509,53 @@
   }
 
   /**
+   * Fusionne les résultats des Passes 1 (titres) et 2 (contenu) par union.
+   * Les groupIds de la Passe 2 sont décalés pour éviter les collisions de couleurs.
+   * Si une carte apparaît dans les deux passes, on conserve le score le plus élevé.
+   * @param {Map<Element, {group: number, score: number}>} titleGroups
+   * @param {Map<Element, {group: number, score: number}>} contentGroups
+   * @returns {Map<Element, {group: number, score: number}>}
+   */
+  function mergeDuplicateGroups(titleGroups, contentGroups) {
+    var merged = new Map();
+
+    // Trouver le groupId max de la Passe 1 pour décaler la Passe 2
+    var maxTitleGroup = -1;
+    titleGroups.forEach(function (info) {
+      if (info.group > maxTitleGroup) maxTitleGroup = info.group;
+    });
+    var offset = maxTitleGroup + 1;
+
+    // Copier la Passe 1
+    titleGroups.forEach(function (info, card) {
+      merged.set(card, { group: info.group, score: info.score });
+    });
+
+    // Fusionner la Passe 2 (avec décalage de groupId)
+    contentGroups.forEach(function (info, card) {
+      if (merged.has(card)) {
+        // La carte existe déjà (Passe 1) → conserver le meilleur score
+        var existing = merged.get(card);
+        if (info.score > existing.score) {
+          existing.score = info.score;
+        }
+      } else {
+        // Nouvelle carte (détectée uniquement par contenu)
+        merged.set(card, { group: info.group + offset, score: info.score });
+      }
+    });
+
+    return merged;
+  }
+
+  /**
    * Handler du clic sur le bouton de détection de doublons.
+   * Flux progressif : Passe 1 (titres, instantanée) puis Passe 2 (contenu, asynchrone).
    */
   async function handleDuplicateSearch() {
+    // Verrou anti-double-clic pendant un scan en cours
+    if (isScanning) return;
+
     if (isDuplicateMode) {
       // Désactiver le mode doublons → restaurer la vue normale
       isDuplicateMode = false;
@@ -402,33 +563,47 @@
       // Ré-appliquer le filtre texte courant
       applyFilter(currentQuery);
       // Retirer la classe active du bouton
-      const btn = searchBarContainer?.querySelector('.mm-search-dupes-btn');
+      var btn = searchBarContainer ? searchBarContainer.querySelector('.mm-search-dupes-btn') : null;
       if (btn) btn.classList.remove('mm-active');
       return;
     }
 
     isDuplicateMode = true;
-    const btn = searchBarContainer?.querySelector('.mm-search-dupes-btn');
+    var btn = searchBarContainer ? searchBarContainer.querySelector('.mm-search-dupes-btn') : null;
     if (btn) btn.classList.add('mm-active');
 
     // Passe 1 : Similarité de titre (instantané)
-    const groups = findTitleDuplicates();
+    var titleGroups = findTitleDuplicates();
 
-    if (groups.size === 0) {
-      applyDuplicateView(groups); // Affiche "aucun doublon"
-      return;
+    // Afficher la vue préliminaire (Passe 1 seule)
+    if (titleGroups.size > 0) {
+      applyDuplicateView(titleGroups);
     }
 
-    // Afficher la vue préliminaire (titres similaires)
-    applyDuplicateView(groups);
+    // Passe 2 : Scan contenu autonome (toutes les sources, asynchrone)
+    isScanning = true;
+    if (btn) btn.classList.add('mm-scanning');
 
-    // Passe 2 : Checksum de contenu (asynchrone, ciblé)
     try {
-      await refineDuplicatesWithChecksum(groups);
-      // Ré-appliquer avec les scores affinés
-      applyDuplicateView(groups);
+      var contentGroups = await findContentDuplicates(function (current, total) {
+        // Callback de progression (exploitable pour un futur indicateur textuel)
+        console.log('[MM] Passe 2 : scan ' + current + '/' + total);
+      });
+
+      // Fusionner les résultats des deux passes
+      var merged = mergeDuplicateGroups(titleGroups, contentGroups);
+
+      // Afficher la vue finale fusionnée
+      applyDuplicateView(merged);
     } catch (err) {
-      console.warn('[MM] Passe 2 checksum échouée, conservation des résultats de la passe 1', err);
+      console.warn('[MM] Passe 2 échouée, conservation des résultats de la passe 1', err);
+      // En cas d'erreur, on garde la vue de la Passe 1 (déjà affichée)
+      if (titleGroups.size === 0) {
+        applyDuplicateView(titleGroups);
+      }
+    } finally {
+      isScanning = false;
+      if (btn) btn.classList.remove('mm-scanning');
     }
   }
 
