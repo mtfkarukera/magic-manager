@@ -193,14 +193,26 @@
 
     const isMobile = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
 
-    cards.forEach((card, index) => {
+    const remaining = cachedDbItems ? [...cachedDbItems] : null;
+
+    cards.forEach((card) => {
       const existingCheckbox = card.querySelector('.mm-studio-checkbox');
 
-      // Récupérer ou attribuer l'ID unique serveur à cette carte DOM (1-pour-1)
+      // Récupérer ou attribuer l'ID unique serveur à cette carte DOM (matching par titre déduplicatif)
       let itemId = card.getAttribute('data-mm-id');
-      if (!itemId && cachedDbItems && cachedDbItems[index]) {
-        itemId = cachedDbItems[index].id;
-        card.setAttribute('data-mm-id', itemId);
+      if (!itemId && remaining) {
+        const cardTitle = getStudioCardTitle(card);
+        if (cardTitle) {
+          const normalizedTitle = cardTitle.trim().toLowerCase();
+          const matchIndex = remaining.findIndex(
+            item => item.title.trim().toLowerCase() === normalizedTitle
+          );
+          if (matchIndex !== -1) {
+            itemId = remaining[matchIndex].id;
+            card.setAttribute('data-mm-id', itemId);
+            remaining.splice(matchIndex, 1); // Retirer pour éviter les doublons d'attribution
+          }
+        }
       }
 
       if (existingCheckbox) {

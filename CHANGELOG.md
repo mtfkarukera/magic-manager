@@ -19,7 +19,7 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 - 🔧 **Studio — Boucle infinie d'injections** : Suppression de l'appel à `updateBatchDeleteButtonState()` depuis `injectStudioCheckboxes()` dans `studio-delete.js`, qui causait une boucle infinie de mutations DOM entre le `studioObserver` et les injections de checkboxes (symptôme : bandeau Firefox « cette page ralentit votre navigateur »).
 - 🔧 **Studio — Popover de filtres insensible aux clics** : Isolation du popover de filtres par type d'artéfact de l'interception Angular via `stopPropagation` sur les événements `click` et `mousedown` au niveau du conteneur du popover. Les événements de la SPA sous-jacente empêchaient les checkboxes de répondre aux clics utilisateur.
 - 🔧 **Studio — Amorce du cache RPC** : Remplacement de l'appel inconditionnel à `applyFilters()` par un appel direct et conditionnel à `fetchStudioItems()` lors de l'initialisation, évitant un double fetch RPC et une invalidation prématurée du cache.
-- 🔧 **Studio — Doublons de titres & Édition de notes** : Passage d'un adressage de sélection par carte DOM (instable) à un alignement ordonné 1-pour-1 entre les cartes DOM et les IDs uniques du serveur (RPC) via l'attribut `data-mm-id`. Résolution définitive du décalage de sélection en cas d'édition d'une note ou de doublons de titres.
+- 🔧 **Studio — Doublons de titres & Édition de notes** : Passage d'un adressage de sélection par carte DOM (instable) à une association robuste par matching de titre déduplicatif séquentiel avec les IDs réels uniques du serveur via l'attribut `data-mm-id`. Résolution définitive du décalage de sélection en cas d'édition de notes ou de doublons de titres.
 
 ## [0.8.1] — 2026-07-19
 
