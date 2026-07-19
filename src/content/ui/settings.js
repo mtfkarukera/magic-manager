@@ -200,6 +200,11 @@
     popoverFocusoutHandler = function (e) {
       setTimeout(function () {
         const active = document.activeElement;
+        // Ignorer les pertes de focus cosmétiques (clic sur élément non-focusable
+        // sous Firefox macOS : le focus retombe sur body sans quitter le popover)
+        if (!active || active === document.body || active === document.documentElement) {
+          return;
+        }
         if (popoverElement && !popoverElement.contains(active) && active !== settingsButton) {
           closeSettingsPopover();
         }

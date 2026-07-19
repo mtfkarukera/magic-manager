@@ -4,6 +4,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.7.1] — 2026-07-19
+
+### Corrigé
+- ⚙️ **Popup de paramètres** : Correction de la fermeture intempestive lors du clic sur un interrupteur ou un label sous Firefox macOS (garde de focus ignorée sur body/html).
+
 ## [0.7.0] — 2026-07-19
 
 ### Ajouté
