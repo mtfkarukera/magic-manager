@@ -1263,14 +1263,210 @@
   flex-shrink: 0;
 }
 
-/* Bouton batch delete Studio */
-.mm-studio-batch-delete {
+/* Actions batch Studio (Supprimer + Désélectionner tout) */
+.mm-studio-batch-actions {
   display: none;
-  margin: var(--mm-spacing-sm) var(--mm-spacing-md);
 }
 
-.mm-studio-batch-delete.mm-visible {
+.mm-studio-batch-actions.mm-visible {
   display: inline-flex;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Studio Search — Pilule de recherche Studio (Sprint 4)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Conteneur principal */
+.mm-studio-search {
+  display: flex;
+  position: sticky;
+  top: 0;
+  z-index: 99;
+  background: var(--mm-surface);
+  padding: var(--mm-spacing-sm) 0;
+  margin: 0 0 var(--mm-spacing-sm) 0;
+  border-bottom: 1px solid var(--mm-outline);
+  animation: mm-slideIn 0.3s ease-out;
+}
+
+/* Wrapper interne pour l'alignement et les marges */
+.mm-studio-search-wrapper {
+  position: relative;
+  flex: 1;
+  margin: 0 var(--mm-spacing-md);
+  display: flex;
+  align-items: center;
+}
+
+/* Champ de recherche */
+.mm-studio-search-input {
+  flex: 1;
+  height: 36px;
+  padding: 0 68px 0 var(--mm-spacing-md);
+  border: 1px solid var(--mm-outline);
+  border-radius: var(--mm-radius-full);
+  background: var(--mm-surface-variant);
+  color: var(--mm-on-surface);
+  font-size: var(--mm-font-size-md);
+  font-family: var(--mm-font-family);
+  outline: none;
+  transition: border-color var(--mm-transition-fast), box-shadow var(--mm-transition-fast);
+  width: 100%;
+}
+
+.mm-studio-search-input::placeholder {
+  color: var(--mm-on-surface-variant);
+  opacity: 0.7;
+}
+
+.mm-studio-search-input:focus {
+  border-color: var(--mm-primary);
+  box-shadow: 0 0 0 2px var(--mm-primary-light);
+}
+
+/* Bouton croix de réinitialisation */
+.mm-studio-search-clear {
+  position: absolute;
+  right: 40px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: var(--mm-on-surface-variant);
+  font-size: 18px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease, color 0.2s ease;
+  padding: 2px 6px;
+  line-height: 1;
+}
+
+.mm-studio-search-clear.mm-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.mm-studio-search-clear:hover {
+  color: var(--mm-error);
+}
+
+.mm-studio-search-clear:focus-visible {
+  outline: 2px solid var(--mm-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Bouton filtre */
+.mm-studio-search-filter {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: none;
+  color: var(--mm-on-surface-variant);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--mm-radius-full);
+  padding: 0;
+  transition: color 0.2s ease, background-color 0.2s ease;
+}
+
+.mm-studio-search-filter:hover {
+  color: var(--mm-primary);
+  background: color-mix(in srgb, var(--mm-primary) 10%, transparent);
+}
+
+.mm-studio-search-filter.mm-active {
+  color: var(--mm-on-primary) !important;
+  background: var(--mm-primary);
+}
+
+.mm-studio-search-filter:focus-visible {
+  outline: 2px solid var(--mm-primary);
+  outline-offset: 2px;
+}
+
+/* Popover de filtres par type */
+.mm-studio-filter-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 200px;
+  padding: var(--mm-spacing-sm);
+  background: var(--mm-surface-variant);
+  border: 1px solid var(--mm-outline);
+  border-radius: var(--mm-radius-md);
+  box-shadow: var(--mm-shadow-2);
+  z-index: 1000;
+  animation: mm-slideIn 0.2s ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-family: var(--mm-font-family);
+}
+
+/* Option de filtre individuelle */
+.mm-studio-filter-option {
+  display: flex;
+  align-items: center;
+  gap: var(--mm-spacing-sm);
+  padding: 6px var(--mm-spacing-sm);
+  border-radius: var(--mm-radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--mm-on-surface);
+  transition: background-color 0.15s ease;
+}
+
+.mm-studio-filter-option:hover {
+  background: color-mix(in srgb, var(--mm-primary) 8%, transparent);
+}
+
+.mm-studio-filter-option input[type="checkbox"] {
+  accent-color: var(--mm-primary);
+  cursor: pointer;
+}
+
+/* Bouton réinitialiser */
+.mm-studio-filter-reset {
+  margin-top: var(--mm-spacing-xs);
+  padding: 6px var(--mm-spacing-sm);
+  border: none;
+  border-radius: var(--mm-radius-sm);
+  background: none;
+  color: var(--mm-primary);
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+  transition: background-color 0.15s ease;
+}
+
+.mm-studio-filter-reset:hover {
+  background: color-mix(in srgb, var(--mm-primary) 10%, transparent);
+}
+
+/* Message "aucun résultat" Studio */
+.mm-studio-no-results {
+  padding: var(--mm-spacing-md);
+  text-align: center;
+  font-style: italic;
+  color: var(--mm-on-surface-variant);
+  font-size: 13px;
+  font-family: var(--mm-font-family);
+}
+
+/* Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .mm-studio-search,
+  .mm-studio-filter-popover {
+    animation: none;
+  }
 }
 
 

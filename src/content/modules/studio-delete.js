@@ -11,7 +11,8 @@
   // État interne
   // ═══════════════════════════════════════════════════════════════════════
   let studioObserver = null;
-  let selectedItems = new Map(); // Associe un élément DOM à ses métadonnées { id, type, title }
+  let selectedItems = new Map(); // Clé = titre normalisé (string), Valeur = { title, checkbox }
+  let batchDeleteWrapper = null;
   let batchDeleteBtn = null;
   let isProcessing = false;
 
@@ -160,6 +161,8 @@
       const title = getStudioCardTitle(card);
       if (!title) return;
 
+      const normalizedTitle = title.trim().toLowerCase();
+
       // Créer la checkbox
       const checkbox = createElement('input', {
         type: 'checkbox',
@@ -174,6 +177,13 @@
       checkbox.addEventListener('change', function () {
         handleCheckboxChange(card, checkbox, title);
       });
+
+      // Restaurer l'état coché si cette carte était déjà sélectionnée (ex: après retour du viewer ou switch layout)
+      if (selectedItems.has(normalizedTitle)) {
+        checkbox.checked = true;
+        // Mettre à jour la référence de la checkbox dans la Map
+        selectedItems.set(normalizedTitle, { title: title, checkbox: checkbox });
+      }
 
       if (isMobile) {
         // En mode mobile, insérer simplement à gauche de la carte sans wrapper l'icône
@@ -205,10 +215,11 @@
    * Gère le changement d'état d'une checkbox du Studio.
    */
   function handleCheckboxChange(card, checkbox, title) {
+    const key = title.trim().toLowerCase();
     if (checkbox.checked) {
-      selectedItems.set(card, { title: title, checkbox: checkbox });
+      selectedItems.set(key, { title: title, checkbox: checkbox });
     } else {
-      selectedItems.delete(card);
+      selectedItems.delete(key);
     }
 
     updateBatchDeleteButtonState();
@@ -224,34 +235,69 @@
     const count = selectedItems.size;
 
     if (count > 0) {
-      if (!batchDeleteBtn) {
+      if (!batchDeleteWrapper) {
         // Chercher une zone d'en-tête du Studio pour injecter le bouton
         const header = studioPanel.querySelector('.studio-header, [class*="header"], h2, h3');
-        const anchor = header || studioPanel;
+
+        batchDeleteWrapper = createElement('div', {
+          className: 'mm-studio-batch-actions mm-visible',
+          style: 'display: inline-flex; width: calc(100% - 32px); gap: 8px; margin: var(--mm-spacing-sm) var(--mm-spacing-md); align-items: center;'
+        });
 
         batchDeleteBtn = createElement('button', {
-          className: 'mm-btn mm-btn-error mm-studio-batch-delete mm-visible',
-          textContent: `${t('studioDeleteButton')} (${count})`,
+          className: 'mm-btn mm-btn-error',
+          style: 'flex: 1; justify-content: center; height: 36px; display: inline-flex; align-items: center;',
+          textContent: `${t('studioDeleteButton') || 'Supprimer la sélection'} (${count})`,
           onClick: handleBatchDeleteClick
         });
 
+        const resetBtn = createElement('button', {
+          className: 'mm-btn mm-btn-secondary',
+          style: 'width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid var(--mm-outline);',
+          type: 'button',
+          title: t('studioClearSelection') || 'Tout désélectionner',
+          onClick: handleClearSelection
+        }, [
+          createElement('span', { textContent: '×', style: 'font-size: 20px; font-weight: bold; line-height: 1;' })
+        ]);
+
+        batchDeleteWrapper.appendChild(batchDeleteBtn);
+        batchDeleteWrapper.appendChild(resetBtn);
+
         if (header) {
           // Insérer juste après le header
-          header.parentNode.insertBefore(batchDeleteBtn, header.nextSibling);
+          header.parentNode.insertBefore(batchDeleteWrapper, header.nextSibling);
         } else {
           // Insérer au tout début
-          studioPanel.insertBefore(batchDeleteBtn, studioPanel.firstChild);
+          studioPanel.insertBefore(batchDeleteWrapper, studioPanel.firstChild);
         }
       } else {
-        batchDeleteBtn.textContent = `${t('studioDeleteButton')} (${count})`;
-        batchDeleteBtn.classList.add('mm-visible');
+        batchDeleteBtn.textContent = `${t('studioDeleteButton') || 'Supprimer la sélection'} (${count})`;
+        batchDeleteWrapper.classList.add('mm-visible');
       }
     } else {
-      if (batchDeleteBtn) {
-        batchDeleteBtn.remove();
+      if (batchDeleteWrapper) {
+        batchDeleteWrapper.remove();
+        batchDeleteWrapper = null;
         batchDeleteBtn = null;
       }
     }
+  }
+
+  /**
+   * Désélectionne tous les éléments sélectionnés dans le Studio.
+   */
+  function handleClearSelection(e) {
+    if (e) e.stopPropagation();
+
+    // Décocher toutes les checkboxes visibles dans le DOM du Studio
+    const studioPanel = findStudioPanel();
+    if (studioPanel) {
+      studioPanel.querySelectorAll('.mm-studio-checkbox').forEach(cb => cb.checked = false);
+    }
+
+    selectedItems.clear();
+    updateBatchDeleteButtonState();
   }
 
   /**
@@ -297,7 +343,16 @@
           const matchedCards = [];
           const remainingItems = [...dbItems];
 
-          selectedItems.forEach((info, card) => {
+          // Retrouver les cartes du DOM actuellement affichées dans le Studio
+          const studioPanel = findStudioPanel();
+          const currentDOMCards = studioPanel ? findStudioCards(studioPanel) : [];
+          const titleToCardDOM = new Map();
+          currentDOMCards.forEach(card => {
+            const tVal = getStudioCardTitle(card);
+            if (tVal) titleToCardDOM.set(tVal.trim().toLowerCase(), card);
+          });
+
+          selectedItems.forEach((info, normalizedTitle) => {
             const cardTitle = info.title.toLowerCase();
             
             // Trouver l'élément correspondant dans la base RPC en évitant les doublons
@@ -317,7 +372,12 @@
                 : [[matchItem.typeCode || 1], matchItem.id]; // Payload DELETE_ARTIFACT corrigé
 
               requests.push({ rpcId: rpcId, params: params, type: matchItem.type, id: matchItem.id });
-              matchedCards.push({ card: card, id: matchItem.id });
+              
+              // Retrouver la carte DOM actuelle si elle est affichée
+              const currentCardDOM = titleToCardDOM.get(normalizedTitle);
+              if (currentCardDOM) {
+                matchedCards.push({ card: currentCardDOM, id: matchItem.id });
+              }
             } else {
               console.warn(`[MM] StudioDelete : impossible de mapper la carte "${info.title}" à un ID RPC.`);
             }
@@ -444,8 +504,9 @@
       studioObserver = null;
     }
 
-    if (batchDeleteBtn) {
-      batchDeleteBtn.remove();
+    if (batchDeleteWrapper) {
+      batchDeleteWrapper.remove();
+      batchDeleteWrapper = null;
       batchDeleteBtn = null;
     }
 

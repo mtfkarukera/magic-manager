@@ -280,5 +280,69 @@
   "selectButton": {
     "message": "Sélectionner",
     "description": "Aria label prefix to select an item"
+  },
+  "studioSearchPlaceholder": {
+    "message": "Rechercher dans le Studio...",
+    "description": "Placeholder du champ de recherche dans le Studio"
+  },
+  "studioNoResults": {
+    "message": "Aucun résultat dans le Studio",
+    "description": "Message affiché quand aucun artéfact ou note ne correspond"
+  },
+  "studioFilterLabel": {
+    "message": "Filtrer par type",
+    "description": "Libellé du bouton de filtrage par type dans le Studio"
+  },
+  "studioFilterReset": {
+    "message": "Réinitialiser",
+    "description": "Bouton de réinitialisation des filtres de type"
+  },
+  "studioFilterAudio": {
+    "message": "Résumé audio",
+    "description": "Option de filtre pour les résumés audio"
+  },
+  "studioFilterReport": {
+    "message": "Rapports",
+    "description": "Option de filtre pour les rapports"
+  },
+  "studioFilterVideo": {
+    "message": "Résumé vidéo",
+    "description": "Option de filtre pour les résumés vidéo"
+  },
+  "studioFilterQuiz": {
+    "message": "Quiz / Fiches",
+    "description": "Option de filtre pour les quiz et flashcards"
+  },
+  "studioFilterMindMap": {
+    "message": "Cartes mentales",
+    "description": "Option de filtre pour les cartes mentales"
+  },
+  "studioFilterInfographic": {
+    "message": "Infographies",
+    "description": "Option de filtre pour les infographies"
+  },
+  "studioFilterSlides": {
+    "message": "Présentations",
+    "description": "Option de filtre pour les présentations"
+  },
+  "studioFilterTable": {
+    "message": "Tableaux",
+    "description": "Option de filtre pour les tableaux de données"
+  },
+  "studioFilterNote": {
+    "message": "Notes",
+    "description": "Option de filtre pour les notes"
+  },
+  "studioFilterOther": {
+    "message": "Autres",
+    "description": "Option de filtre pour les autres types d'artéfacts (fichiers, etc.)"
+  },
+  "settingsFeatureStudioSearch": {
+    "message": "Recherche dans le Studio",
+    "description": "Libellé de l'option de recherche du Studio dans les réglages"
+  },
+  "studioClearSelection": {
+    "message": "Tout désélectionner",
+    "description": "Bouton pour désélectionner tous les artéfacts du Studio d'un coup"
   }
 }

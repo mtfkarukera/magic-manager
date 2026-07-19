@@ -17,21 +17,19 @@ magic-manager/
 │   │   ├── modules/           # Sous-modules de l'extension
 │   │   │   ├── source-helpers.js # Fonctions centralisées DOM des sources
 │   │   │   ├── source-badges.js  # Module de badges visuels de sources
+│   │   │   ├── shortcuts.js   # Module de raccourcis clavier
 │   │   │   ├── search.js      # Module de recherche globale
 │   │   │   ├── merge.js       # Module de fusion intelligente
 │   │   │   ├── export.js      # Module d'exports simplifiés
 │   │   │   ├── delete.js      # Module de suppression en ligne
-│   │   │   ├── batch-delete.js # Module de suppression par lot de sources [NEW]
-│   │   │   ├── studio-delete.js # Module de suppression par lot du Studio [NEW]
+│   │   │   ├── batch-delete.js # Module de suppression par lot de sources
+│   │   │   ├── studio-delete.js # Module de suppression par lot du Studio
+│   │   │   ├── studio-search.js # Module de recherche et filtrage du Studio [NEW]
 │   │   │   ├── syntax.js      # Module de coloration syntaxique
 │   │   │   └── chatexport.js  # Module d'export du chat
 │   │   └── ui/                # Composants d'interface partagés
 │   │       ├── dialogs.js     # Boîtes de dialogue Material Design 3
 │   │       └── settings.js    # Panneau de réglages utilisateur
-│   ├── popup/
-│   │   ├── popup.html         # Interface de la popup de paramètres
-│   │   ├── popup.js           # Logique de la popup
-│   │   └── popup.css          # Styles de la popup
 │   └── styles/
 │       └── magic-manager.css  # Styles injectés dans la page Gemini Notebook
 ├── _locales/
@@ -70,6 +68,7 @@ graph TD
     E --> I["delete.js"]
     E --> I2["batch-delete.js"]
     E --> I3["studio-delete.js"]
+    E --> I4["studio-search.js"]
     E --> J["syntax.js"]
     E --> K["chatexport.js"]
     L["Bouton parametres in-page"] -->|"browser.storage.local"| D
@@ -96,6 +95,7 @@ Chaque fonctionnalité peut être activée/désactivée individuellement via le 
 | `feature_export` | `boolean` | `true` | Exports simplifiés |
 | `feature_delete` | `boolean` | `true` | Suppression en ligne |
 | `feature_batchDelete` | `boolean` | `true` | Suppression par lot (sources + Studio) |
+| `feature_studioSearch` | `boolean` | `true` | Recherche et filtrage du Studio |
 | `feature_syntax` | `boolean` | `true` | Coloration syntaxique |
 | `feature_chatExport` | `boolean` | `true` | Export du chat |
 
@@ -141,6 +141,16 @@ Pour garantir une expérience utilisateur fluide sur la SPA Gemini Notebook sans
   - **Invalidation sur transition SPA** : Le module détecte immédiatement les changements de Notebook ID dès l'entrée de `injectBadges()`, ce qui vide le cache local et réinitialise les compteurs lors de la navigation dynamique entre carnets.
   - **Retry progressif avec backoff** : Si la liste des sources dans le DOM est initialement vide ou si des cartes n'ont pas encore reçu de badge (titre non encore hydraté par Angular), un retry automatique est planifié avec des délais croissants (500ms, 1s, 1.5s, 2s, 3s) bornés à 5 tentatives max, qui s'auto-annule dès que toutes les cartes ont leur badge.
   - **Sentinelle d'idempotence** : Utilisation de l'attribut `data-mm-badge` sur les cartes pour éviter les multi-injections de badges lors des mutations DOM ultérieures.
+- **Recherche et Filtrage du Studio (v0.9.0)** : Le module `studio-search.js` injecte une pilule de recherche rétractable dans le panneau Studio (Notes & Artéfacts) avec les mécanismes suivants :
+  - **Cache RPC hybride** : Les métadonnées du Studio sont récupérées en parallèle via deux appels RPC (`cFji9` pour les notes/cartes mentales et `gArtLc` pour les artéfacts). Le résultat est unifié dans un cache local `cachedDbItems` qui associe chaque élément à son `typeCode` (1=Audio, 2=Rapport, 3=Vidéo, 4=Quiz, 5=Carte mentale, 7=Infographie, 8=Présentation, 9=Tableau, `note`=Note). Un verrou `isFetchingDbItems` empêche les appels concurrents.
+  - **Détection DOM hybride** : Pour chaque carte du Studio, le type est déterminé en priorité par le cache RPC (fiabilité 100%), avec un fallback sur la détection DOM via les textes et attributs des icônes Material (`mat-icon`, `svgicon`, `data-mat-icon-name`).
+  - **Filtrage par type avec popover isolé** : Un popover multi-sélection permet de filtrer par type d'artéfact. Le popover est isolé de l'interception Angular via `stopPropagation` sur les événements `click` et `mousedown` au niveau du conteneur du popover, garantissant que les checkboxes répondent correctement aux clics utilisateur malgré les handlers de la SPA sous-jacente.
+  - **Pilule rétractable** : La barre de recherche est automatiquement masquée lorsqu'un artéfact ou une note est ouvert en consultation (Garde 2 : détection du viewer), et lorsque le panneau Studio est replié en dessous de 120px de largeur (Garde 1.5).
+- **Persistance de Sélection et Actions Batch (v0.9.0)** :
+  - **Identifiant par Titre Normalisé** : Pour contrer les reconstructions et destructions massives de cartes DOM par le framework Angular (surtout lors de l'ouverture et de la fermeture d'artéfacts), l'extension stocke l'état sélectionné indexé par le titre de l'artéfact normalisé (`trim().toLowerCase()`) plutôt que par référence d'élément DOM. À la réinjection des checkboxes, l'état coché est automatiquement restauré.
+  - **Bouton Tout Désélectionner (×)** : Introduction d'un bouton de réinitialisation rapide à côté du bouton de suppression par lot du Studio. Son clic vide instantanément l'état interne de sélection et décoche toutes les checkboxes actuellement visibles dans le DOM du Studio.
+  - **Mapping RPC post-viewer** : Lors du clic sur "Supprimer la sélection", les cartes DOM à animer et supprimer visuellement sont retrouvées de manière dynamique en faisant correspondre les titres du DOM actuel avec les titres normalisés présents dans le cache des sélections.
+
 
 ## Conventions
 

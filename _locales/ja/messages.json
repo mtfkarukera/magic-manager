@@ -280,5 +280,69 @@
   "selectButton": {
     "message": "選択",
     "description": "Aria label prefix to select an item"
+  },
+  "studioSearchPlaceholder": {
+    "message": "Studio内を検索...",
+    "description": "Placeholder for the search input in the Studio"
+  },
+  "studioNoResults": {
+    "message": "Studio内に結果はありません",
+    "description": "Message displayed when no artifact or note matches"
+  },
+  "studioFilterLabel": {
+    "message": "タイプでフィルタ",
+    "description": "Label for the type filter button in the Studio"
+  },
+  "studioFilterReset": {
+    "message": "リセット",
+    "description": "Reset button for type filters"
+  },
+  "studioFilterAudio": {
+    "message": "音声概要",
+    "description": "Filter option for Audio Overviews"
+  },
+  "studioFilterReport": {
+    "message": "レポート",
+    "description": "Filter option for Reports"
+  },
+  "studioFilterVideo": {
+    "message": "動画概要",
+    "description": "Filter option for Video Overviews"
+  },
+  "studioFilterQuiz": {
+    "message": "クイズ / 単語帳",
+    "description": "Filter option for quizzes and flashcards"
+  },
+  "studioFilterMindMap": {
+    "message": "マインドマップ",
+    "description": "Filter option for Mind Maps"
+  },
+  "studioFilterInfographic": {
+    "message": "インフォグラフィック",
+    "description": "Filter option for Infographics"
+  },
+  "studioFilterSlides": {
+    "message": "プレゼンテーション",
+    "description": "Filter option for Slide Decks"
+  },
+  "studioFilterTable": {
+    "message": "データテーブル",
+    "description": "Filter option for Data Tables"
+  },
+  "studioFilterNote": {
+    "message": "メモ",
+    "description": "Filter option for Notes"
+  },
+  "studioFilterOther": {
+    "message": "その他",
+    "description": "Filter option for other types of artifacts (files, etc.)"
+  },
+  "settingsFeatureStudioSearch": {
+    "message": "Studio検索",
+    "description": "Label for the Studio Search feature toggle in settings"
+  },
+  "studioClearSelection": {
+    "message": "選択解除",
+    "description": "Button to clear all selected Studio artifacts at once"
   }
 }

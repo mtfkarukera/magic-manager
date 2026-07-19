@@ -280,5 +280,69 @@
   "selectButton": {
     "message": "Auswählen",
     "description": "Aria label prefix to select an item"
+  },
+  "studioSearchPlaceholder": {
+    "message": "Im Studio suchen...",
+    "description": "Placeholder for the search input in the Studio"
+  },
+  "studioNoResults": {
+    "message": "Keine Ergebnisse im Studio",
+    "description": "Message displayed when no artifact or note matches"
+  },
+  "studioFilterLabel": {
+    "message": "Nach Typ filtern",
+    "description": "Label for the type filter button in the Studio"
+  },
+  "studioFilterReset": {
+    "message": "Zurücksetzen",
+    "description": "Reset button for type filters"
+  },
+  "studioFilterAudio": {
+    "message": "Audio-Übersicht",
+    "description": "Filter option for Audio Overviews"
+  },
+  "studioFilterReport": {
+    "message": "Berichte",
+    "description": "Filter option for Reports"
+  },
+  "studioFilterVideo": {
+    "message": "Video-Übersicht",
+    "description": "Filter option for Video Overviews"
+  },
+  "studioFilterQuiz": {
+    "message": "Quiz / Karteikarten",
+    "description": "Filter option for quizzes and flashcards"
+  },
+  "studioFilterMindMap": {
+    "message": "Mindmaps",
+    "description": "Filter option for Mind Maps"
+  },
+  "studioFilterInfographic": {
+    "message": "Infografiken",
+    "description": "Filter option for Infographics"
+  },
+  "studioFilterSlides": {
+    "message": "Präsentationen",
+    "description": "Filter option for Slide Decks"
+  },
+  "studioFilterTable": {
+    "message": "Datentabellen",
+    "description": "Filter option for Data Tables"
+  },
+  "studioFilterNote": {
+    "message": "Notizen",
+    "description": "Filter option for Notes"
+  },
+  "studioFilterOther": {
+    "message": "Andere",
+    "description": "Filter option for other types of artifacts (files, etc.)"
+  },
+  "settingsFeatureStudioSearch": {
+    "message": "Studio-Suche",
+    "description": "Label for the Studio Search feature toggle in settings"
+  },
+  "studioClearSelection": {
+    "message": "Auswahl aufheben",
+    "description": "Button to clear all selected Studio artifacts at once"
   }
 }

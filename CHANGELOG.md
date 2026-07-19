@@ -4,6 +4,23 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.9.0] — 2026-07-19
+
+### Ajouté
+- 🔍 **Recherche dans le Studio** :
+  - **Pilule de recherche fixe** : Ajout d'un champ de recherche textuelle debouncé (150ms) positionné de façon fixe sous l'en-tête du Studio, respectant le masquage automatique en mode consultation d'artéfacts.
+  - **Filtres par type d'artéfact** : Implémentation d'un popover multi-sélection pour filtrer dynamiquement les éléments par type (Résumé audio, Rapports, Résumé vidéo, Quiz, Cartes mentales, Infographies, Présentations, Tableaux, Notes).
+  - **Détection DOM intelligente** : Détection automatique du type d'artéfact depuis le texte de l'icône Material de la carte.
+  - **Raccourci clavier** : Liaison avec le raccourci `Alt+Shift+F` (ou `Option+Shift+F`) pour focaliser instantanément l'input Studio.
+  - **Paramétrage utilisateur** : Ajout du toggle `feature_studioSearch` dans les réglages de l'extension pour activer ou désactiver entièrement la fonctionnalité.
+  - 🧹 **Tout désélectionner (Studio)** : Ajout d'un bouton × de réinitialisation à côté du bouton de suppression par lot pour décocher instantanément tous les artéfacts sélectionnés.
+
+### Corrigé
+- 🔧 **Studio — Boucle infinie d'injections** : Suppression de l'appel à `updateBatchDeleteButtonState()` depuis `injectStudioCheckboxes()` dans `studio-delete.js`, qui causait une boucle infinie de mutations DOM entre le `studioObserver` et les injections de checkboxes (symptôme : bandeau Firefox « cette page ralentit votre navigateur »).
+- 🔧 **Studio — Popover de filtres insensible aux clics** : Isolation du popover de filtres par type d'artéfact de l'interception Angular via `stopPropagation` sur les événements `click` et `mousedown` au niveau du conteneur du popover. Les événements de la SPA sous-jacente empêchaient les checkboxes de répondre aux clics utilisateur.
+- 🔧 **Studio — Amorce du cache RPC** : Remplacement de l'appel inconditionnel à `applyFilters()` par un appel direct et conditionnel à `fetchStudioItems()` lors de l'initialisation, évitant un double fetch RPC et une invalidation prématurée du cache.
+- 🔧 **Studio — Perte de sélection & Références DOM orphelines** : Passage d'un adressage de sélection par carte DOM (instable après la transition viewer d'Angular) à un adressage par titre normalisé, assurant la persistance des checkboxes cochées et la cohérence du compteur d'éléments sélectionnés lors des allers-retours ou changements de layout.
+
 ## [0.8.1] — 2026-07-19
 
 ### Ajouté

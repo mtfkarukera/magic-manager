@@ -280,5 +280,69 @@
   "selectButton": {
     "message": "Chọn",
     "description": "Aria label prefix to select an item"
+  },
+  "studioSearchPlaceholder": {
+    "message": "Tìm kiếm trong Studio...",
+    "description": "Placeholder for the search input in the Studio"
+  },
+  "studioNoResults": {
+    "message": "Không có kết quả trong Studio",
+    "description": "Message displayed when no artifact or note matches"
+  },
+  "studioFilterLabel": {
+    "message": "Lọc theo loại",
+    "description": "Label for the type filter button in the Studio"
+  },
+  "studioFilterReset": {
+    "message": "Đặt lại",
+    "description": "Reset button for type filters"
+  },
+  "studioFilterAudio": {
+    "message": "Tổng quan âm thanh",
+    "description": "Filter option for Audio Overviews"
+  },
+  "studioFilterReport": {
+    "message": "Báo cáo",
+    "description": "Filter option for Reports"
+  },
+  "studioFilterVideo": {
+    "message": "Tổng quan video",
+    "description": "Filter option for Video Overviews"
+  },
+  "studioFilterQuiz": {
+    "message": "Trắc nghiệm / Flashcard",
+    "description": "Filter option for quizzes and flashcards"
+  },
+  "studioFilterMindMap": {
+    "message": "Sơ đồ tư duy",
+    "description": "Filter option for Mind Maps"
+  },
+  "studioFilterInfographic": {
+    "message": "Đồ họa thông tin",
+    "description": "Filter option for Infographics"
+  },
+  "studioFilterSlides": {
+    "message": "Bài thuyết trình",
+    "description": "Filter option for Slide Decks"
+  },
+  "studioFilterTable": {
+    "message": "Bảng dữ liệu",
+    "description": "Filter option for Data Tables"
+  },
+  "studioFilterNote": {
+    "message": "Ghi chú",
+    "description": "Filter option for Notes"
+  },
+  "studioFilterOther": {
+    "message": "Khác",
+    "description": "Filter option for other types of artifacts (files, etc.)"
+  },
+  "settingsFeatureStudioSearch": {
+    "message": "Tìm kiếm Studio",
+    "description": "Label for the Studio Search feature toggle in settings"
+  },
+  "studioClearSelection": {
+    "message": "Bỏ chọn tất cả",
+    "description": "Button to clear all selected Studio artifacts at once"
   }
 }

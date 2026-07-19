@@ -25,6 +25,7 @@
     export: 'feature_export',
     delete: 'feature_delete',
     batchDelete: 'feature_batchDelete',
+    studioSearch: 'feature_studioSearch',
     syntax: 'feature_syntax',
     chatExport: 'feature_chatExport'
   };
@@ -102,6 +103,7 @@
       { key: FEATURES.delete, init: 'initDelete', label: 'Suppression' },
       { key: FEATURES.batchDelete, init: 'initBatchDelete', label: 'Suppression lot' },
       { key: FEATURES.batchDelete, init: 'initStudioDelete', label: 'Suppression Studio' },
+      { key: FEATURES.studioSearch, init: 'initStudioSearch', label: 'Recherche Studio' },
       { key: FEATURES.syntax, init: 'initSyntax', label: 'Syntaxe' },
       { key: FEATURES.chatExport, init: 'initChatExport', label: 'ChatExport' }
     ];
@@ -116,8 +118,8 @@
       }
     }
 
-    // Panel observer centralisé : actif si export, delete, badges ou batchDelete est activé
-    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.badges) || isFeatureEnabled(FEATURES.batchDelete)) {
+    // Panel observer centralisé : actif si export, delete, badges, batchDelete ou studioSearch est activé
+    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.badges) || isFeatureEnabled(FEATURES.batchDelete) || isFeatureEnabled(FEATURES.studioSearch)) {
       try {
         window.MM.initPanelObserver();
       } catch (err) {
@@ -141,6 +143,7 @@
       { name: 'Delete', fn: window.MM.cleanupDelete },
       { name: 'BatchDelete', fn: window.MM.cleanupBatchDelete },
       { name: 'StudioDelete', fn: window.MM.cleanupStudioDelete },
+      { name: 'StudioSearch', fn: window.MM.cleanupStudioSearch },
       { name: 'Syntax', fn: window.MM.cleanupSyntax },
       { name: 'ChatExport', fn: window.MM.cleanupChatExport }
     ];
@@ -191,7 +194,7 @@
    * Lance l'extension.
    */
   async function init() {
-    console.log('[MM] Magic Manager v0.8.0 — Initialisation globale');
+    console.log('[MM] Magic Manager v0.9.0 — Initialisation globale');
 
     // Mettre à disposition la vérification d'état des features pour les autres modules
     window.MM.isFeatureEnabled = isFeatureEnabled;

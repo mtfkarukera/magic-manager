@@ -812,4 +812,11 @@
   // Exposition des classes d'erreurs pour diagnostics
   window.MM.RpcError = RpcError;
   window.MM.RpcApiChangedError = RpcApiChangedError;
+
+  // Capture immédiate du jeton CSRF au chargement précoce du script
+  try {
+    getCsrfToken();
+  } catch (e) {
+    console.debug('[MM] Capture précoce du CSRF reportée :', e);
+  }
 })();

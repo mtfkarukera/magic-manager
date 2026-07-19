@@ -29,7 +29,8 @@
     { key: 'feature_delete',     i18nKey: 'settingsFeatureDelete' },
     { key: 'feature_batchDelete', i18nKey: 'settingsFeatureBatchDelete' },
     { key: 'feature_syntax',     i18nKey: 'settingsFeatureSyntax' },
-    { key: 'feature_chatExport', i18nKey: 'settingsFeatureChatExport' }
+    { key: 'feature_chatExport', i18nKey: 'settingsFeatureChatExport' },
+    { key: 'feature_studioSearch', i18nKey: 'settingsFeatureStudioSearch' }
   ];
 
   // ═══════════════════════════════════════════════════════════════════════

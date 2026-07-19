@@ -214,6 +214,11 @@
         window.MM.dispatchStudioInjections();
       }
 
+      // 4.7 Recherche Studio (Sprint 4)
+      if (window.MM.isFeatureEnabled('studioSearch') && typeof window.MM.checkAndInjectStudioSearch === 'function') {
+        window.MM.checkAndInjectStudioSearch();
+      }
+
       // 5. Injections individuelles (Poubelle & Export) s'il y a un source-viewer actif
       const sourceViewer = document.querySelector('source-viewer');
       if (sourceViewer) {
