@@ -16,6 +16,13 @@
   // Verrou pour éviter des appels RPC concurrents de récupération de sources
   let isFetching = false;
 
+  // Variables pour la logique de retry intelligent en cas de DOM non hydraté
+  let retryCount = 0;
+  let retryTimer = null;
+  let lastCardsCount = 0;
+  const MAX_RETRIES = 5;
+  const RETRY_DELAYS = [500, 1000, 1500, 2000, 3000]; // Délais de backoff progressif en ms
+
   // ═══════════════════════════════════════════════════════════════════════
   // Générateurs d'icônes SVG pour les badges
   // ═══════════════════════════════════════════════════════════════════════
@@ -85,6 +92,7 @@
             sourceTypesCache.set(normalizedTitle, src.kind);
           }
         });
+        retryCount = 0;
         injectBadges();
       }
     } catch (err) {
@@ -104,75 +112,137 @@
     return 'local';
   }
 
+  function planRetry() {
+    if (retryTimer) return;
+    const delay = RETRY_DELAYS[retryCount] || RETRY_DELAYS[RETRY_DELAYS.length - 1];
+    retryTimer = setTimeout(function () {
+      retryTimer = null;
+      retryCount++;
+      injectBadges();
+    }, delay);
+  }
+
+  function cleanupRetry() {
+    retryCount = 0;
+    lastCardsCount = 0;
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
+  }
+
   function injectBadges() {
     if (!window.MM.isFeatureEnabled('badges')) return;
 
+    const notebookId = window.MM.getActiveNotebookId();
+    if (!notebookId) {
+      cleanupRetry();
+      return;
+    }
+
+    // Détection immédiate du changement de notebook
+    if (notebookId !== currentNotebookId) {
+      sourceTypesCache.clear();
+      currentNotebookId = notebookId;
+      cleanupRetry();
+    }
+
     if (sourceTypesCache.size === 0) {
       fetchAndCacheSourceTypes();
+      planRetry();
       return;
     }
 
     const cards = typeof window.MM.findSourceCards === 'function' ? window.MM.findSourceCards() : [];
-    if (cards.length === 0) return;
+    
+    // Réinitialiser les tentatives si le nombre de cartes a changé (ex. ajout/suppression de source)
+    if (cards.length !== lastCardsCount) {
+      retryCount = 0;
+      lastCardsCount = cards.length;
+    }
 
-    cards.forEach(function (card) {
-      if (card.getAttribute('data-mm-badge') === 'true') return;
+    let unbadgedCount = 0;
 
-      const stretchedBtn = card.querySelector('button.source-stretched-button');
-      if (!stretchedBtn) return;
+    if (cards.length > 0) {
+      cards.forEach(function (card) {
+        if (card.getAttribute('data-mm-badge') === 'true') return;
 
-      const ariaLabel = stretchedBtn.getAttribute('aria-label') || '';
-      const normalizedTitle = ariaLabel.trim().toLowerCase();
+        const stretchedBtn = card.querySelector('button.source-stretched-button');
+        if (!stretchedBtn) {
+          unbadgedCount++;
+          return;
+        }
 
-      // Essayer de faire un match flexible si has() exact échoue (gestion des troncatures ou points de suspension)
-      let foundKind = null;
-      if (sourceTypesCache.has(normalizedTitle)) {
-        foundKind = sourceTypesCache.get(normalizedTitle);
-      } else {
-        // Recherche partielle (si le titre DOM est de type "nom...")
-        const cleanDomTitle = normalizedTitle.replace(/\.\.\./g, '').trim();
-        for (const [cacheTitle, kind] of sourceTypesCache.entries()) {
-          if (cacheTitle.startsWith(cleanDomTitle) || cleanDomTitle.startsWith(cacheTitle)) {
-            foundKind = kind;
-            break;
+        const ariaLabel = stretchedBtn.getAttribute('aria-label') || '';
+        const normalizedTitle = ariaLabel.trim().toLowerCase();
+
+        if (!normalizedTitle) {
+          unbadgedCount++;
+          return;
+        }
+
+        // Essayer de faire un match flexible si has() exact échoue (gestion des troncatures ou points de suspension)
+        let foundKind = null;
+        if (sourceTypesCache.has(normalizedTitle)) {
+          foundKind = sourceTypesCache.get(normalizedTitle);
+        } else {
+          // Recherche partielle (si le titre DOM est de type "nom...")
+          const cleanDomTitle = normalizedTitle.replace(/\.\.\./g, '').trim();
+          for (const [cacheTitle, kind] of sourceTypesCache.entries()) {
+            if (cacheTitle.startsWith(cleanDomTitle) || cleanDomTitle.startsWith(cacheTitle)) {
+              foundKind = kind;
+              break;
+            }
           }
         }
-      }
 
-      if (foundKind !== null) {
-        const category = getCategoryByKind(foundKind);
-        let svgElement;
-        if (category === 'drive') {
-          svgElement = createDriveSvg();
-        } else if (category === 'url') {
-          svgElement = createUrlSvg();
-        } else {
-          svgElement = createLocalSvg();
-        }
-
-        const badge = document.createElement('span');
-        badge.className = `mm-source-badge mm-source-badge--${category}`;
-        badge.title = category.charAt(0).toUpperCase() + category.slice(1);
-        badge.appendChild(svgElement);
-        // Localiser le nœud de titre visible dans la carte (hors bouton stretched/checkbox)
-        const titleText = stretchedBtn.getAttribute('aria-label') || '';
-        const titleNode = findTitleNode(card, titleText);
-
-        if (titleNode) {
-          titleNode.parentNode.insertBefore(badge, titleNode);
-          card.setAttribute('data-mm-badge', 'true');
-        } else {
-          // Fallback : insérer après le premier enfant de la carte
-          const firstChild = card.firstElementChild;
-          if (firstChild) {
-            firstChild.after(badge);
+        if (foundKind !== null) {
+          const category = getCategoryByKind(foundKind);
+          let svgElement;
+          if (category === 'drive') {
+            svgElement = createDriveSvg();
+          } else if (category === 'url') {
+            svgElement = createUrlSvg();
           } else {
-            card.prepend(badge);
+            svgElement = createLocalSvg();
           }
-          card.setAttribute('data-mm-badge', 'true');
+
+          const badge = document.createElement('span');
+          badge.className = `mm-source-badge mm-source-badge--${category}`;
+          badge.title = category.charAt(0).toUpperCase() + category.slice(1);
+          badge.appendChild(svgElement);
+          // Localiser le nœud de titre visible dans la carte (hors bouton stretched/checkbox)
+          const titleText = stretchedBtn.getAttribute('aria-label') || '';
+          const titleNode = findTitleNode(card, titleText);
+
+          if (titleNode) {
+            titleNode.parentNode.insertBefore(badge, titleNode);
+            card.setAttribute('data-mm-badge', 'true');
+          } else {
+            // Fallback : insérer après le premier enfant de la carte
+            const firstChild = card.firstElementChild;
+            if (firstChild) {
+              firstChild.after(badge);
+            } else {
+              card.prepend(badge);
+            }
+            card.setAttribute('data-mm-badge', 'true');
+          }
+        } else {
+          unbadgedCount++;
         }
-      }
-    });
+      });
+    } else {
+      // Pas encore de cartes dans le DOM, mais on a un notebookId : planifier un retry
+      unbadgedCount = 1;
+    }
+
+    // Gérer la planification du retry
+    if (unbadgedCount > 0 && retryCount < MAX_RETRIES) {
+      planRetry();
+    } else {
+      retryCount = 0; // Succès total ou abandon
+    }
   }
 
   /**
@@ -229,6 +299,7 @@
 
     sourceTypesCache.clear();
     currentNotebookId = null;
+    cleanupRetry();
     console.log('[MM] Badges visuels de sources nettoyés.');
   }
 

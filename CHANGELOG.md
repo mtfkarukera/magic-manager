@@ -11,7 +11,8 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   - **Icônes SVG dédiées** : Ajout de badges à côté du titre de chaque source dans la liste pour identifier son type d'import (🔄 Google Drive, 🌐 Lien Web/YouTube, ▢ Upload Local).
   - **Cache intelligent & résilient** : Stockage local en mémoire `titre -> type` hydraté automatiquement via l'appel RPC `getNotebookSources` (`rLM1Ne`) au démarrage du carnet.
   - **Paramétrage utilisateur** : Intégration d'un toggle d'activation dédié `feature_badges` dans le panneau de préférences de l'extension, supportant les 7 langues de l'extension.
-  - **Correction de positionnement** : Résolution du bug de décalage en insérant le badge précisément après l'icône native de Google.
+  - **Correction de positionnement** : Résolution du bug de décalage en insérant le badge précisément après l'icône de gauche dans le flux du flexbox, éliminant les badges absolus flottants.
+  - **Correction de timing** : Résolution du problème d'asynchronisme au chargement initial via un retry automatique debouncé avec backoff (jusqu'à 5 tentatives) pour injecter les badges dès que les titres DOM sont hydratés.
 
 
 ## [0.6.5] — 2026-07-19
