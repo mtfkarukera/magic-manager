@@ -16,6 +16,13 @@
 - 💬 **Export du chat** — Sauvegardez vos conversations avec l'IA sous forme de notes.
 - ⌨️ **Raccourcis clavier** — Accélérez votre navigation avec des raccourcis dédiés (`Cmd/Ctrl+Shift+F` pour focaliser la recherche, `Cmd/Ctrl+Shift+E` pour le chat).
 
+## ⚡ Performance & Sobriété énergétique
+
+Magic Manager est optimisé pour être le plus léger possible et préserver vos ressources système :
+- **0% CPU au repos** : L'observation des modifications de l'interface par MutationObserver est centralisée, debouncée à 250ms, et filtrée pour éviter tout calcul inutile lorsque la page est stable.
+- **Requêtes directes via l'API interne (RPC)** : Pas de simulations de clics de souris ou de manipulations visuelles lentes. L'extension communique directement en tâche de fond avec l'API officielle sécurisée de Gemini Notebook pour toutes ses actions lourdes (suppression, fusion, etc.).
+- **Zéro script persistant** : L'extension s'exécute uniquement sous forme de scripts de contenu injectés à la demande. Aucun script d'arrière-plan permanent ne consomme votre mémoire vive (RAM) inutilement.
+
 ## 📦 Installation
 
 ### Depuis le store AMO (recommandé)
