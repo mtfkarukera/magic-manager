@@ -20,6 +20,7 @@
   const FEATURES = {
     shortcuts: 'feature_shortcuts',
     search: 'feature_search',
+    badges: 'feature_badges',
     merge: 'feature_merge',
     export: 'feature_export',
     delete: 'feature_delete',
@@ -94,6 +95,7 @@
     const modules = [
       { key: FEATURES.shortcuts, init: 'initShortcuts', label: 'Raccourcis' },
       { key: FEATURES.search, init: 'initSearch', label: 'Recherche' },
+      { key: FEATURES.badges, init: 'initBadges', label: 'Badges' },
       { key: FEATURES.merge,  init: 'initMerge',  label: 'Fusion' },
       { key: FEATURES.export, init: 'initExport', label: 'Export' },
       { key: FEATURES.delete, init: 'initDelete', label: 'Suppression' },
@@ -111,8 +113,8 @@
       }
     }
 
-    // Panel observer centralisé : actif si export OU delete est activé
-    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete)) {
+    // Panel observer centralisé : actif si export, delete ou badges est activé
+    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.badges)) {
       try {
         window.MM.initPanelObserver();
       } catch (err) {
@@ -130,6 +132,7 @@
       { name: 'Shortcuts', fn: window.MM.cleanupShortcuts },
       { name: 'PanelObserver', fn: window.MM.cleanupPanelObserver },
       { name: 'Search', fn: window.MM.cleanupSearch },
+      { name: 'Badges', fn: window.MM.cleanupBadges },
       { name: 'Merge', fn: window.MM.cleanupMerge },
       { name: 'Export', fn: window.MM.cleanupExport },
       { name: 'Delete', fn: window.MM.cleanupDelete },

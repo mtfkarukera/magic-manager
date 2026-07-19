@@ -115,6 +115,9 @@
 
     if (shouldRecalculate) {
       debouncedPanelInteraction();
+      if (window.MM.isFeatureEnabled('badges') && typeof window.MM.injectBadges === 'function') {
+        window.MM.injectBadges();
+      }
     }
   }
 
@@ -196,6 +199,11 @@
       // 4. Syntaxe : Coloration des blocs de code
       if (window.MM.isFeatureEnabled('syntax') && typeof window.MM.scanAndHighlight === 'function') {
         window.MM.scanAndHighlight();
+      }
+
+      // 4.5 Badges de type de source
+      if (window.MM.isFeatureEnabled('badges') && typeof window.MM.injectBadges === 'function') {
+        window.MM.injectBadges();
       }
 
       // 5. Injections individuelles (Poubelle & Export) s'il y a un source-viewer actif

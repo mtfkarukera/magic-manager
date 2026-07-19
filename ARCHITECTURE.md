@@ -16,6 +16,7 @@ magic-manager/
 │   │   ├── orchestrator.js    # Point d'entrée — orchestrateur des modules
 │   │   ├── modules/           # Sous-modules de l'extension
 │   │   │   ├── source-helpers.js # Fonctions centralisées DOM des sources
+│   │   │   ├── source-badges.js  # Module de badges visuels de sources
 │   │   │   ├── search.js      # Module de recherche globale
 │   │   │   ├── merge.js       # Module de fusion intelligente
 │   │   │   ├── export.js      # Module d'exports simplifiés
@@ -86,6 +87,7 @@ Chaque fonctionnalité peut être activée/désactivée individuellement via le 
 |---|---|---|---|
 | `feature_shortcuts` | `boolean` | `true` | Raccourcis clavier |
 | `feature_search` | `boolean` | `true` | Recherche globale |
+| `feature_badges` | `boolean` | `true` | Badges visuels de sources |
 | `feature_merge` | `boolean` | `true` | Fusion intelligente |
 | `feature_export` | `boolean` | `true` | Exports simplifiés |
 | `feature_delete` | `boolean` | `true` | Suppression en ligne |
@@ -127,7 +129,7 @@ Pour garantir une expérience utilisateur fluide sur la SPA Gemini Notebook sans
   1. Passe locale instantanée via le coefficient de Sørensen-Dice sur les bigrammes des titres (Dice score ≥ 0.8) pour un affichage visuel préliminaire immédiat.
   2. Passe réseau asynchrone autonome scannant toutes les sources du carnet par requêtes RPC `getSourceContent` (`hizoJc`). Le contenu est comparé par paires avec le coefficient de Jaccard sur les ensembles de mots significatifs (> 3 lettres) avec un seuil de similarité ≥ 0.6. Cette méthode élimine les faux négatifs causés par les pipelines d'importation différents (Drive, URL, PDF local) ou les titres renommés.
 - **Bouton de Réinitialisation Croix (×)** : Intégration d'un bouton croix positionné en absolute dans la barre de recherche. Sa visibilité est liée dynamiquement à la présence de texte dans le champ de recherche par toggles de classe CSS.
-
+- **Badges de type de source (v0.7.0)** : Les métadonnées de provenance (Google Drive, URL, Fichier local) sont récupérées via l'API RPC `rLM1Ne` et stockées en cache local (Map normalisée `titre -> type`). Les badges de couleur associés (🔄 Drive, 🌐 URL/YouTube, ▢ Upload Local) sont injectés dynamiquement de façon réactive dans le DOM des cartes sources en s'appuyant sur l'attribut sentinelle `data-mm-badge` pour prévenir toute multi-injection.
 
 ## Conventions
 

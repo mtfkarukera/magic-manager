@@ -1134,5 +1134,54 @@
   100% { transform: rotate(360deg); }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Badges de type de source (Sprint 2)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mm-source-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-right: 6px;
+  margin-left: 2px;
+  vertical-align: middle;
+  opacity: 0.8;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.mm-source-badge:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.mm-source-badge svg {
+  width: 14px;
+  height: 14px;
+  fill: currentColor;
+  stroke: currentColor;
+  stroke-width: 0.5px;
+}
+
+/* Couleurs adaptées au thème clair/sombre */
+.mm-source-badge--drive {
+  color: #34a853; /* Vert Google Drive */
+}
+.mm-source-badge--url {
+  color: #4285f4; /* Bleu Google */
+}
+.mm-source-badge--local {
+  color: #9aa0a6; /* Gris neutre */
+}
+
+@media (prefers-color-scheme: dark) {
+  .mm-source-badge--local {
+    color: #bdc1c6; /* Gris plus clair en mode sombre */
+  }
+}
+
+
 
 

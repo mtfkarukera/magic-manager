@@ -4,6 +4,16 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.7.0] — 2026-07-19
+
+### Ajouté
+- 🏷️ **Badges visuels de sources** :
+  - **Icônes SVG dédiées** : Ajout de badges à côté du titre de chaque source dans la liste pour identifier son type d'import (🔄 Google Drive, 🌐 Lien Web/YouTube, ▢ Upload Local).
+  - **Cache intelligent & résilient** : Stockage local en mémoire `titre -> type` hydraté automatiquement via l'appel RPC `getNotebookSources` (`rLM1Ne`) au démarrage du carnet.
+  - **Paramétrage utilisateur** : Intégration d'un toggle d'activation dédié `feature_badges` dans le panneau de préférences de l'extension, supportant les 7 langues de l'extension.
+  - **Correction de positionnement** : Résolution du bug de décalage en insérant le badge précisément après l'icône native de Google.
+
+
 ## [0.6.5] — 2026-07-19
 
 ### Optimisé & Corrigé

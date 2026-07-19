@@ -23,6 +23,7 @@
   const FEATURE_TOGGLES = [
     { key: 'feature_shortcuts',  i18nKey: 'settingsFeatureShortcuts' },
     { key: 'feature_search',     i18nKey: 'settingsFeatureSearch' },
+    { key: 'feature_badges',     i18nKey: 'settingsFeatureBadges' },
     { key: 'feature_merge',      i18nKey: 'settingsFeatureMerge' },
     { key: 'feature_export',     i18nKey: 'settingsFeatureExport' },
     { key: 'feature_delete',     i18nKey: 'settingsFeatureDelete' },

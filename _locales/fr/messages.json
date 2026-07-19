@@ -209,7 +209,14 @@
     "message": "Similarité : $score$%",
     "description": "Infobulle du badge de score de similarité",
     "placeholders": {
-      "score": { "content": "$1", "example": "85" }
+      "score": {
+        "content": "$1",
+        "example": "85"
+      }
     }
+  },
+  "settingsFeatureBadges": {
+    "message": "Badges de type de source",
+    "description": "Libellé du toggle de badges de type de source dans les paramètres"
   }
 }

@@ -209,7 +209,14 @@
     "message": "Similitud: $score$%",
     "description": "Infobulle du badge de score de similarité",
     "placeholders": {
-      "score": { "content": "$1", "example": "85" }
+      "score": {
+        "content": "$1",
+        "example": "85"
+      }
     }
+  },
+  "settingsFeatureBadges": {
+    "message": "Insignias de tipo de fuente",
+    "description": "Label of the source type badges toggle in settings"
   }
 }

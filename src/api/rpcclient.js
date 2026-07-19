@@ -585,14 +585,24 @@
     // Le sourceId peut être un string direct OU un tableau [uuid]
     return sourcesList
       .filter(src => Array.isArray(src))
-      .map(src => {
+      .map((src, index) => {
         var rawId = src[0];
         // Déballage si le sourceId est wrappé dans un tableau [uuid]
         var id = Array.isArray(rawId) ? rawId[0] : rawId;
+        
+        // Extraction robuste du type de source (kind)
+        // Généralement situé dans le sous-tableau des métadonnées src[2] à l'index 4
+        var kind = undefined;
+        if (src[2] && Array.isArray(src[2]) && src[2].length > 4) {
+          kind = src[2][4];
+        } else if (src[16] !== undefined) {
+          kind = src[16];
+        }
+
         return {
           id: id,
           title: src[1],
-          kind: src[16]
+          kind: kind
         };
       })
       .filter(s => typeof s.id === 'string' && s.id.length > 5);

@@ -328,6 +328,55 @@
     return stickyHeader;
   }
 
+  /**
+   * Identifie de manière robuste toutes les lignes de sources individuelles.
+   * Se base sur la présence des checkboxes individuelles de sélection.
+   * @returns {Array<Element>}
+   */
+  function findSourceCards() {
+    const container = findSourcesListContainer();
+    if (!container) return [];
+
+    const checkboxes = Array.from(container.querySelectorAll('input[type="checkbox"], [role="checkbox"]'));
+    const cards = [];
+
+    checkboxes.forEach(function (cb) {
+      const parentText = cb.parentNode ? cb.parentNode.textContent : '';
+      if (parentText.includes('Tout sélectionner') || 
+          cb.closest('[class*="select-all"]') || 
+          cb.closest('[class*="selectAll"]')) {
+        return;
+      }
+
+      let line = cb;
+      while (line && line.parentNode && line.parentNode !== container && line.parentNode !== document.body) {
+        if (line.classList && (
+          line.classList.contains('source-card') ||
+          (typeof line.className === 'string' && (
+            line.className.includes('source') ||
+            line.className.includes('item') ||
+            line.className.includes('card')
+          ))
+        )) {
+          break;
+        }
+        line = line.parentNode;
+      }
+
+      if (line && line !== container && !cards.includes(line)) {
+        cards.push(line);
+      }
+    });
+
+    if (cards.length === 0) {
+      return Array.from(container.querySelectorAll(
+        'div[class*="source-card"], div[class*="source-item"], div[class*="sourceItem"], [class*="source-row"], [data-source-id]'
+      ));
+    }
+
+    return cards;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // Exposition dans le namespace global MM
   // ═══════════════════════════════════════════════════════════════════════
@@ -341,4 +390,5 @@
   window.MM.findSourceViewerCloseButton = findSourceViewerCloseButton;
   window.MM.findSourceViewerTitle = findSourceViewerTitle;
   window.MM.findSourceViewerTitleText = findSourceViewerTitleText;
+  window.MM.findSourceCards = findSourceCards;
 })();
