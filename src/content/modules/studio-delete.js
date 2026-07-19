@@ -11,7 +11,11 @@
   // État interne
   // ═══════════════════════════════════════════════════════════════════════
   let studioObserver = null;
-  let selectedItems = new Map(); // Clé = titre normalisé (string), Valeur = { title, checkbox }
+  let selectedItems = new Set(); // Contient les IDs uniques (strings) des artéfacts sélectionnés
+  let cachedDbItems = null; // Cache local ordonné des éléments du Studio du serveur
+  let lastFetchedNotebookId = null;
+  let isFetchingDbItems = false;
+  let wasViewing = false; // Flag pour détecter la fermeture du note viewer
   let batchDeleteWrapper = null;
   let batchDeleteBtn = null;
   let isProcessing = false;
@@ -118,6 +122,36 @@
     }).filter(Boolean);
   }
 
+  /**
+   * Récupère la liste des artéfacts et notes via RPC et remplit le cache local de studio-delete.
+   */
+  async function fetchStudioItemsLocal(notebookId, force = false) {
+    if (isFetchingDbItems) return;
+    if (!force && cachedDbItems && notebookId === lastFetchedNotebookId) return;
+
+    isFetchingDbItems = true;
+    try {
+      console.log('[MM] StudioDelete : chargement de la liste des notes/artéfacts via RPC...');
+      const [notesRaw, artifactsRaw] = await Promise.all([
+        window.MM.rpc.getNotesAndMindMaps(notebookId),
+        window.MM.rpc.getArtifactsList(notebookId)
+      ]);
+
+      const dbNotes = parseNotesResult(notesRaw);
+      const dbArtifacts = parseArtifactsResult(artifactsRaw);
+      cachedDbItems = dbNotes.concat(dbArtifacts);
+      lastFetchedNotebookId = notebookId;
+      
+      console.log(`[MM] StudioDelete : Cache hydraté avec ${cachedDbItems.length} éléments.`);
+      // Ré-injecter pour appliquer les IDs et l'état coché
+      dispatchStudioInjections();
+    } catch (err) {
+      console.error('[MM] StudioDelete : Échec de chargement RPC des types d\'artéfacts :', err);
+    } finally {
+      isFetchingDbItems = false;
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // Routines d'Injection
   // ═══════════════════════════════════════════════════════════════════════
@@ -129,10 +163,45 @@
     const cards = findStudioCards(studioPanel);
     if (cards.length === 0) return;
 
+    // Détecter si l'utilisateur est dans le viewer (Garde 2)
+    const isViewing = !!document.querySelector(
+      "button[aria-label='Expand'], button[aria-label='Close note view'], " +
+      ".artifact-viewer-container, [class*='artifact-viewer'], [class*='note-view']"
+    );
+
+    if (isViewing) {
+      wasViewing = true;
+      return;
+    }
+
+    const notebookId = window.MM.getActiveNotebookId();
+
+    // Si on vient de fermer le viewer, on invalide le cache car une note a pu être éditée/réordonnée
+    if (wasViewing && !isViewing) {
+      wasViewing = false;
+      cachedDbItems = null; // Invalider le cache
+      // Retirer les anciens attributs data-mm-id pour forcer la ré-association propre
+      cards.forEach(card => card.removeAttribute('data-mm-id'));
+    }
+
+    if (notebookId) {
+      // Lancer le fetch du cache en tâche de fond s'il n'est pas hydraté
+      if (!cachedDbItems && !isFetchingDbItems) {
+        fetchStudioItemsLocal(notebookId);
+      }
+    }
+
     const isMobile = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
 
-    cards.forEach(card => {
+    cards.forEach((card, index) => {
       const existingCheckbox = card.querySelector('.mm-studio-checkbox');
+
+      // Récupérer ou attribuer l'ID unique serveur à cette carte DOM (1-pour-1)
+      let itemId = card.getAttribute('data-mm-id');
+      if (!itemId && cachedDbItems && cachedDbItems[index]) {
+        itemId = cachedDbItems[index].id;
+        card.setAttribute('data-mm-id', itemId);
+      }
 
       if (existingCheckbox) {
         const hasMobileClass = existingCheckbox.classList.contains('mm-studio-checkbox-mobile');
@@ -153,15 +222,16 @@
           existingCheckbox.remove();
           card.classList.remove('mm-studio-item', 'mm-studio-mobile-item');
         } else {
-          // Checkbox existante compatible, pas besoin de ré-injecter
+          // Checkbox existante compatible, s'assurer que son état coché est synchrone avec le Set d'IDs
+          if (itemId) {
+            existingCheckbox.checked = selectedItems.has(itemId);
+          }
           return;
         }
       }
 
       const title = getStudioCardTitle(card);
       if (!title) return;
-
-      const normalizedTitle = title.trim().toLowerCase();
 
       // Créer la checkbox
       const checkbox = createElement('input', {
@@ -175,14 +245,12 @@
       });
 
       checkbox.addEventListener('change', function () {
-        handleCheckboxChange(card, checkbox, title);
+        handleCheckboxChange(card, checkbox, itemId);
       });
 
-      // Restaurer l'état coché si cette carte était déjà sélectionnée (ex: après retour du viewer ou switch layout)
-      if (selectedItems.has(normalizedTitle)) {
+      // Restaurer l'état coché si cet ID était sélectionné
+      if (itemId && selectedItems.has(itemId)) {
         checkbox.checked = true;
-        // Mettre à jour la référence de la checkbox dans la Map
-        selectedItems.set(normalizedTitle, { title: title, checkbox: checkbox });
       }
 
       if (isMobile) {
@@ -214,12 +282,28 @@
   /**
    * Gère le changement d'état d'une checkbox du Studio.
    */
-  function handleCheckboxChange(card, checkbox, title) {
-    const key = title.trim().toLowerCase();
+  function handleCheckboxChange(card, checkbox, itemId) {
+    // Fallback de sécurité : si l'ID n'est pas encore assigné (RPC asynchrone non terminé au clic)
+    if (!itemId) {
+      itemId = card.getAttribute('data-mm-id');
+    }
+    if (!itemId) {
+      const title = getStudioCardTitle(card);
+      if (title && cachedDbItems) {
+        const matched = cachedDbItems.find(item => item.title.toLowerCase() === title.toLowerCase());
+        if (matched) {
+          itemId = matched.id;
+          card.setAttribute('data-mm-id', itemId);
+        }
+      }
+    }
+
+    if (!itemId) return; // Sécurité si toujours pas trouvé
+
     if (checkbox.checked) {
-      selectedItems.set(key, { title: title, checkbox: checkbox });
+      selectedItems.add(itemId);
     } else {
-      selectedItems.delete(key);
+      selectedItems.delete(itemId);
     }
 
     updateBatchDeleteButtonState();
@@ -338,34 +422,13 @@
 
           console.log(`[MM] StudioDelete : ${dbItems.length} éléments récupérés du serveur.`);
 
-          // 2. Résoudre les IDs des éléments cochés (avec déduplication)
+          // 2. Préparer les requêtes de suppression RPC
           const requests = [];
           const matchedCards = [];
-          const remainingItems = [...dbItems];
 
-          // Retrouver les cartes du DOM actuellement affichées dans le Studio
-          const studioPanel = findStudioPanel();
-          const currentDOMCards = studioPanel ? findStudioCards(studioPanel) : [];
-          const titleToCardDOM = new Map();
-          currentDOMCards.forEach(card => {
-            const tVal = getStudioCardTitle(card);
-            if (tVal) titleToCardDOM.set(tVal.trim().toLowerCase(), card);
-          });
-
-          selectedItems.forEach((info, normalizedTitle) => {
-            const cardTitle = info.title.toLowerCase();
-            
-            // Trouver l'élément correspondant dans la base RPC en évitant les doublons
-            const matchIndex = remainingItems.findIndex(item => {
-              const dbTitle = item.title.toLowerCase();
-              return dbTitle.includes(cardTitle) || cardTitle.includes(dbTitle);
-            });
-
-            if (matchIndex !== -1) {
-              const matchItem = remainingItems[matchIndex];
-              // Retirer de la liste pour ne pas mapper deux cartes différentes sur le même ID serveur
-              remainingItems.splice(matchIndex, 1);
-
+          selectedItems.forEach(itemId => {
+            const matchItem = dbItems.find(item => item.id === itemId);
+            if (matchItem) {
               const rpcId = matchItem.type === 'note' ? 'AH0mwd' : 'V5N4be';
               const params = matchItem.type === 'note' 
                 ? [notebookId, null, [matchItem.id]] // Payload DELETE_NOTE
@@ -373,13 +436,13 @@
 
               requests.push({ rpcId: rpcId, params: params, type: matchItem.type, id: matchItem.id });
               
-              // Retrouver la carte DOM actuelle si elle est affichée
-              const currentCardDOM = titleToCardDOM.get(normalizedTitle);
-              if (currentCardDOM) {
-                matchedCards.push({ card: currentCardDOM, id: matchItem.id });
+              // Cibler la carte DOM physique exacte grâce à notre attribut data-mm-id
+              const cardDOM = studioPanel.querySelector(`[data-mm-id="${itemId}"]`);
+              if (cardDOM) {
+                matchedCards.push({ card: cardDOM, id: matchItem.id });
               }
             } else {
-              console.warn(`[MM] StudioDelete : impossible de mapper la carte "${info.title}" à un ID RPC.`);
+              console.warn(`[MM] StudioDelete : impossible de trouver l'item "${itemId}" dans le cache RPC.`);
             }
           });
 
@@ -533,6 +596,10 @@
     }
 
     selectedItems.clear();
+    cachedDbItems = null;
+    lastFetchedNotebookId = null;
+    isFetchingDbItems = false;
+    wasViewing = false;
     isProcessing = false;
     console.log('[MM] Module studio-delete nettoyé');
   }
