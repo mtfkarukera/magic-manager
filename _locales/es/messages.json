@@ -218,5 +218,67 @@
   "settingsFeatureBadges": {
     "message": "Insignias de tipo de fuente",
     "description": "Label of the source type badges toggle in settings"
+  },
+  "settingsFeatureBatchDelete": {
+    "message": "Eliminación por lote",
+    "description": "Label of the batch delete toggle in settings"
+  },
+  "batchDeleteButton": {
+    "message": "Eliminar selección",
+    "description": "Label of the batch delete sources button"
+  },
+  "batchDeleteConfirmTitle": {
+    "message": "Eliminar fuentes",
+    "description": "Title of the batch delete confirmation dialog"
+  },
+  "batchDeleteConfirmMessage": {
+    "message": "¿Está seguro de que desea eliminar las $count$ fuentes seleccionadas? Esta acción no se puede deshacer.",
+    "description": "Message of the batch delete confirmation dialog",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "batchDeletePartialTitle": {
+    "message": "Eliminación parcial",
+    "description": "Title of the partial deletion alert dialog"
+  },
+  "batchDeletePartialMessage": {
+    "message": "$succeeded$ fuente(s) eliminada(s), $failed$ fallida(s).",
+    "description": "Message of the partial deletion alert dialog",
+    "placeholders": {
+      "succeeded": {
+        "content": "$1",
+        "example": "2"
+      },
+      "failed": {
+        "content": "$2",
+        "example": "1"
+      }
+    }
+  },
+  "studioDeleteButton": {
+    "message": "Eliminar selección",
+    "description": "Label of the batch delete button in the Studio"
+  },
+  "studioDeleteConfirmTitle": {
+    "message": "Eliminar elementos",
+    "description": "Title of the batch delete confirmation dialog for Studio"
+  },
+  "studioDeleteConfirmMessage": {
+    "message": "¿Está seguro de que desea eliminar los $count$ elementos seleccionados del Studio?",
+    "description": "Message of the batch delete confirmation dialog for Studio",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectButton": {
+    "message": "Seleccionar",
+    "description": "Aria label prefix to select an item"
   }
 }

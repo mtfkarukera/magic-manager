@@ -58,6 +58,9 @@
     if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
       window.MM.updateBatchMergeButtonState();
     }
+    if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateBatchDeleteButtonState === 'function') {
+      window.MM.updateBatchDeleteButtonState();
+    }
   }, 150);
 
   /** Sélecteurs CSS des checkboxes natives Gemini Notebook (Angular Material) */
@@ -206,6 +209,11 @@
         window.MM.injectBadges();
       }
 
+      // 4.6 Checkboxes et suppression Studio
+      if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.dispatchStudioInjections === 'function') {
+        window.MM.dispatchStudioInjections();
+      }
+
       // 5. Injections individuelles (Poubelle & Export) s'il y a un source-viewer actif
       const sourceViewer = document.querySelector('source-viewer');
       if (sourceViewer) {
@@ -282,6 +290,9 @@
       if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
         window.MM.updateBatchMergeButtonState();
       }
+      if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateBatchDeleteButtonState === 'function') {
+        window.MM.updateBatchDeleteButtonState();
+      }
 
       // Second dispatch retardé — filet de sécurité pour les hydratations Angular tardives
       if (lateDispatchTimer) {
@@ -323,6 +334,9 @@
         }
         if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
           window.MM.updateBatchMergeButtonState();
+        }
+        if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateBatchDeleteButtonState === 'function') {
+          window.MM.updateBatchDeleteButtonState();
         }
       }, 300);
     }

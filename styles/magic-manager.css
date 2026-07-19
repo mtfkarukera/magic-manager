@@ -1187,6 +1187,92 @@
   }
 }
 
+/* ═══════════════════════════════════════════════════════════════════════
+   Suppression par lot (Sprint 3)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Bouton batch delete — couleur d'erreur pour différencier des autres actions */
+.mm-batch-delete-btn.mm-btn-icon {
+  color: var(--mm-error) !important;
+}
+
+.mm-batch-delete-btn.mm-btn-icon:hover {
+  background-color: var(--mm-error-light);
+  color: var(--mm-error-hover) !important;
+}
+
+/* Focus accessible */
+.mm-batch-delete-btn:focus-visible {
+  outline: 2px solid var(--mm-error) !important;
+  outline-offset: 2px !important;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Checkboxes Studio au survol (Sprint 3)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mm-studio-icon-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  z-index: 10 !important;
+}
+
+.mm-studio-checkbox {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 20px;
+  height: 20px;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0;
+  pointer-events: auto !important;
+  cursor: pointer;
+  accent-color: var(--mm-primary);
+  z-index: 10 !important;
+}
+
+.mm-studio-native-icon {
+  transition: opacity var(--mm-transition-fast);
+  pointer-events: none;
+}
+
+/* La checkbox devient visible au survol direct d'elle-même ou si cochée */
+.mm-studio-checkbox:hover,
+.mm-studio-checkbox:checked {
+  opacity: 1 !important;
+}
+
+/* Masquer l'icône native uniquement au survol de la checkbox ou si cochée */
+.mm-studio-checkbox:hover ~ .mm-studio-native-icon,
+.mm-studio-checkbox:checked ~ .mm-studio-native-icon {
+  opacity: 0 !important;
+}
+
+/* Mode mobile : la checkbox s'insère à côté de l'icône, reste visible en permanence */
+.mm-studio-checkbox-mobile {
+  position: static !important;
+  transform: none !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  margin-right: var(--mm-spacing-sm) !important;
+  flex-shrink: 0;
+}
+
+/* Bouton batch delete Studio */
+.mm-studio-batch-delete {
+  display: none;
+  margin: var(--mm-spacing-sm) var(--mm-spacing-md);
+}
+
+.mm-studio-batch-delete.mm-visible {
+  display: inline-flex;
+}
+
 
 
 

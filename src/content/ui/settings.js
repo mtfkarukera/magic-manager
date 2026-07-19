@@ -27,6 +27,7 @@
     { key: 'feature_merge',      i18nKey: 'settingsFeatureMerge' },
     { key: 'feature_export',     i18nKey: 'settingsFeatureExport' },
     { key: 'feature_delete',     i18nKey: 'settingsFeatureDelete' },
+    { key: 'feature_batchDelete', i18nKey: 'settingsFeatureBatchDelete' },
     { key: 'feature_syntax',     i18nKey: 'settingsFeatureSyntax' },
     { key: 'feature_chatExport', i18nKey: 'settingsFeatureChatExport' }
   ];

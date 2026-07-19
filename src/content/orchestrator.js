@@ -24,6 +24,7 @@
     merge: 'feature_merge',
     export: 'feature_export',
     delete: 'feature_delete',
+    batchDelete: 'feature_batchDelete',
     syntax: 'feature_syntax',
     chatExport: 'feature_chatExport'
   };
@@ -99,6 +100,8 @@
       { key: FEATURES.merge,  init: 'initMerge',  label: 'Fusion' },
       { key: FEATURES.export, init: 'initExport', label: 'Export' },
       { key: FEATURES.delete, init: 'initDelete', label: 'Suppression' },
+      { key: FEATURES.batchDelete, init: 'initBatchDelete', label: 'Suppression lot' },
+      { key: FEATURES.batchDelete, init: 'initStudioDelete', label: 'Suppression Studio' },
       { key: FEATURES.syntax, init: 'initSyntax', label: 'Syntaxe' },
       { key: FEATURES.chatExport, init: 'initChatExport', label: 'ChatExport' }
     ];
@@ -113,8 +116,8 @@
       }
     }
 
-    // Panel observer centralisé : actif si export, delete ou badges est activé
-    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.badges)) {
+    // Panel observer centralisé : actif si export, delete, badges ou batchDelete est activé
+    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.badges) || isFeatureEnabled(FEATURES.batchDelete)) {
       try {
         window.MM.initPanelObserver();
       } catch (err) {
@@ -136,6 +139,8 @@
       { name: 'Merge', fn: window.MM.cleanupMerge },
       { name: 'Export', fn: window.MM.cleanupExport },
       { name: 'Delete', fn: window.MM.cleanupDelete },
+      { name: 'BatchDelete', fn: window.MM.cleanupBatchDelete },
+      { name: 'StudioDelete', fn: window.MM.cleanupStudioDelete },
       { name: 'Syntax', fn: window.MM.cleanupSyntax },
       { name: 'ChatExport', fn: window.MM.cleanupChatExport }
     ];
@@ -186,7 +191,7 @@
    * Lance l'extension.
    */
   async function init() {
-    console.log('[MM] Magic Manager v0.5.0 — Initialisation globale');
+    console.log('[MM] Magic Manager v0.8.0 — Initialisation globale');
 
     // Mettre à disposition la vérification d'état des features pour les autres modules
     window.MM.isFeatureEnabled = isFeatureEnabled;

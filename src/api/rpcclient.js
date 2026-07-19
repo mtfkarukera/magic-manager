@@ -53,6 +53,19 @@
   }
 
   /**
+   * Construit le body f.req pour N requêtes RPC empilées dans un seul POST batchexecute.
+   * Chaque requête reçoit un index numérique séquentiel comme identifiant interne.
+   *
+   * @param {Array<{rpcId: string, params: any}>} requests - Liste des requêtes à empiler.
+   * @returns {Array} Structure triple-imbriquée multi-RPC.
+   */
+  function encodeBatchRpcRequests(requests) {
+    return [requests.map(function (req, index) {
+      return [req.rpcId, JSON.stringify(req.params), null, 'generic'];
+    })];
+  }
+
+  /**
    * Construit le corps de la requête HTTP f.req encodé.
    */
   function buildRequestBody(rpcRequest, csrfToken) {
@@ -319,6 +332,75 @@
     return validateAndExtractRpcResponse(responseText, rpcId);
   }
 
+  /**
+   * Envoie N requêtes dans un seul POST batchexecute.
+   * Le query param `rpcids` doit lister tous les IDs RPC séparés par des virgules.
+   *
+   * @param {Array<{rpcId: string, params: any}>} requests - Requêtes RPC à exécuter.
+   * @param {string} notebookId - ID du carnet courant.
+   * @returns {Promise<{succeeded: number, failed: number, errors: Array}>}
+   */
+  async function sendBatchMultiple(requests, notebookId) {
+    if (!requests || requests.length === 0) {
+      return { succeeded: 0, failed: 0, errors: [] };
+    }
+
+    const csrfToken = getCsrfToken();
+    if (!csrfToken) {
+      throw new Error('[MM] Impossible de récupérer le jeton CSRF.');
+    }
+
+    const authuser = getAuthuserIndex();
+    const batchRequest = encodeBatchRpcRequests(requests);
+    const body = buildRequestBody(batchRequest, csrfToken);
+
+    // Collecter les IDs RPC uniques pour le query param rpcids
+    const uniqueRpcIds = [...new Set(requests.map(r => r.rpcId))];
+    const sourcePath = notebookId ? `/notebook/${notebookId}` : '/';
+    const queryParams = new URLSearchParams({
+      rpcids: uniqueRpcIds.join(','),
+      'source-path': sourcePath,
+      hl: 'fr',
+      rt: 'c'
+    }).toString();
+
+    const endpoint = `https://notebooklm.google.com/_/LabsTailwindUi/data/batchexecute?${queryParams}&authuser=${authuser}`;
+
+    console.log(`[MM] Envoi batch de ${requests.length} requêtes RPC (${uniqueRpcIds.join(', ')})`);
+
+    const response = await fetchWithRetryAndTimeout(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=utf-8' },
+      credentials: 'include',
+      body: body
+    });
+
+    if (!response.ok) {
+      throw new RpcError('BATCH', `HTTP_${response.status}`, `Batch échoué avec HTTP ${response.status}`);
+    }
+
+    const responseText = await response.text();
+    const chunks = parseChunkedResponse(stripAntiXssi(responseText));
+
+    // Analyser les résultats individuels
+    let succeeded = 0;
+    let failed = 0;
+    const errors = [];
+
+    for (const req of requests) {
+      try {
+        extractRpcResult(chunks, req.rpcId);
+        succeeded++;
+      } catch (err) {
+        failed++;
+        errors.push({ rpcId: req.rpcId, error: err.message });
+      }
+    }
+
+    console.log(`[MM] Batch terminé : ${succeeded} réussies, ${failed} échouées`);
+    return { succeeded, failed, errors };
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // 4. FONCTION MÉTIER (Suppression de source)
   // ═══════════════════════════════════════════════════════════════════════
@@ -343,6 +425,58 @@
     await sendBatchExecute(rpcId, params, notebookId);
     console.log(`[MM] RPC deleteSource exécuté avec succès pour ${sourceId}`);
     return true;
+  }
+
+  /**
+   * Supprime une note via RPC AH0mwd (DELETE_NOTE).
+   * @param {string} noteId - ID de la note.
+   * @param {string} notebookId - ID du carnet.
+   */
+  async function deleteNote(noteId, notebookId) {
+    const rpcId = 'AH0mwd';
+    const params = [notebookId, null, [noteId]];
+    console.log(`[MM] Appel RPC deleteNote (note: ${noteId})`);
+    await sendBatchExecute(rpcId, params, notebookId);
+    return true;
+  }
+
+  /**
+   * Supprime un artéfact via RPC V5N4be (DELETE_ARTIFACT).
+   * @param {string} artifactId - ID de l'artéfact.
+   * @param {string} notebookId - ID du carnet.
+   */
+  async function deleteArtifact(artifactId, notebookId) {
+    const rpcId = 'V5N4be';
+    const params = [artifactId];
+    console.log(`[MM] Appel RPC deleteArtifact (artifact: ${artifactId})`);
+    await sendBatchExecute(rpcId, params, notebookId);
+    return true;
+  }
+
+  /**
+   * Récupère la liste des notes avec leurs IDs via RPC cFji9.
+   */
+  async function getNotesAndMindMaps(notebookId) {
+    if (!notebookId) {
+      throw new Error('[MM] getNotesAndMindMaps : notebookId manquant.');
+    }
+    const rpcId = 'cFji9';
+    const params = [notebookId];
+    console.log(`[MM] Appel RPC getNotesAndMindMaps (notebook: ${notebookId})`);
+    return await sendBatchExecute(rpcId, params, notebookId);
+  }
+
+  /**
+   * Récupère la liste des artéfacts avec leurs IDs via RPC gArtLc.
+   */
+  async function getArtifactsList(notebookId) {
+    if (!notebookId) {
+      throw new Error('[MM] getArtifactsList : notebookId manquant.');
+    }
+    const rpcId = 'gArtLc';
+    const params = [[2], notebookId, 'NOT artifact.status = "ARTIFACT_STATUS_SUGGESTED"'];
+    console.log(`[MM] Appel RPC getArtifactsList (notebook: ${notebookId})`);
+    return await sendBatchExecute(rpcId, params, notebookId);
   }
 
   /**
@@ -661,6 +795,13 @@
 
   window.MM.rpc = {
     deleteSource: deleteSource,
+    deleteNote: deleteNote,
+    deleteArtifact: deleteArtifact,
+    sendBatchMultiple: sendBatchMultiple,
+    getNotesAndMindMaps: getNotesAndMindMaps,
+    getArtifactsList: getArtifactsList,
+    sendBatchExecute: sendBatchExecute,
+    _sendBatchExecute: sendBatchExecute,
     addTextSource: addTextSource,
     uploadBlob: uploadBlob,
     getSourceContent: getSourceContent,

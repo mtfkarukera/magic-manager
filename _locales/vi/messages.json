@@ -218,5 +218,67 @@
   "settingsFeatureBadges": {
     "message": "Huy hiệu loại nguồn",
     "description": "Label of the source type badges toggle in settings"
+  },
+  "settingsFeatureBatchDelete": {
+    "message": "Xóa hàng loạt",
+    "description": "Label of the batch delete toggle in settings"
+  },
+  "batchDeleteButton": {
+    "message": "Xóa mục đã chọn",
+    "description": "Label of the batch delete sources button"
+  },
+  "batchDeleteConfirmTitle": {
+    "message": "Xóa các nguồn",
+    "description": "Title of the batch delete confirmation dialog"
+  },
+  "batchDeleteConfirmMessage": {
+    "message": "Bạn có chắc chắn muốn xóa $count$ nguồn đã chọn không? Hành động này không thể hoàn tác.",
+    "description": "Message of the batch delete confirmation dialog",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "batchDeletePartialTitle": {
+    "message": "Xóa một phần",
+    "description": "Title of the partial deletion alert dialog"
+  },
+  "batchDeletePartialMessage": {
+    "message": "Đã xóa $succeeded$ nguồn, thất bại $failed$.",
+    "description": "Message of the partial deletion alert dialog",
+    "placeholders": {
+      "succeeded": {
+        "content": "$1",
+        "example": "2"
+      },
+      "failed": {
+        "content": "$2",
+        "example": "1"
+      }
+    }
+  },
+  "studioDeleteButton": {
+    "message": "Xóa mục đã chọn",
+    "description": "Label of the batch delete button in the Studio"
+  },
+  "studioDeleteConfirmTitle": {
+    "message": "Xóa các mục",
+    "description": "Title of the batch delete confirmation dialog for Studio"
+  },
+  "studioDeleteConfirmMessage": {
+    "message": "Bạn có chắc chắn muốn xóa $count$ mục đã chọn khỏi Studio không?",
+    "description": "Message of the batch delete confirmation dialog for Studio",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectButton": {
+    "message": "Chọn",
+    "description": "Aria label prefix to select an item"
   }
 }

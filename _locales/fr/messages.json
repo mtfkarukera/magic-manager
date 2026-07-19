@@ -218,5 +218,67 @@
   "settingsFeatureBadges": {
     "message": "Badges de type de source",
     "description": "Libellé du toggle de badges de type de source dans les paramètres"
+  },
+  "settingsFeatureBatchDelete": {
+    "message": "Suppression par lot",
+    "description": "Libellé du toggle de suppression par lot dans les paramètres"
+  },
+  "batchDeleteButton": {
+    "message": "Supprimer la sélection",
+    "description": "Libellé du bouton de suppression par lot de sources"
+  },
+  "batchDeleteConfirmTitle": {
+    "message": "Supprimer les sources",
+    "description": "Titre de la boîte de dialogue de confirmation de suppression en lot"
+  },
+  "batchDeleteConfirmMessage": {
+    "message": "Êtes-vous sûr de vouloir supprimer les $count$ sources sélectionnées ? Cette action est irréversible.",
+    "description": "Message de confirmation de suppression en lot de sources",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "batchDeletePartialTitle": {
+    "message": "Suppression partielle",
+    "description": "Titre de la boîte de dialogue d'échec partiel du batch delete"
+  },
+  "batchDeletePartialMessage": {
+    "message": "$succeeded$ source(s) supprimée(s), $failed$ en échec.",
+    "description": "Message d'échec partiel du batch delete de sources",
+    "placeholders": {
+      "succeeded": {
+        "content": "$1",
+        "example": "2"
+      },
+      "failed": {
+        "content": "$2",
+        "example": "1"
+      }
+    }
+  },
+  "studioDeleteButton": {
+    "message": "Supprimer la sélection",
+    "description": "Libellé du bouton de suppression par lot dans le Studio"
+  },
+  "studioDeleteConfirmTitle": {
+    "message": "Supprimer les éléments",
+    "description": "Titre de la confirmation de suppression en lot du Studio"
+  },
+  "studioDeleteConfirmMessage": {
+    "message": "Êtes-vous sûr de vouloir supprimer les $count$ éléments sélectionnés du Studio ?",
+    "description": "Message de confirmation de suppression en lot du Studio",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectButton": {
+    "message": "Sélectionner",
+    "description": "Aria label prefix to select an item"
   }
 }

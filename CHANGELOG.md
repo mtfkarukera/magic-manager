@@ -4,6 +4,22 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.8.1] — 2026-07-19
+
+### Ajouté
+- 🗑️ **Suppression par lot (sources et Studio)** :
+  - **Infrastructure batch multi-RPC** : Ajout des fonctions `encodeBatchRpcRequests` et `sendBatchMultiple` dans `rpcclient.js` pour regrouper plusieurs requêtes RPC différentes dans un seul POST réseau `batchexecute`.
+  - **Module batch-delete.js** : Suppression par lot des sources via checkboxes natives du panneau sources, avec repli automatique sur une suppression séquentielle (rate limit de 300ms) en cas d'échec global.
+  - **Module studio-delete.js** : Suppression par lot des notes et artéfacts du Studio, avec injection dynamique de checkboxes au survol, mapping automatique titre ↔ ID via RPCs `cFji9` (GET_NOTES_AND_MIND_MAPS) et `gArtLc` (LIST_ARTIFACTS).
+  - **Intégration et UX** : Ajout d'un toggle d'activation dédié `feature_batchDelete` dans le popover de réglages pour activer/désactiver l'ensemble de la suppression batch. Styles CSS dédiés, prise en charge de l'en-tête mobile collant et du ResizeObserver.
+
+### Corrigé
+- 🗑️ **Studio & Mobile** :
+  - Remplacement de la suppression batch par une suppression séquentielle asynchrone avec un délai de 400ms pour contourner le blocage du serveur Google sur les requêtes multi-RPC hétérogènes ou redondantes.
+  - Nettoyage et démontage automatique des checkboxes de layout obsolète (Desktop vs Mobile) sur les cartes réutilisées dynamiquement par le framework Angular.
+  - Connexion du module Studio au ResizeObserver global pour forcer l'adaptation et la reconstruction des checkboxes du Studio dès qu'un franchissement de seuil responsive est détecté.
+  - Résolution des alertes i18n répétitives de console en ajoutant la clé de traduction `selectButton` dans les 7 locales du projet.
+
 ## [0.7.1] — 2026-07-19
 
 ### Corrigé

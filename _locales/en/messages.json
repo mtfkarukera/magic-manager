@@ -218,5 +218,67 @@
   "settingsFeatureBadges": {
     "message": "Source type badges",
     "description": "Label of the source type badges toggle in settings"
+  },
+  "settingsFeatureBatchDelete": {
+    "message": "Batch delete",
+    "description": "Label of the batch delete toggle in settings"
+  },
+  "batchDeleteButton": {
+    "message": "Delete selected",
+    "description": "Label of the batch delete sources button"
+  },
+  "batchDeleteConfirmTitle": {
+    "message": "Delete sources",
+    "description": "Title of the batch delete confirmation dialog"
+  },
+  "batchDeleteConfirmMessage": {
+    "message": "Are you sure you want to delete the $count$ selected sources? This action cannot be undone.",
+    "description": "Message of the batch delete confirmation dialog",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "batchDeletePartialTitle": {
+    "message": "Partial deletion",
+    "description": "Title of the partial deletion alert dialog"
+  },
+  "batchDeletePartialMessage": {
+    "message": "$succeeded$ source(s) deleted, $failed$ failed.",
+    "description": "Message of the partial deletion alert dialog",
+    "placeholders": {
+      "succeeded": {
+        "content": "$1",
+        "example": "2"
+      },
+      "failed": {
+        "content": "$2",
+        "example": "1"
+      }
+    }
+  },
+  "studioDeleteButton": {
+    "message": "Delete selected",
+    "description": "Label of the batch delete button in the Studio"
+  },
+  "studioDeleteConfirmTitle": {
+    "message": "Delete items",
+    "description": "Title of the batch delete confirmation dialog for Studio"
+  },
+  "studioDeleteConfirmMessage": {
+    "message": "Are you sure you want to delete the $count$ selected items from the Studio?",
+    "description": "Message of the batch delete confirmation dialog for Studio",
+    "placeholders": {
+      "count": {
+        "content": "$1",
+        "example": "3"
+      }
+    }
+  },
+  "selectButton": {
+    "message": "Select",
+    "description": "Aria label prefix to select an item"
   }
 }

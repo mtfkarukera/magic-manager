@@ -21,6 +21,8 @@ magic-manager/
 │   │   │   ├── merge.js       # Module de fusion intelligente
 │   │   │   ├── export.js      # Module d'exports simplifiés
 │   │   │   ├── delete.js      # Module de suppression en ligne
+│   │   │   ├── batch-delete.js # Module de suppression par lot de sources [NEW]
+│   │   │   ├── studio-delete.js # Module de suppression par lot du Studio [NEW]
 │   │   │   ├── syntax.js      # Module de coloration syntaxique
 │   │   │   └── chatexport.js  # Module d'export du chat
 │   │   └── ui/                # Composants d'interface partagés
@@ -66,6 +68,8 @@ graph TD
     E --> G["merge.js"]
     E --> H["export.js"]
     E --> I["delete.js"]
+    E --> I2["batch-delete.js"]
+    E --> I3["studio-delete.js"]
     E --> J["syntax.js"]
     E --> K["chatexport.js"]
     L["Bouton parametres in-page"] -->|"browser.storage.local"| D
@@ -91,6 +95,7 @@ Chaque fonctionnalité peut être activée/désactivée individuellement via le 
 | `feature_merge` | `boolean` | `true` | Fusion intelligente |
 | `feature_export` | `boolean` | `true` | Exports simplifiés |
 | `feature_delete` | `boolean` | `true` | Suppression en ligne |
+| `feature_batchDelete` | `boolean` | `true` | Suppression par lot (sources + Studio) |
 | `feature_syntax` | `boolean` | `true` | Coloration syntaxique |
 | `feature_chatExport` | `boolean` | `true` | Export du chat |
 
@@ -101,6 +106,9 @@ L'extension s'affranchit des simulations d'interactions DOM (fragiles et sources
 - **GET_SOURCE (`hizoJc`)** : Permet de récupérer le texte brut indexé d'une source à l'index `[3][0]` (ou l'HTML de rendu à `[4][1]`), sans charger le document dans le visualiseur DOM de la page.
 - **CREATE_NOTE (`CYK0Xb`) / UPDATE_NOTE (`cYAfTb`)** : Création séquentielle robuste en tâche de fond pour exporter les conversations de chat en notes sans focus automatique de l'interface Google.
 - **DELETE_SOURCE (`tGMBJ`) / ADD_SOURCE (`izAoDd`)** : Appels directs utilisant des structures de tableaux doublement et triplement enveloppées pour des mutations réseau résilientes.
+- **DELETE_NOTE (`AH0mwd`) / DELETE_ARTIFACT (`V5N4be`)** : Appels directs pour la suppression d'éléments du Studio.
+- **GET_NOTES_AND_MIND_MAPS (`cFji9`) / LIST_ARTIFACTS (`gArtLc`)** : Requêtes permettant de récupérer les éléments du Studio en tâche de fond afin d'effectuer le mapping titre ↔ ID requis pour la suppression batch.
+- **Infrastructure batch multi-RPC (`sendBatchMultiple`)** : Encapsule plusieurs requêtes RPC différentes dans un seul POST réseau `batchexecute` en empilant les tuples de requêtes dans le tableau externe de l'enveloppe `f.req`. En cas d'échec global du batch, un fallback séquentiel avec rate limiting (300ms entre les requêtes) est automatiquement exécuté.
 
 ## Composants d'interface (Modales & Dialogues)
 

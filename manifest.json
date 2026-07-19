@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
   "short_name": "Magic Manager",
-  "version": "0.7.1",
+  "version": "0.8.1",
   "default_locale": "en",
 
   "description": "__MSG_extensionDescription__",
@@ -33,6 +33,8 @@
         "src/content/modules/merge.js",
         "src/content/modules/export.js",
         "src/content/modules/delete.js",
+        "src/content/modules/batch-delete.js",
+        "src/content/modules/studio-delete.js",
         "src/content/modules/panel-observer.js",
         "src/content/modules/syntax.js",
         "src/content/modules/chatexport.js",
