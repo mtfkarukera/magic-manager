@@ -19,6 +19,7 @@
   let batchDeleteWrapper = null;
   let batchDeleteBtn = null;
   let isProcessing = false;
+  let lastForceFetchTime = 0; // Timestamp du dernier refetch de synchronisation (cooldown de 4s)
 
   // ═══════════════════════════════════════════════════════════════════════
   // Sélecteurs Heuristiques et Robustes
@@ -237,6 +238,8 @@
           // Checkbox existante compatible, s'assurer que son état coché est synchrone avec le Set d'IDs
           if (itemId) {
             existingCheckbox.checked = selectedItems.has(itemId);
+          } else {
+            existingCheckbox.checked = false;
           }
           return;
         }
@@ -289,6 +292,27 @@
         }
       }
     });
+
+    // Détecter s'il reste des cartes sans ID ou si les longueurs divergent (lag de réplication)
+    let hasUnresolved = false;
+    cards.forEach(card => {
+      if (!card.getAttribute('data-mm-id')) {
+        hasUnresolved = true;
+      }
+    });
+
+    const lengthMismatch = cachedDbItems ? (cards.length !== cachedDbItems.length) : false;
+    if ((hasUnresolved || lengthMismatch) && cachedDbItems && !isFetchingDbItems) {
+      const now = Date.now();
+      if (now - lastForceFetchTime > 4000) {
+        lastForceFetchTime = now;
+        console.log('[MM] StudioDelete : désynchronisation ou lag détecté, planification d\'un refetch dans 1.5s...');
+        setTimeout(() => {
+          const activeId = window.MM.getActiveNotebookId();
+          if (activeId) fetchStudioItemsLocal(activeId, true);
+        }, 1500);
+      }
+    }
   }
 
   /**
@@ -421,6 +445,14 @@
         if (batchDeleteBtn) batchDeleteBtn.disabled = true;
 
         try {
+          const studioPanel = findStudioPanel();
+          if (!studioPanel) {
+            window.MM.showAlertDialog('deleteError', 'deleteError');
+            isProcessing = false;
+            if (batchDeleteBtn) batchDeleteBtn.disabled = false;
+            return;
+          }
+
           // 1. Récupérer toutes les notes et artéfacts du serveur pour pouvoir faire le mapping par titre
           console.log('[MM] StudioDelete : chargement de la liste des notes/artéfacts via RPC...');
           const [notesRaw, artifactsRaw] = await Promise.all([
