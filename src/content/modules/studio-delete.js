@@ -182,75 +182,8 @@
 
     const notebookId = window.MM.getActiveNotebookId();
 
-    // 1. Analyse active de désynchronisation DOM vs Cache
-    let hasUnresolved = false;
-    let titleMismatch = false;
-    let orderMismatch = false;
-    const domIds = [];
-
-    cards.forEach(card => {
-      const id = card.getAttribute('data-mm-id');
-      if (!id) {
-        hasUnresolved = true;
-      } else {
-        domIds.push(id);
-        if (cachedDbItems) {
-          const cachedItem = cachedDbItems.find(item => item.id === id);
-          if (cachedItem) {
-            const domTitle = getStudioCardTitle(card).trim().toLowerCase();
-            const cachedTitle = cachedItem.title.trim().toLowerCase();
-            if (domTitle !== cachedTitle) {
-              titleMismatch = true;
-            }
-          }
-        }
-      }
-    });
-
-    const lengthMismatch = cachedDbItems ? (cards.length !== cachedDbItems.length) : false;
-
-    // Comparer l'ordre des IDs si tout est résolu et de même longueur
-    if (cachedDbItems && !hasUnresolved && !lengthMismatch) {
-      const cacheIdsFiltered = cachedDbItems
-        .map(item => item.id)
-        .filter(id => domIds.includes(id));
-      
-      if (domIds.length === cacheIdsFiltered.length) {
-        for (let i = 0; i < domIds.length; i++) {
-          if (domIds[i] !== cacheIdsFiltered[i]) {
-            orderMismatch = true;
-            break;
-          }
-        }
-      }
-    }
-
-    // 2. Déclencher le refetch si désynchronisation détectée (avec debounce)
-    const needsRefetch = hasUnresolved || lengthMismatch || titleMismatch || orderMismatch;
-    if (needsRefetch && cachedDbItems && !isFetchingDbItems) {
-      if (syncTimeout) clearTimeout(syncTimeout);
-
-      // Sauvegarder l'ordre actuel de référence dès la première détection
-      if (!previousOrderIds && selectedItems.size > 0) {
-        previousOrderIds = cachedDbItems.map(item => item.id);
-      }
-
-      syncTimeout = setTimeout(() => {
-        console.log(`[MM] StudioDelete : exécution de la synchronisation debouncée (unresolved: ${hasUnresolved}, len: ${lengthMismatch}, title: ${titleMismatch}, order: ${orderMismatch}).`);
-        
-        // Invalider le cache et vider les attributs pour forcer le re-matching propre
-        cachedDbItems = null;
-        cards.forEach(card => card.removeAttribute('data-mm-id'));
-
-        if (notebookId) {
-          fetchStudioItemsLocal(notebookId, true);
-        }
-        syncTimeout = null;
-      }, 1200);
-    }
-
-    // 3. Lancer le fetch initial s'il n'est pas hydraté et pas en cours
-    if (notebookId && !cachedDbItems && !isFetchingDbItems && !needsRefetch) {
+    // 1. Lancer le fetch initial du cache s'il n'est pas hydraté
+    if (notebookId && !cachedDbItems && !isFetchingDbItems) {
       fetchStudioItemsLocal(notebookId);
     }
 
@@ -370,6 +303,72 @@
       }
     });
 
+    // 4. Analyse active de désynchronisation DOM vs Cache (après matching et injection)
+    let hasUnresolved = false;
+    let titleMismatch = false;
+    let orderMismatch = false;
+    const domIds = [];
+
+    cards.forEach(card => {
+      const id = card.getAttribute('data-mm-id');
+      if (!id) {
+        hasUnresolved = true;
+      } else {
+        domIds.push(id);
+        if (cachedDbItems) {
+          const cachedItem = cachedDbItems.find(item => item.id === id);
+          if (cachedItem) {
+            const domTitle = getStudioCardTitle(card).trim().toLowerCase();
+            const cachedTitle = cachedItem.title.trim().toLowerCase();
+            if (domTitle !== cachedTitle) {
+              titleMismatch = true;
+            }
+          }
+        }
+      }
+    });
+
+    const lengthMismatch = cachedDbItems ? (cards.length !== cachedDbItems.length) : false;
+
+    // Comparer l'ordre des IDs si tout est résolu et de même longueur
+    if (cachedDbItems && !hasUnresolved && !lengthMismatch) {
+      const cacheIdsFiltered = cachedDbItems
+        .map(item => item.id)
+        .filter(id => domIds.includes(id));
+      
+      if (domIds.length === cacheIdsFiltered.length) {
+        for (let i = 0; i < domIds.length; i++) {
+          if (domIds[i] !== cacheIdsFiltered[i]) {
+            orderMismatch = true;
+            break;
+          }
+        }
+      }
+    }
+
+    // 5. Déclencher le refetch si désynchronisation détectée (avec debounce)
+    const needsRefetch = hasUnresolved || lengthMismatch || titleMismatch || orderMismatch;
+    if (needsRefetch && cachedDbItems && !isFetchingDbItems) {
+      if (syncTimeout) clearTimeout(syncTimeout);
+
+      // Sauvegarder l'ordre actuel de référence dès la première détection
+      if (!previousOrderIds && selectedItems.size > 0) {
+        previousOrderIds = cachedDbItems.map(item => item.id);
+      }
+
+      syncTimeout = setTimeout(() => {
+        console.log(`[MM] StudioDelete : exécution de la synchronisation debouncée (unresolved: ${hasUnresolved}, len: ${lengthMismatch}, title: ${titleMismatch}, order: ${orderMismatch}).`);
+        
+        // Invalider le cache et vider les attributs pour forcer le re-matching propre
+        cachedDbItems = null;
+        cards.forEach(card => card.removeAttribute('data-mm-id'));
+
+        if (notebookId) {
+          fetchStudioItemsLocal(notebookId, true);
+        }
+        syncTimeout = null;
+      }, 1200);
+    }
   }
 
   /**
