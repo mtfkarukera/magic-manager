@@ -11,7 +11,7 @@
 - 🏷️ **Badges visuels de sources** — Identifiez instantanément la nature de vos sources (🔄 Google Drive, 🌐 Lien Web/YouTube, ▢ Upload Local) directement dans la liste des sources.
 - 🔗 **Fusion intelligente** — Fusionnez plusieurs sources en un seul document Markdown ou PDF.
 - 📤 **Exports simplifiés** — Exportez vos sources aux formats Markdown, PDF ou ZIP en un clic.
-- 🗑️ **Suppression en ligne & par lot** — Supprimez des sources individuellement ou par lot, ainsi que les notes et artéfacts du Studio, directement depuis l'interface. La sélection est protégée par empreinte de liste : si la liste change (renommage, ajout, suppression), la sélection est automatiquement réinitialisée avec une alerte.
+- 🗑️ **Suppression en ligne & par lot** — Supprimez des sources individuellement ou par lot, ainsi que les notes et artéfacts du Studio, directement depuis l'interface. La sélection est sécurisée par une empreinte de liste : si la liste subit des modifications (renommage, ajout, suppression, réordonnancement), la sélection est automatiquement réinitialisée avec une alerte utilisateur pour éviter toute erreur.
 - 🔎 **Recherche & Filtres Studio** — Recherchez et filtrez les notes et artéfacts du Studio par texte et par type (résumés audio, quiz, cartes mentales, infographies, etc.) avec une pilule de recherche rétractable.
 - 🎨 **Coloration syntaxique** — Mise en valeur du code dans les réponses du chat avec coloration syntaxique.
 - 💬 **Export du chat** — Sauvegardez vos conversations avec l'IA sous forme de notes.
