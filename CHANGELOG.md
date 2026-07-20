@@ -4,6 +4,17 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.9.1] — 2026-07-20
+
+### Corrigé & Refactorisé
+- 🔁 **Studio — Refonte complète du système de sélection** :
+  - **Suppression du système RPC/Cache/debounce** : Retrait intégral de `cachedDbItems`, `fetchStudioItemsLocal`, `syncTimeout`, `previousOrderIds`, `wasEditingNote`, et de l'attribut `data-mm-id` (7 variables d'état et ~260 lignes supprimées) pour simplifier le cycle de vie.
+  - **Empreinte de liste DOM (fingerprint)** : La sélection est désormais gérée exclusivement côté DOM sans aucun appel réseau régulier. Une empreinte `titre1||titre2||...` est capturée au premier cochage et comparée à chaque cycle du MutationObserver.
+  - **Détection instantanée de tout changement** : Tout renommage, ajout, suppression ou réordonnancement de la liste déclenche immédiatement une réinitialisation de la sélection avec alerte utilisateur.
+  - **Sélection par index positionnel** : Les items sélectionnés sont référencés par leur position dans le DOM (index entier) au lieu d'un ID serveur, éliminant les problèmes d'homonymes et de désynchronisation.
+  - **RPC uniquement à la suppression** : Le serveur n'est interrogé qu'au moment du clic « Supprimer », permettant la prise en charge transparente des doublons de titres.
+- 🔧 **Studio — Fausse alerte « Sélection réinitialisée » pendant le delete** : Vissage de la réinitialisation de la sélection en tout début de suppression RPC séquentielle, évitant les déclenchements du MutationObserver lors du démontage successif des cartes par Angular.
+
 ## [0.9.0] — 2026-07-20
 
 ### Ajouté
@@ -15,14 +26,7 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   - **Paramétrage utilisateur** : Ajout du toggle `feature_studioSearch` dans les réglages de l'extension pour activer ou désactiver entièrement la fonctionnalité.
   - 🧹 **Tout désélectionner (Studio)** : Ajout d'un bouton × de réinitialisation à côté du bouton de suppression par lot pour décocher instantanément tous les artéfacts sélectionnés.
 
-### Corrigé & Refactorisé
-- 🔁 **Studio — Refonte complète du système de sélection** :
-  - **Suppression du système RPC/Cache/debounce** : Retrait intégral de `cachedDbItems`, `fetchStudioItemsLocal`, `syncTimeout`, `previousOrderIds`, `wasEditingNote`, et de l'attribut `data-mm-id` (7 variables d'état et ~260 lignes supprimées) pour simplifier le cycle de vie.
-  - **Empreinte de liste DOM (fingerprint)** : La sélection est désormais gérée exclusivement côté DOM sans aucun appel réseau régulier. Une empreinte `titre1||titre2||...` est capturée au premier cochage et comparée à chaque cycle du MutationObserver.
-  - **Détection instantanée de tout changement** : Tout renommage, ajout, suppression ou réordonnancement de la liste déclenche immédiatement une réinitialisation de la sélection avec alerte utilisateur.
-  - **Sélection par index positionnel** : Les items sélectionnés sont référencés par leur position dans le DOM (index entier) au lieu d'un ID serveur, éliminant les problèmes d'homonymes et de désynchronisation.
-  - **RPC uniquement à la suppression** : Le serveur n'est interrogé qu'au moment du clic « Supprimer », permettant la prise en charge transparente des doublons de titres.
-- 🔧 **Studio — Fausse alerte « Sélection réinitialisée » pendant le delete** : Vissage de la réinitialisation de la sélection en tout début de suppression RPC séquentielle, évitant les déclenchements du MutationObserver lors du démontage successif des cartes par Angular.
+### Corrigé
 - 🔧 **Studio — Boucle infinie d'injections** : Suppression de l'appel à `updateBatchDeleteButtonState()` depuis `injectStudioCheckboxes()` dans `studio-delete.js`, qui causait une boucle infinie de mutations DOM.
 - 🔧 **Studio — Popover de filtres insensible aux clics** : Isolation du popover de filtres par type d'artéfact de l'interception Angular via `stopPropagation` sur les clics.
 - 🔧 **Studio — Amorce du cache RPC** : Remplacement de l'appel inconditionnel à `applyFilters()` par un appel direct et conditionnel à `fetchStudioItems()` lors de l'initialisation.
