@@ -387,6 +387,12 @@
         isProcessing = true;
         if (batchDeleteBtn) batchDeleteBtn.disabled = true;
 
+        // Libérer immédiatement la sélection et l'empreinte pour éviter une fausse
+        // alerte de reset déclenchée par le MutationObserver pendant la suppression
+        selectedItems.clear();
+        selectionFingerprint = null;
+        updateBatchDeleteButtonState();
+
         try {
           // Fetch RPC pour obtenir les vrais IDs serveur (uniquement au moment de la suppression)
           console.log('[MM] StudioDelete : chargement de la liste des notes/artéfacts via RPC...');
@@ -480,9 +486,6 @@
           window.MM.showAlertDialog('deleteError', 'deleteError');
         } finally {
           isProcessing = false;
-          selectedItems.clear();
-          selectionFingerprint = null;
-          updateBatchDeleteButtonState();
         }
       }
     );
