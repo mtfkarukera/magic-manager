@@ -401,28 +401,6 @@
 
           console.log(`[MM] StudioDelete : ${dbItems.length} éléments récupérés du serveur.`);
 
-          // Garde de sécurité : bloquer si des éléments sélectionnés ont des titres homonymes
-          const titleCounts = new Map();
-          dbItems.forEach(item => {
-            const key = item.title.trim().toLowerCase();
-            titleCounts.set(key, (titleCounts.get(key) || 0) + 1);
-          });
-
-          let hasDuplicateTitle = false;
-          selectedTitles.forEach(({ title }) => {
-            const key = title.toLowerCase();
-            if ((titleCounts.get(key) || 0) > 1) {
-              hasDuplicateTitle = true;
-            }
-          });
-
-          if (hasDuplicateTitle) {
-            console.warn('[MM] StudioDelete : suppression bloquée — titres homonymes détectés parmi la sélection.');
-            window.MM.showAlertDialog('studioDuplicateTitle', 'studioDuplicateMessage');
-            isProcessing = false;
-            if (batchDeleteBtn) batchDeleteBtn.disabled = false;
-            return;
-          }
 
           // Préparer les requêtes de suppression RPC via matching titre → ID serveur
           const requests = [];
