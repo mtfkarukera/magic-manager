@@ -285,6 +285,14 @@
     "message": "Some selected items share the same name. Please rename them or delete them individually to avoid errors.",
     "description": "Message of the alert dialog when duplicate names are detected during batch delete"
   },
+  "studioSelectionResetTitle": {
+    "message": "Selection reset",
+    "description": "Title of the alert when selection is reset after list reorganization"
+  },
+  "studioSelectionResetMessage": {
+    "message": "The list was reorganized after your edit. Your selection has been reset to avoid errors.",
+    "description": "Message of the alert when selection is reset after list reorganization"
+  },
   "selectButton": {
     "message": "Select",
     "description": "Aria label prefix to select an item"

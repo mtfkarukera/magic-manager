@@ -285,6 +285,14 @@
     "message": "選択された一部のアイテムの名前が重複しています。エラーを避けるため、名前を変更するか、個別に削除してください。",
     "description": "Message de l'alerte de doublons de noms lors de la suppression par lot (JA)"
   },
+  "studioSelectionResetTitle": {
+    "message": "選択の初期化",
+    "description": "Titre de l'alerte de réinitialisation de sélection (JA)"
+  },
+  "studioSelectionResetMessage": {
+    "message": "編集後にリストが再構成されました。エラーを避けるために選択がリセットされました。",
+    "description": "Message de l'alerte de réinitialisation de sélection (JA)"
+  },
   "selectButton": {
     "message": "選択",
     "description": "Aria label prefix to select an item"

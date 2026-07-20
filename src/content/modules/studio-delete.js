@@ -20,6 +20,7 @@
   let batchDeleteBtn = null;
   let isProcessing = false;
   let lastForceFetchTime = 0; // Timestamp du dernier refetch de synchronisation (cooldown de 4s)
+  let previousOrderIds = null; // Ordre des IDs avant invalidation du cache (pour détection de changement)
 
   // ═══════════════════════════════════════════════════════════════════════
   // Sélecteurs Heuristiques et Robustes
@@ -144,6 +145,22 @@
       lastFetchedNotebookId = notebookId;
       
       console.log(`[MM] StudioDelete : Cache hydraté avec ${cachedDbItems.length} éléments.`);
+
+      // Vérifier si l'ordre a changé (après retour du viewer)
+      if (previousOrderIds && selectedItems.size > 0) {
+        const newOrderIds = cachedDbItems.map(item => item.id);
+        const orderChanged = previousOrderIds.length !== newOrderIds.length ||
+          previousOrderIds.some((id, i) => id !== newOrderIds[i]);
+
+        if (orderChanged) {
+          console.log('[MM] StudioDelete : ordre modifié après le viewer, réinitialisation de la sélection.');
+          selectedItems.clear();
+          updateBatchDeleteButtonState();
+          window.MM.showAlertDialog('studioSelectionResetTitle', 'studioSelectionResetMessage');
+        }
+        previousOrderIds = null;
+      }
+
       // Ré-injecter pour appliquer les IDs et l'état coché
       dispatchStudioInjections();
     } catch (err) {
@@ -180,6 +197,10 @@
     // Si on vient de fermer le viewer, on invalide le cache car une note a pu être éditée/réordonnée
     if (wasViewing && !isViewing) {
       wasViewing = false;
+      // Sauvegarder l'ordre actuel AVANT d'invalider le cache
+      if (cachedDbItems && selectedItems.size > 0) {
+        previousOrderIds = cachedDbItems.map(item => item.id);
+      }
       cachedDbItems = null; // Invalider le cache
       // Retirer les anciens attributs data-mm-id pour forcer la ré-association propre
       cards.forEach(card => card.removeAttribute('data-mm-id'));
