@@ -4,7 +4,7 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
-## [0.9.0] — 2026-07-19
+## [0.9.0] — 2026-07-20
 
 ### Ajouté
 - 🔍 **Recherche dans le Studio** :
@@ -13,15 +13,20 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
   - **Détection DOM intelligente** : Détection automatique du type d'artéfact depuis le texte de l'icône Material de la carte.
   - **Raccourci clavier** : Liaison avec le raccourci `Alt+Shift+F` (ou `Option+Shift+F`) pour focaliser instantanément l'input Studio.
   - **Paramétrage utilisateur** : Ajout du toggle `feature_studioSearch` dans les réglages de l'extension pour activer ou désactiver entièrement la fonctionnalité.
-  - 🧹 **Tout désélectionner (Studio)** : Ajout d'un bouton × de réinitialisation à côté du bouton de suppression par lot pour décocher instantanément tous les artéfacts sélectionnés.
+- 🧹 **Tout désélectionner (Studio)** : Ajout d'un bouton × de réinitialisation à côté du bouton de suppression par lot pour décocher instantanément tous les artéfacts sélectionnés.
 
-### Corrigé
-- 🔧 **Studio — Boucle infinie d'injections** : Suppression de l'appel à `updateBatchDeleteButtonState()` depuis `injectStudioCheckboxes()` dans `studio-delete.js`, qui causait une boucle infinie de mutations DOM entre le `studioObserver` et les injections de checkboxes (symptôme : bandeau Firefox « cette page ralentit votre navigateur »).
-- 🔧 **Studio — Popover de filtres insensible aux clics** : Isolation du popover de filtres par type d'artéfact de l'interception Angular via `stopPropagation` sur les événements `click` et `mousedown` au niveau du conteneur du popover. Les événements de la SPA sous-jacente empêchaient les checkboxes de répondre aux clics utilisateur.
-- 🔧 **Studio — Amorce du cache RPC** : Remplacement de l'appel inconditionnel à `applyFilters()` par un appel direct et conditionnel à `fetchStudioItems()` lors de l'initialisation, évitant un double fetch RPC et une invalidation prématurée du cache.
-- 🔧 **Studio — Doublons de titres, Édition de notes & Auto-guérison** : Passage d'un adressage de sélection par carte DOM (instable) à une association robuste par matching de titre déduplicatif séquentiel avec les IDs réels uniques du serveur via `data-mm-id`. Introduction d'un système d'auto-guérison résolvant le lag de réplication du serveur suite à l'édition/renommage d'une note.
-- 🔧 **Studio — Correction du crash de suppression par lot (ReferenceError)** : Restauration de la définition locale de `studioPanel` dans `handleBatchDeleteClick` résolvant l'alerte « Erreur lors de la suppression » qui bloquait les actions batch.
-- 🔧 **Studio — Isolation des homonymes dans le matching** : Pré-passe de filtrage des IDs déjà attribués dans le pool de matching `remaining`, empêchant qu'un homonyme reçoive un ID déjà utilisé par une autre carte. La garde de sécurité dans `handleBatchDeleteClick` bloque la suppression batch si des homonymes sont dans la sélection.
+### Corrigé & Refactorisé
+- 🔧 **Studio — Boucle infinie d'injections** : Suppression de l'appel à `updateBatchDeleteButtonState()` depuis `injectStudioCheckboxes()`, qui causait une boucle infinie de mutations DOM (symptôme : bandeau Firefox « cette page ralentit votre navigateur »).
+- 🔧 **Studio — Popover de filtres insensible aux clics** : Isolation du popover de filtres par type d'artéfact de l'interception Angular via `stopPropagation`.
+- 🔧 **Studio — Amorce du cache RPC** : Correction du double fetch RPC et de l'invalidation prématurée du cache à l'initialisation.
+- 🔧 **Studio — Crash de suppression par lot (ReferenceError)** : Restauration de la définition locale de `studioPanel` dans `handleBatchDeleteClick`.
+- 🔁 **Studio — Refonte complète du système de sélection** :
+  - **Suppression du système RPC/Cache/debounce** : Retrait intégral de `cachedDbItems`, `fetchStudioItemsLocal`, `syncTimeout`, `previousOrderIds`, `wasEditingNote`, et de l'attribut `data-mm-id` (7 variables d'état, ~260 lignes supprimées).
+  - **Empreinte de liste DOM (fingerprint)** : La sélection est désormais gérée exclusivement côté DOM sans aucun appel réseau. Une empreinte `titre1||titre2||...` est capturée au premier cochage et comparée à chaque cycle du MutationObserver.
+  - **Détection instantanée de tout changement** : Tout renommage, ajout, suppression ou réordonnancement de la liste déclenche immédiatement une réinitialisation de la sélection avec alerte utilisateur.
+  - **Sélection par index positionnel** : Les items sélectionnés sont référencés par leur position dans le DOM (index entier) au lieu d'un ID serveur, éliminant les problèmes de homonymes et de désynchronisation.
+  - **RPC uniquement à la suppression** : Le serveur n'est interrogé qu'au moment du clic « Supprimer », jamais pendant la sélection.
+  - **Suppression de la garde anti-homonymes** : Désormais superflue grâce à l'adressage par index.
 
 ## [0.8.1] — 2026-07-19
 
