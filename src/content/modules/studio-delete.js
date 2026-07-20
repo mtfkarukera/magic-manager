@@ -196,6 +196,15 @@
 
     const remaining = cachedDbItems ? [...cachedDbItems] : null;
 
+    // Comptage des titres pour détecter les homonymes
+    const titleCounts = new Map();
+    if (cachedDbItems) {
+      cachedDbItems.forEach(item => {
+        const key = item.title.trim().toLowerCase();
+        titleCounts.set(key, (titleCounts.get(key) || 0) + 1);
+      });
+    }
+
     cards.forEach((card) => {
       const existingCheckbox = card.querySelector('.mm-studio-checkbox');
 
@@ -235,7 +244,19 @@
           existingCheckbox.remove();
           card.classList.remove('mm-studio-item', 'mm-studio-mobile-item');
         } else {
-          // Checkbox existante compatible, s'assurer que son état coché est synchrone avec le Set d'IDs
+          // Checkbox existante compatible : synchroniser état coché et état disabled (homonymes)
+          const cardTitle = getStudioCardTitle(card);
+          const normTitle = cardTitle ? cardTitle.trim().toLowerCase() : '';
+          const isDuplicate = titleCounts.get(normTitle) > 1;
+
+          existingCheckbox.disabled = isDuplicate;
+          existingCheckbox.title = isDuplicate ? (t('studioDuplicateTooltip') || 'Renommez pour sélectionner') : '';
+
+          if (isDuplicate && selectedItems.has(itemId)) {
+            // Sécurité : si un homonyme était coché avant de devenir doublon, le décocher
+            selectedItems.delete(itemId);
+          }
+
           if (itemId) {
             existingCheckbox.checked = selectedItems.has(itemId);
           } else {
@@ -255,12 +276,20 @@
         'aria-label': `${t('selectButton') || 'Sélectionner'} ${title}`
       });
 
+      // Désactiver la checkbox si le titre est un homonyme
+      const normTitle = title.trim().toLowerCase();
+      const isDuplicate = titleCounts.get(normTitle) > 1;
+      if (isDuplicate) {
+        checkbox.disabled = true;
+        checkbox.title = t('studioDuplicateTooltip') || 'Renommez pour sélectionner';
+      }
+
       checkbox.addEventListener('click', function (e) {
         e.stopPropagation();
       });
 
       checkbox.addEventListener('change', function () {
-        handleCheckboxChange(card, checkbox);
+        handleCheckboxChange(card, checkbox, itemId);
       });
 
       // Restaurer l'état coché si cet ID était sélectionné
@@ -318,9 +347,23 @@
   /**
    * Gère le changement d'état d'une checkbox du Studio.
    */
-  function handleCheckboxChange(card, checkbox) {
-    const itemId = card.getAttribute('data-mm-id');
-    if (!itemId) return; // Sécurité si pas encore résolu
+  function handleCheckboxChange(card, checkbox, itemId) {
+    // Fallback de sécurité : si l'ID n'est pas encore assigné (RPC asynchrone non terminé au clic)
+    if (!itemId) {
+      itemId = card.getAttribute('data-mm-id');
+    }
+    if (!itemId) {
+      const title = getStudioCardTitle(card);
+      if (title && cachedDbItems) {
+        const matched = cachedDbItems.find(item => item.title.toLowerCase() === title.toLowerCase());
+        if (matched) {
+          itemId = matched.id;
+          card.setAttribute('data-mm-id', itemId);
+        }
+      }
+    }
+
+    if (!itemId) return; // Sécurité si toujours pas trouvé
 
     if (checkbox.checked) {
       selectedItems.add(itemId);

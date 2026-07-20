@@ -285,6 +285,10 @@
     "message": "Certains éléments sélectionnés portent le même nom. Veuillez les renommer ou les supprimer individuellement pour éviter les erreurs.",
     "description": "Message de l'alerte de doublons de noms lors de la suppression par lot"
   },
+  "studioDuplicateTooltip": {
+    "message": "Renommez cet élément pour le sélectionner",
+    "description": "Tooltip affiché sur les checkboxes désactivées pour les éléments en doublon dans le Studio"
+  },
   "selectButton": {
     "message": "Sélectionner",
     "description": "Aria label prefix to select an item"
