@@ -20,6 +20,7 @@
   let isProcessing = false;
   let syncTimeout = null; // Timeout pour le debounce de la synchronisation DOM/Cache
   let previousOrderIds = null; // Ordre des IDs avant invalidation du cache (pour détection de changement)
+  let wasEditingNote = false; // Flag pour détecter la fermeture de l'éditeur de note
 
   // ═══════════════════════════════════════════════════════════════════════
   // Sélecteurs Heuristiques et Robustes
@@ -182,6 +183,41 @@
 
     const notebookId = window.MM.getActiveNotebookId();
 
+    // Détecter si l'éditeur de note est ouvert
+    const isEditingNote = !!document.querySelector(
+      "input.title-input, textarea.title-input, [class*='title-input'], [placeholder*='Titre'], [placeholder*='Title']"
+    );
+
+    if (isEditingNote) {
+      wasEditingNote = true;
+      if (syncTimeout) {
+        clearTimeout(syncTimeout);
+        syncTimeout = null;
+      }
+    }
+
+    // Si l'éditeur vient d'être fermé, forcer immédiatement la synchronisation après 300ms
+    if (wasEditingNote && !isEditingNote && cachedDbItems) {
+      wasEditingNote = false;
+      if (syncTimeout) clearTimeout(syncTimeout);
+
+      if (!previousOrderIds && selectedItems.size > 0) {
+        previousOrderIds = cachedDbItems.map(item => item.id);
+      }
+
+      // Invalider immédiatement le cache et vider les data-mm-id pour éviter les décalages visuels d'Angular
+      cachedDbItems = null;
+      cards.forEach(card => card.removeAttribute('data-mm-id'));
+
+      // Lancer le refetch après un court délai pour laisser le serveur finaliser l'enregistrement
+      setTimeout(() => {
+        if (notebookId) {
+          fetchStudioItemsLocal(notebookId, true);
+        }
+      }, 300);
+      return;
+    }
+
     // 1. Lancer le fetch initial du cache s'il n'est pas hydraté
     if (notebookId && !cachedDbItems && !isFetchingDbItems) {
       fetchStudioItemsLocal(notebookId);
@@ -302,6 +338,8 @@
         }
       }
     });
+
+    if (isEditingNote) return; // Ne pas analyser le DOM en cours de saisie
 
     // 4. Analyse active de désynchronisation DOM vs Cache (après matching et injection)
     let hasUnresolved = false;
@@ -728,6 +766,7 @@
     cachedDbItems = null;
     lastFetchedNotebookId = null;
     isFetchingDbItems = false;
+    wasEditingNote = false;
     isProcessing = false;
     console.log('[MM] Module studio-delete nettoyé');
   }
