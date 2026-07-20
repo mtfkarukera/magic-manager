@@ -196,12 +196,17 @@
 
     const remaining = cachedDbItems ? [...cachedDbItems] : null;
 
-    // Comptage des titres pour détecter les homonymes
-    const titleCounts = new Map();
-    if (cachedDbItems) {
-      cachedDbItems.forEach(item => {
-        const key = item.title.trim().toLowerCase();
-        titleCounts.set(key, (titleCounts.get(key) || 0) + 1);
+    // Pré-passe : retirer du pool de matching les IDs déjà attribués dans le DOM
+    // pour éviter qu'un homonyme reçoive un ID déjà utilisé par une autre carte
+    if (remaining) {
+      cards.forEach(card => {
+        const id = card.getAttribute('data-mm-id');
+        if (id) {
+          const idx = remaining.findIndex(item => item.id === id);
+          if (idx !== -1) {
+            remaining.splice(idx, 1);
+          }
+        }
       });
     }
 
@@ -244,19 +249,7 @@
           existingCheckbox.remove();
           card.classList.remove('mm-studio-item', 'mm-studio-mobile-item');
         } else {
-          // Checkbox existante compatible : synchroniser état coché et état disabled (homonymes)
-          const cardTitle = getStudioCardTitle(card);
-          const normTitle = cardTitle ? cardTitle.trim().toLowerCase() : '';
-          const isDuplicate = titleCounts.get(normTitle) > 1;
-
-          existingCheckbox.disabled = isDuplicate;
-          existingCheckbox.title = isDuplicate ? (t('studioDuplicateTooltip') || 'Renommez pour sélectionner') : '';
-
-          if (isDuplicate && selectedItems.has(itemId)) {
-            // Sécurité : si un homonyme était coché avant de devenir doublon, le décocher
-            selectedItems.delete(itemId);
-          }
-
+          // Checkbox existante compatible, s'assurer que son état coché est synchrone avec le Set d'IDs
           if (itemId) {
             existingCheckbox.checked = selectedItems.has(itemId);
           } else {
@@ -276,13 +269,6 @@
         'aria-label': `${t('selectButton') || 'Sélectionner'} ${title}`
       });
 
-      // Désactiver la checkbox si le titre est un homonyme
-      const normTitle = title.trim().toLowerCase();
-      const isDuplicate = titleCounts.get(normTitle) > 1;
-      if (isDuplicate) {
-        checkbox.disabled = true;
-        checkbox.title = t('studioDuplicateTooltip') || 'Renommez pour sélectionner';
-      }
 
       checkbox.addEventListener('click', function (e) {
         e.stopPropagation();

@@ -285,10 +285,6 @@
     "message": "Some selected items share the same name. Please rename them or delete them individually to avoid errors.",
     "description": "Message of the alert dialog when duplicate names are detected during batch delete"
   },
-  "studioDuplicateTooltip": {
-    "message": "Rename this item to enable selection",
-    "description": "Tooltip shown on disabled checkboxes for duplicate items in Studio"
-  },
   "selectButton": {
     "message": "Select",
     "description": "Aria label prefix to select an item"

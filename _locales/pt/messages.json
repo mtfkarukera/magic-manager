@@ -285,10 +285,6 @@
     "message": "Alguns itens selecionados compartilham o mesmo nome. Renomeie-os ou exclua-os individualmente para evitar erros.",
     "description": "Message de l'alerte de doublons de noms lors de la suppression par lot (PT)"
   },
-  "studioDuplicateTooltip": {
-    "message": "Renomeie este item para selecioná-lo",
-    "description": "Tooltip affiché sur les checkboxes désactivées pour les éléments en doublon (PT)"
-  },
   "selectButton": {
     "message": "Selecionar",
     "description": "Aria label prefix to select an item"
