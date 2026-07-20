@@ -21,7 +21,7 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 - 🔧 **Studio — Amorce du cache RPC** : Remplacement de l'appel inconditionnel à `applyFilters()` par un appel direct et conditionnel à `fetchStudioItems()` lors de l'initialisation, évitant un double fetch RPC et une invalidation prématurée du cache.
 - 🔧 **Studio — Doublons de titres, Édition de notes & Auto-guérison** : Passage d'un adressage de sélection par carte DOM (instable) à une association robuste par matching de titre déduplicatif séquentiel avec les IDs réels uniques du serveur via `data-mm-id`. Introduction d'un système d'auto-guérison résolvant le lag de réplication du serveur suite à l'édition/renommage d'une note.
 - 🔧 **Studio — Correction du crash de suppression par lot (ReferenceError)** : Restauration de la définition locale de `studioPanel` dans `handleBatchDeleteClick` résolvant l'alerte « Erreur lors de la suppression » qui bloquait les actions batch.
-- 🛡️ **Studio — Garde anti-homonymes** : Blocage préventif de la suppression batch si des éléments sélectionnés partagent leur nom avec d'autres éléments du Studio, éliminant tout risque de suppression involontaire.
+- 🛡️ **Studio — Garde anti-homonymes & Résolution de la sélection miroir** : Blocage préventif de la suppression batch si des éléments sélectionnés partagent leur nom. Résolution d'un bug de fermeture lexicale obsolète (`stale closure`) et suppression du fallback de titre de `handleCheckboxChange` pour éliminer l'effet de sélection miroir involontaire sur les homonymes.
 
 ## [0.8.1] — 2026-07-19
 

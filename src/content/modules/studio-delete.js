@@ -260,7 +260,7 @@
       });
 
       checkbox.addEventListener('change', function () {
-        handleCheckboxChange(card, checkbox, itemId);
+        handleCheckboxChange(card, checkbox);
       });
 
       // Restaurer l'état coché si cet ID était sélectionné
@@ -318,23 +318,9 @@
   /**
    * Gère le changement d'état d'une checkbox du Studio.
    */
-  function handleCheckboxChange(card, checkbox, itemId) {
-    // Fallback de sécurité : si l'ID n'est pas encore assigné (RPC asynchrone non terminé au clic)
-    if (!itemId) {
-      itemId = card.getAttribute('data-mm-id');
-    }
-    if (!itemId) {
-      const title = getStudioCardTitle(card);
-      if (title && cachedDbItems) {
-        const matched = cachedDbItems.find(item => item.title.toLowerCase() === title.toLowerCase());
-        if (matched) {
-          itemId = matched.id;
-          card.setAttribute('data-mm-id', itemId);
-        }
-      }
-    }
-
-    if (!itemId) return; // Sécurité si toujours pas trouvé
+  function handleCheckboxChange(card, checkbox) {
+    const itemId = card.getAttribute('data-mm-id');
+    if (!itemId) return; // Sécurité si pas encore résolu
 
     if (checkbox.checked) {
       selectedItems.add(itemId);
