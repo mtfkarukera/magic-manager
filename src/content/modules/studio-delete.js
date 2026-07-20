@@ -18,7 +18,7 @@
   let batchDeleteWrapper = null;
   let batchDeleteBtn = null;
   let isProcessing = false;
-  let lastForceFetchTime = 0; // Timestamp du dernier refetch de synchronisation (cooldown de 4s)
+  let syncTimeout = null; // Timeout pour le debounce de la synchronisation DOM/Cache
   let previousOrderIds = null; // Ordre des IDs avant invalidation du cache (pour détection de changement)
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -225,19 +225,18 @@
       }
     }
 
-    // 2. Déclencher le refetch si désynchronisation détectée (cooldown 4s pour éviter le spam)
+    // 2. Déclencher le refetch si désynchronisation détectée (avec debounce)
     const needsRefetch = hasUnresolved || lengthMismatch || titleMismatch || orderMismatch;
     if (needsRefetch && cachedDbItems && !isFetchingDbItems) {
-      const now = Date.now();
-      if (now - lastForceFetchTime > 4000) {
-        lastForceFetchTime = now;
+      if (syncTimeout) clearTimeout(syncTimeout);
 
-        // Sauvegarder l'ordre actuel immédiat pour comparaison au retour du RPC
-        if (selectedItems.size > 0) {
-          previousOrderIds = cachedDbItems.map(item => item.id);
-        }
+      // Sauvegarder l'ordre actuel de référence dès la première détection
+      if (!previousOrderIds && selectedItems.size > 0) {
+        previousOrderIds = cachedDbItems.map(item => item.id);
+      }
 
-        console.log(`[MM] StudioDelete : désynchronisation détectée (unresolved: ${hasUnresolved}, len: ${lengthMismatch}, title: ${titleMismatch}, order: ${orderMismatch}). Refetch...`);
+      syncTimeout = setTimeout(() => {
+        console.log(`[MM] StudioDelete : exécution de la synchronisation debouncée (unresolved: ${hasUnresolved}, len: ${lengthMismatch}, title: ${titleMismatch}, order: ${orderMismatch}).`);
         
         // Invalider le cache et vider les attributs pour forcer le re-matching propre
         cachedDbItems = null;
@@ -246,11 +245,12 @@
         if (notebookId) {
           fetchStudioItemsLocal(notebookId, true);
         }
-      }
+        syncTimeout = null;
+      }, 1200);
     }
 
     // 3. Lancer le fetch initial s'il n'est pas hydraté et pas en cours
-    if (notebookId && !cachedDbItems && !isFetchingDbItems) {
+    if (notebookId && !cachedDbItems && !isFetchingDbItems && !needsRefetch) {
       fetchStudioItemsLocal(notebookId);
     }
 
@@ -687,6 +687,11 @@
   }
 
   function cleanupStudioDelete() {
+    if (syncTimeout) {
+      clearTimeout(syncTimeout);
+      syncTimeout = null;
+    }
+
     if (studioObserver) {
       studioObserver.disconnect();
       studioObserver = null;
