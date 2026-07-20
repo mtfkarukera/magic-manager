@@ -15,7 +15,6 @@
   let cachedDbItems = null; // Cache local ordonné des éléments du Studio du serveur
   let lastFetchedNotebookId = null;
   let isFetchingDbItems = false;
-  let wasViewing = false; // Flag pour détecter la fermeture du note viewer
   let batchDeleteWrapper = null;
   let batchDeleteBtn = null;
   let isProcessing = false;
@@ -181,36 +180,78 @@
     const cards = findStudioCards(studioPanel);
     if (cards.length === 0) return;
 
-    // Détecter si l'utilisateur est dans le viewer (Garde 2)
-    const isViewing = !!document.querySelector(
-      "button[aria-label='Expand'], button[aria-label='Close note view'], " +
-      ".artifact-viewer-container, [class*='artifact-viewer'], [class*='note-view']"
-    );
-
-    if (isViewing) {
-      wasViewing = true;
-      return;
-    }
-
     const notebookId = window.MM.getActiveNotebookId();
 
-    // Si on vient de fermer le viewer, on invalide le cache car une note a pu être éditée/réordonnée
-    if (wasViewing && !isViewing) {
-      wasViewing = false;
-      // Sauvegarder l'ordre actuel AVANT d'invalider le cache
-      if (cachedDbItems && selectedItems.size > 0) {
-        previousOrderIds = cachedDbItems.map(item => item.id);
+    // 1. Analyse active de désynchronisation DOM vs Cache
+    let hasUnresolved = false;
+    let titleMismatch = false;
+    let orderMismatch = false;
+    const domIds = [];
+
+    cards.forEach(card => {
+      const id = card.getAttribute('data-mm-id');
+      if (!id) {
+        hasUnresolved = true;
+      } else {
+        domIds.push(id);
+        if (cachedDbItems) {
+          const cachedItem = cachedDbItems.find(item => item.id === id);
+          if (cachedItem) {
+            const domTitle = getStudioCardTitle(card).trim().toLowerCase();
+            const cachedTitle = cachedItem.title.trim().toLowerCase();
+            if (domTitle !== cachedTitle) {
+              titleMismatch = true;
+            }
+          }
+        }
       }
-      cachedDbItems = null; // Invalider le cache
-      // Retirer les anciens attributs data-mm-id pour forcer la ré-association propre
-      cards.forEach(card => card.removeAttribute('data-mm-id'));
+    });
+
+    const lengthMismatch = cachedDbItems ? (cards.length !== cachedDbItems.length) : false;
+
+    // Comparer l'ordre des IDs si tout est résolu et de même longueur
+    if (cachedDbItems && !hasUnresolved && !lengthMismatch) {
+      const cacheIdsFiltered = cachedDbItems
+        .map(item => item.id)
+        .filter(id => domIds.includes(id));
+      
+      if (domIds.length === cacheIdsFiltered.length) {
+        for (let i = 0; i < domIds.length; i++) {
+          if (domIds[i] !== cacheIdsFiltered[i]) {
+            orderMismatch = true;
+            break;
+          }
+        }
+      }
     }
 
-    if (notebookId) {
-      // Lancer le fetch du cache en tâche de fond s'il n'est pas hydraté
-      if (!cachedDbItems && !isFetchingDbItems) {
-        fetchStudioItemsLocal(notebookId);
+    // 2. Déclencher le refetch si désynchronisation détectée (cooldown 4s pour éviter le spam)
+    const needsRefetch = hasUnresolved || lengthMismatch || titleMismatch || orderMismatch;
+    if (needsRefetch && cachedDbItems && !isFetchingDbItems) {
+      const now = Date.now();
+      if (now - lastForceFetchTime > 4000) {
+        lastForceFetchTime = now;
+
+        // Sauvegarder l'ordre actuel immédiat pour comparaison au retour du RPC
+        if (selectedItems.size > 0) {
+          previousOrderIds = cachedDbItems.map(item => item.id);
+        }
+
+        console.log(`[MM] StudioDelete : désynchronisation détectée (unresolved: ${hasUnresolved}, len: ${lengthMismatch}, title: ${titleMismatch}, order: ${orderMismatch}). Refetch...`);
+        
+        // Invalider le cache et vider les attributs pour forcer le re-matching propre
+        cachedDbItems = null;
+        cards.forEach(card => card.removeAttribute('data-mm-id'));
+
+        if (notebookId) {
+          fetchStudioItemsLocal(notebookId, true);
+        }
       }
+    }
+
+    // 3. Lancer le fetch initial s'il n'est pas hydraté et pas en cours
+    if (notebookId && !cachedDbItems && !isFetchingDbItems) {
+      fetchStudioItemsLocal(notebookId);
     }
 
     const isMobile = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
@@ -329,26 +370,6 @@
       }
     });
 
-    // Détecter s'il reste des cartes sans ID ou si les longueurs divergent (lag de réplication)
-    let hasUnresolved = false;
-    cards.forEach(card => {
-      if (!card.getAttribute('data-mm-id')) {
-        hasUnresolved = true;
-      }
-    });
-
-    const lengthMismatch = cachedDbItems ? (cards.length !== cachedDbItems.length) : false;
-    if ((hasUnresolved || lengthMismatch) && cachedDbItems && !isFetchingDbItems) {
-      const now = Date.now();
-      if (now - lastForceFetchTime > 4000) {
-        lastForceFetchTime = now;
-        console.log('[MM] StudioDelete : désynchronisation ou lag détecté, planification d\'un refetch dans 1.5s...');
-        setTimeout(() => {
-          const activeId = window.MM.getActiveNotebookId();
-          if (activeId) fetchStudioItemsLocal(activeId, true);
-        }, 1500);
-      }
-    }
   }
 
   /**
@@ -703,7 +724,6 @@
     cachedDbItems = null;
     lastFetchedNotebookId = null;
     isFetchingDbItems = false;
-    wasViewing = false;
     isProcessing = false;
     console.log('[MM] Module studio-delete nettoyé');
   }
