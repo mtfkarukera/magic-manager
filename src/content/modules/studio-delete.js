@@ -466,6 +466,32 @@
 
           console.log(`[MM] StudioDelete : ${dbItems.length} éléments récupérés du serveur.`);
 
+          // 1b. Garde de sécurité : bloquer si des éléments sélectionnés ont des titres homonymes
+          const titleCounts = new Map();
+          dbItems.forEach(item => {
+            const key = item.title.trim().toLowerCase();
+            titleCounts.set(key, (titleCounts.get(key) || 0) + 1);
+          });
+
+          let hasDuplicateTitle = false;
+          selectedItems.forEach(itemId => {
+            const item = dbItems.find(i => i.id === itemId);
+            if (item) {
+              const key = item.title.trim().toLowerCase();
+              if (titleCounts.get(key) > 1) {
+                hasDuplicateTitle = true;
+              }
+            }
+          });
+
+          if (hasDuplicateTitle) {
+            console.warn('[MM] StudioDelete : suppression bloquée — titres homonymes détectés parmi la sélection.');
+            window.MM.showAlertDialog('studioDuplicateTitle', 'studioDuplicateMessage');
+            isProcessing = false;
+            if (batchDeleteBtn) batchDeleteBtn.disabled = false;
+            return;
+          }
+
           // 2. Préparer les requêtes de suppression RPC
           const requests = [];
           const matchedCards = [];

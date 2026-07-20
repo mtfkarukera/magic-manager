@@ -277,6 +277,14 @@
       }
     }
   },
+  "studioDuplicateTitle": {
+    "message": "Duplicate names detected",
+    "description": "Title of the alert dialog when duplicate names are detected during batch delete"
+  },
+  "studioDuplicateMessage": {
+    "message": "Some selected items share the same name. Please rename them or delete them individually to avoid errors.",
+    "description": "Message of the alert dialog when duplicate names are detected during batch delete"
+  },
   "selectButton": {
     "message": "Select",
     "description": "Aria label prefix to select an item"
