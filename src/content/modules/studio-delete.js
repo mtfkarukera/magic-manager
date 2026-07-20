@@ -275,7 +275,7 @@
       });
 
       checkbox.addEventListener('change', function () {
-        handleCheckboxChange(card, checkbox, itemId);
+        handleCheckboxChange(card, checkbox);
       });
 
       // Restaurer l'état coché si cet ID était sélectionné
@@ -333,11 +333,9 @@
   /**
    * Gère le changement d'état d'une checkbox du Studio.
    */
-  function handleCheckboxChange(card, checkbox, itemId) {
-    // Fallback de sécurité : si l'ID n'est pas encore assigné (RPC asynchrone non terminé au clic)
-    if (!itemId) {
-      itemId = card.getAttribute('data-mm-id');
-    }
+  function handleCheckboxChange(card, checkbox) {
+    // Toujours lire l'ID actuel depuis le DOM, jamais depuis une closure
+    let itemId = card.getAttribute('data-mm-id');
     if (!itemId) {
       const title = getStudioCardTitle(card);
       if (title && cachedDbItems) {
