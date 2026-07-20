@@ -11,16 +11,11 @@
   // État interne
   // ═══════════════════════════════════════════════════════════════════════
   let studioObserver = null;
-  let selectedItems = new Set(); // Contient les IDs uniques (strings) des artéfacts sélectionnés
-  let cachedDbItems = null; // Cache local ordonné des éléments du Studio du serveur
-  let lastFetchedNotebookId = null;
-  let isFetchingDbItems = false;
+  let selectedItems = new Set(); // Contient les indices positionnels (entiers) des éléments sélectionnés
+  let selectionFingerprint = null; // Empreinte titre+ordre au moment de la première sélection
   let batchDeleteWrapper = null;
   let batchDeleteBtn = null;
   let isProcessing = false;
-  let syncTimeout = null; // Timeout pour le debounce de la synchronisation DOM/Cache
-  let previousOrderIds = null; // Ordre des IDs avant invalidation du cache (pour détection de changement)
-  let wasEditingNote = false; // Flag pour détecter la fermeture de l'éditeur de note
 
   // ═══════════════════════════════════════════════════════════════════════
   // Sélecteurs Heuristiques et Robustes
@@ -87,7 +82,7 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
-  // Parseurs RPC Résilients
+  // Parseurs RPC Résilients (utilisés uniquement lors de la suppression)
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
@@ -124,50 +119,18 @@
     }).filter(Boolean);
   }
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // Empreinte de liste (fingerprint)
+  // ═══════════════════════════════════════════════════════════════════════
+
   /**
-   * Récupère la liste des artéfacts et notes via RPC et remplit le cache local de studio-delete.
+   * Calcule l'empreinte de la liste du Studio à partir des titres DOM ordonnés.
+   * Sert de clé de cohérence pour la sélection en cours.
    */
-  async function fetchStudioItemsLocal(notebookId, force = false) {
-    if (isFetchingDbItems) return;
-    if (!force && cachedDbItems && notebookId === lastFetchedNotebookId) return;
-
-    isFetchingDbItems = true;
-    try {
-      console.log('[MM] StudioDelete : chargement de la liste des notes/artéfacts via RPC...');
-      const [notesRaw, artifactsRaw] = await Promise.all([
-        window.MM.rpc.getNotesAndMindMaps(notebookId),
-        window.MM.rpc.getArtifactsList(notebookId)
-      ]);
-
-      const dbNotes = parseNotesResult(notesRaw);
-      const dbArtifacts = parseArtifactsResult(artifactsRaw);
-      cachedDbItems = dbNotes.concat(dbArtifacts);
-      lastFetchedNotebookId = notebookId;
-      
-      console.log(`[MM] StudioDelete : Cache hydraté avec ${cachedDbItems.length} éléments.`);
-
-      // Vérifier si l'ordre a changé (après retour du viewer)
-      if (previousOrderIds && selectedItems.size > 0) {
-        const newOrderIds = cachedDbItems.map(item => item.id);
-        const orderChanged = previousOrderIds.length !== newOrderIds.length ||
-          previousOrderIds.some((id, i) => id !== newOrderIds[i]);
-
-        if (orderChanged) {
-          console.log('[MM] StudioDelete : ordre modifié après le viewer, réinitialisation de la sélection.');
-          selectedItems.clear();
-          updateBatchDeleteButtonState();
-          window.MM.showAlertDialog('studioSelectionResetTitle', 'studioSelectionResetMessage');
-        }
-        previousOrderIds = null;
-      }
-
-      // Ré-injecter pour appliquer les IDs et l'état coché
-      dispatchStudioInjections();
-    } catch (err) {
-      console.error('[MM] StudioDelete : Échec de chargement RPC des types d\'artéfacts :', err);
-    } finally {
-      isFetchingDbItems = false;
-    }
+  function computeFingerprint(cards) {
+    return Array.from(cards)
+      .map(card => getStudioCardTitle(card).trim().toLowerCase())
+      .join('||');
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -181,85 +144,24 @@
     const cards = findStudioCards(studioPanel);
     if (cards.length === 0) return;
 
-    const notebookId = window.MM.getActiveNotebookId();
-
-    // Détecter si l'éditeur de note est ouvert
-    const isEditingNote = !!document.querySelector(
-      "input.title-input, textarea.title-input, [class*='title-input'], [placeholder*='Titre'], [placeholder*='Title']"
-    );
-
-    if (isEditingNote) {
-      wasEditingNote = true;
-      if (syncTimeout) {
-        clearTimeout(syncTimeout);
-        syncTimeout = null;
+    // 1. Vérifier la cohérence de la sélection par empreinte de liste
+    if (selectedItems.size > 0 && selectionFingerprint !== null) {
+      const currentFingerprint = computeFingerprint(cards);
+      if (currentFingerprint !== selectionFingerprint) {
+        console.log('[MM] StudioDelete : empreinte de liste modifiée, réinitialisation de la sélection.');
+        selectedItems.clear();
+        selectionFingerprint = null;
+        updateBatchDeleteButtonState();
+        // Décocher les checkboxes existantes dans le DOM
+        studioPanel.querySelectorAll('.mm-studio-checkbox').forEach(cb => { cb.checked = false; });
+        window.MM.showAlertDialog('studioSelectionResetTitle', 'studioSelectionResetMessage');
       }
-    }
-
-    // Si l'éditeur vient d'être fermé, forcer immédiatement la synchronisation après 300ms
-    if (wasEditingNote && !isEditingNote && cachedDbItems) {
-      wasEditingNote = false;
-      if (syncTimeout) clearTimeout(syncTimeout);
-
-      if (!previousOrderIds && selectedItems.size > 0) {
-        previousOrderIds = cachedDbItems.map(item => item.id);
-      }
-
-      // Invalider immédiatement le cache et vider les data-mm-id pour éviter les décalages visuels d'Angular
-      cachedDbItems = null;
-      cards.forEach(card => card.removeAttribute('data-mm-id'));
-
-      // Lancer le refetch après un court délai pour laisser le serveur finaliser l'enregistrement
-      setTimeout(() => {
-        if (notebookId) {
-          fetchStudioItemsLocal(notebookId, true);
-        }
-      }, 300);
-      return;
-    }
-
-    // 1. Lancer le fetch initial du cache s'il n'est pas hydraté
-    if (notebookId && !cachedDbItems && !isFetchingDbItems) {
-      fetchStudioItemsLocal(notebookId);
     }
 
     const isMobile = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
 
-    const remaining = cachedDbItems ? [...cachedDbItems] : null;
-
-    // Pré-passe : retirer du pool de matching les IDs déjà attribués dans le DOM
-    // pour éviter qu'un homonyme reçoive un ID déjà utilisé par une autre carte
-    if (remaining) {
-      cards.forEach(card => {
-        const id = card.getAttribute('data-mm-id');
-        if (id) {
-          const idx = remaining.findIndex(item => item.id === id);
-          if (idx !== -1) {
-            remaining.splice(idx, 1);
-          }
-        }
-      });
-    }
-
-    cards.forEach((card) => {
+    cards.forEach((card, index) => {
       const existingCheckbox = card.querySelector('.mm-studio-checkbox');
-
-      // Récupérer ou attribuer l'ID unique serveur à cette carte DOM (matching par titre déduplicatif)
-      let itemId = card.getAttribute('data-mm-id');
-      if (!itemId && remaining) {
-        const cardTitle = getStudioCardTitle(card);
-        if (cardTitle) {
-          const normalizedTitle = cardTitle.trim().toLowerCase();
-          const matchIndex = remaining.findIndex(
-            item => item.title.trim().toLowerCase() === normalizedTitle
-          );
-          if (matchIndex !== -1) {
-            itemId = remaining[matchIndex].id;
-            card.setAttribute('data-mm-id', itemId);
-            remaining.splice(matchIndex, 1); // Retirer pour éviter les doublons d'attribution
-          }
-        }
-      }
 
       if (existingCheckbox) {
         const hasMobileClass = existingCheckbox.classList.contains('mm-studio-checkbox-mobile');
@@ -280,12 +182,9 @@
           existingCheckbox.remove();
           card.classList.remove('mm-studio-item', 'mm-studio-mobile-item');
         } else {
-          // Checkbox existante compatible, s'assurer que son état coché est synchrone avec le Set d'IDs
-          if (itemId) {
-            existingCheckbox.checked = selectedItems.has(itemId);
-          } else {
-            existingCheckbox.checked = false;
-          }
+          // Checkbox existante compatible, synchroniser son état avec le Set d'indices
+          existingCheckbox.checked = selectedItems.has(index);
+          existingCheckbox.dataset.mmIndex = index;
           return;
         }
       }
@@ -299,18 +198,18 @@
         className: isMobile ? 'mm-studio-checkbox mm-studio-checkbox-mobile' : 'mm-studio-checkbox',
         'aria-label': `${t('selectButton') || 'Sélectionner'} ${title}`
       });
-
+      checkbox.dataset.mmIndex = index;
 
       checkbox.addEventListener('click', function (e) {
         e.stopPropagation();
       });
 
       checkbox.addEventListener('change', function () {
-        handleCheckboxChange(card, checkbox);
+        handleCheckboxChange(cards, checkbox);
       });
 
-      // Restaurer l'état coché si cet ID était sélectionné
-      if (itemId && selectedItems.has(itemId)) {
+      // Restaurer l'état coché si cet index était sélectionné
+      if (selectedItems.has(index)) {
         checkbox.checked = true;
       }
 
@@ -338,100 +237,27 @@
         }
       }
     });
-
-    if (isEditingNote) return; // Ne pas analyser le DOM en cours de saisie
-
-    // 4. Analyse active de désynchronisation DOM vs Cache (après matching et injection)
-    let hasUnresolved = false;
-    let titleMismatch = false;
-    let orderMismatch = false;
-    const domIds = [];
-
-    cards.forEach(card => {
-      const id = card.getAttribute('data-mm-id');
-      if (!id) {
-        hasUnresolved = true;
-      } else {
-        domIds.push(id);
-        if (cachedDbItems) {
-          const cachedItem = cachedDbItems.find(item => item.id === id);
-          if (cachedItem) {
-            const domTitle = getStudioCardTitle(card).trim().toLowerCase();
-            const cachedTitle = cachedItem.title.trim().toLowerCase();
-            if (domTitle !== cachedTitle) {
-              titleMismatch = true;
-            }
-          }
-        }
-      }
-    });
-
-    const lengthMismatch = cachedDbItems ? (cards.length !== cachedDbItems.length) : false;
-
-    // Comparer l'ordre des IDs si tout est résolu et de même longueur
-    if (cachedDbItems && !hasUnresolved && !lengthMismatch) {
-      const cacheIdsFiltered = cachedDbItems
-        .map(item => item.id)
-        .filter(id => domIds.includes(id));
-      
-      if (domIds.length === cacheIdsFiltered.length) {
-        for (let i = 0; i < domIds.length; i++) {
-          if (domIds[i] !== cacheIdsFiltered[i]) {
-            orderMismatch = true;
-            break;
-          }
-        }
-      }
-    }
-
-    // 5. Déclencher le refetch si désynchronisation détectée (avec debounce)
-    const needsRefetch = hasUnresolved || lengthMismatch || titleMismatch || orderMismatch;
-    if (needsRefetch && cachedDbItems && !isFetchingDbItems) {
-      if (syncTimeout) clearTimeout(syncTimeout);
-
-      // Sauvegarder l'ordre actuel de référence dès la première détection
-      if (!previousOrderIds && selectedItems.size > 0) {
-        previousOrderIds = cachedDbItems.map(item => item.id);
-      }
-
-      syncTimeout = setTimeout(() => {
-        console.log(`[MM] StudioDelete : exécution de la synchronisation debouncée (unresolved: ${hasUnresolved}, len: ${lengthMismatch}, title: ${titleMismatch}, order: ${orderMismatch}).`);
-        
-        // Invalider le cache et vider les attributs pour forcer le re-matching propre
-        cachedDbItems = null;
-        cards.forEach(card => card.removeAttribute('data-mm-id'));
-
-        if (notebookId) {
-          fetchStudioItemsLocal(notebookId, true);
-        }
-        syncTimeout = null;
-      }, 1200);
-    }
   }
 
   /**
    * Gère le changement d'état d'une checkbox du Studio.
    */
-  function handleCheckboxChange(card, checkbox) {
-    // Toujours lire l'ID actuel depuis le DOM, jamais depuis une closure
-    let itemId = card.getAttribute('data-mm-id');
-    if (!itemId) {
-      const title = getStudioCardTitle(card);
-      if (title && cachedDbItems) {
-        const matched = cachedDbItems.find(item => item.title.toLowerCase() === title.toLowerCase());
-        if (matched) {
-          itemId = matched.id;
-          card.setAttribute('data-mm-id', itemId);
-        }
-      }
-    }
-
-    if (!itemId) return; // Sécurité si toujours pas trouvé
+  function handleCheckboxChange(cards, checkbox) {
+    const index = parseInt(checkbox.dataset.mmIndex, 10);
+    if (isNaN(index)) return;
 
     if (checkbox.checked) {
-      selectedItems.add(itemId);
+      // Capturer l'empreinte au premier cochage
+      if (selectedItems.size === 0) {
+        selectionFingerprint = computeFingerprint(cards);
+      }
+      selectedItems.add(index);
     } else {
-      selectedItems.delete(itemId);
+      selectedItems.delete(index);
+      // Si plus rien de sélectionné, libérer l'empreinte
+      if (selectedItems.size === 0) {
+        selectionFingerprint = null;
+      }
     }
 
     updateBatchDeleteButtonState();
@@ -505,10 +331,11 @@
     // Décocher toutes les checkboxes visibles dans le DOM du Studio
     const studioPanel = findStudioPanel();
     if (studioPanel) {
-      studioPanel.querySelectorAll('.mm-studio-checkbox').forEach(cb => cb.checked = false);
+      studioPanel.querySelectorAll('.mm-studio-checkbox').forEach(cb => { cb.checked = false; });
     }
 
     selectedItems.clear();
+    selectionFingerprint = null;
     updateBatchDeleteButtonState();
   }
 
@@ -527,25 +354,41 @@
       return;
     }
 
+    // Récupérer les titres DOM des éléments sélectionnés par index positionnel
+    const studioPanel = findStudioPanel();
+    if (!studioPanel) {
+      window.MM.showAlertDialog('deleteError', 'deleteError');
+      return;
+    }
+    const cards = findStudioCards(studioPanel);
+    const selectedTitles = [];
+    const selectedIndices = Array.from(selectedItems).sort((a, b) => a - b);
+
+    selectedIndices.forEach(idx => {
+      if (idx < cards.length) {
+        const title = getStudioCardTitle(cards[idx]).trim();
+        if (title) {
+          selectedTitles.push({ title, index: idx });
+        }
+      }
+    });
+
+    if (selectedTitles.length === 0) {
+      window.MM.showAlertDialog('deleteError', 'deleteError');
+      return;
+    }
+
     // Demander confirmation
     window.MM.showConfirmDialog(
       'studioDeleteConfirmTitle',
       'studioDeleteConfirmMessage',
-      [String(selectedItems.size)],
+      [String(selectedTitles.length)],
       async function () {
         isProcessing = true;
         if (batchDeleteBtn) batchDeleteBtn.disabled = true;
 
         try {
-          const studioPanel = findStudioPanel();
-          if (!studioPanel) {
-            window.MM.showAlertDialog('deleteError', 'deleteError');
-            isProcessing = false;
-            if (batchDeleteBtn) batchDeleteBtn.disabled = false;
-            return;
-          }
-
-          // 1. Récupérer toutes les notes et artéfacts du serveur pour pouvoir faire le mapping par titre
+          // Fetch RPC pour obtenir les vrais IDs serveur (uniquement au moment de la suppression)
           console.log('[MM] StudioDelete : chargement de la liste des notes/artéfacts via RPC...');
           const [notesRaw, artifactsRaw] = await Promise.all([
             window.MM.rpc.getNotesAndMindMaps(notebookId),
@@ -558,7 +401,7 @@
 
           console.log(`[MM] StudioDelete : ${dbItems.length} éléments récupérés du serveur.`);
 
-          // 1b. Garde de sécurité : bloquer si des éléments sélectionnés ont des titres homonymes
+          // Garde de sécurité : bloquer si des éléments sélectionnés ont des titres homonymes
           const titleCounts = new Map();
           dbItems.forEach(item => {
             const key = item.title.trim().toLowerCase();
@@ -566,13 +409,10 @@
           });
 
           let hasDuplicateTitle = false;
-          selectedItems.forEach(itemId => {
-            const item = dbItems.find(i => i.id === itemId);
-            if (item) {
-              const key = item.title.trim().toLowerCase();
-              if (titleCounts.get(key) > 1) {
-                hasDuplicateTitle = true;
-              }
+          selectedTitles.forEach(({ title }) => {
+            const key = title.toLowerCase();
+            if ((titleCounts.get(key) || 0) > 1) {
+              hasDuplicateTitle = true;
             }
           });
 
@@ -584,27 +424,28 @@
             return;
           }
 
-          // 2. Préparer les requêtes de suppression RPC
+          // Préparer les requêtes de suppression RPC via matching titre → ID serveur
           const requests = [];
           const matchedCards = [];
 
-          selectedItems.forEach(itemId => {
-            const matchItem = dbItems.find(item => item.id === itemId);
+          selectedTitles.forEach(({ title, index }) => {
+            const matchItem = dbItems.find(
+              item => item.title.trim().toLowerCase() === title.toLowerCase()
+            );
             if (matchItem) {
               const rpcId = matchItem.type === 'note' ? 'AH0mwd' : 'V5N4be';
-              const params = matchItem.type === 'note' 
+              const params = matchItem.type === 'note'
                 ? [notebookId, null, [matchItem.id]] // Payload DELETE_NOTE
-                : [[matchItem.typeCode || 1], matchItem.id]; // Payload DELETE_ARTIFACT corrigé
+                : [[matchItem.typeCode || 1], matchItem.id]; // Payload DELETE_ARTIFACT
 
               requests.push({ rpcId: rpcId, params: params, type: matchItem.type, id: matchItem.id });
-              
-              // Cibler la carte DOM physique exacte grâce à notre attribut data-mm-id
-              const cardDOM = studioPanel.querySelector(`[data-mm-id="${itemId}"]`);
-              if (cardDOM) {
-                matchedCards.push({ card: cardDOM, id: matchItem.id });
+
+              // Cibler la carte DOM physique exacte grâce à l'index positionnel
+              if (index < cards.length) {
+                matchedCards.push({ card: cards[index], id: matchItem.id });
               }
             } else {
-              console.warn(`[MM] StudioDelete : impossible de trouver l'item "${itemId}" dans le cache RPC.`);
+              console.warn(`[MM] StudioDelete : impossible de trouver l'item "${title}" dans le cache RPC.`);
             }
           });
 
@@ -615,7 +456,7 @@
             return;
           }
 
-          // 3. Envoyer la suppression séquentiellement (pour contourner les limitations Google batchexecute multi-identique)
+          // Envoyer la suppression séquentiellement (pour contourner les limitations Google batchexecute multi-identique)
           console.log(`[MM] StudioDelete : suppression séquentielle de ${requests.length} éléments Studio...`);
           let succeeded = 0;
           let failed = 0;
@@ -638,7 +479,7 @@
 
           console.log(`[MM] StudioDelete terminé : ${succeeded} réussies, ${failed} échouées`);
 
-          // 4. Retirer les cartes du DOM avec animation
+          // Retirer les cartes du DOM avec animation
           matchedCards.forEach(info => {
             info.card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
             info.card.style.opacity = '0';
@@ -662,6 +503,7 @@
         } finally {
           isProcessing = false;
           selectedItems.clear();
+          selectionFingerprint = null;
           updateBatchDeleteButtonState();
         }
       }
@@ -724,11 +566,6 @@
   }
 
   function cleanupStudioDelete() {
-    if (syncTimeout) {
-      clearTimeout(syncTimeout);
-      syncTimeout = null;
-    }
-
     if (studioObserver) {
       studioObserver.disconnect();
       studioObserver = null;
@@ -763,10 +600,7 @@
     }
 
     selectedItems.clear();
-    cachedDbItems = null;
-    lastFetchedNotebookId = null;
-    isFetchingDbItems = false;
-    wasEditingNote = false;
+    selectionFingerprint = null;
     isProcessing = false;
     console.log('[MM] Module studio-delete nettoyé');
   }
