@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.14.1] — 2026-07-21
+
+### Corrigé & Ajouté
+- 🔄 **Transfert Individuel en Consultation de Source** : Ajout d'un bouton de transfert indigo 🔄 placé directement dans l'en-tête de consultation d'une source (`source-viewer`), entre le bouton d'exportation 📤 et la corbeille 🗑️.
+- 🛠️ **Correctif d'Exécution Inter-carnets** : Encapsulation de la chaîne modale/progression (`startTransferProcess`) résolvant le bug `openTransferModal is not defined` et harmonisation de la clé i18n (`transferButton`).
+- 📄 **Résolution MIME Type Google Drive** : Prise en charge automatique des types MIME spécifiques par type (`kind === 2` pour Google Slides, `kind === 14` pour Google Sheets, `kind === 1` pour Google Docs).
+
 ## [0.14.0] — 2026-07-21
 
 ### Ajouté
