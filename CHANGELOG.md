@@ -4,6 +4,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.14.5] — 2026-07-21
+
+### Corrigé
+- 📱 **Correction Définitive du Bouton Chat Export en Mode Mobile** : Réécriture complète de la branche Mobile de `findChatPanelHeader()` pour scoper la recherche d'icône (`tune`) au `chatPanel` au lieu du document entier. Élimine les faux positifs causés par les classes Angular obfusquées matchées par `.closest()` avec des sélecteurs de sous-chaîne CSS trop larges (`[class*="tab-header"]`). Branche Desktop 100% intacte (logique v0.14.1).
+
 ## [0.14.4] — 2026-07-21
 
 ### Corrigé

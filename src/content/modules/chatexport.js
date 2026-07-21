@@ -558,32 +558,56 @@
     }
 
     // ═══════════════════════════════════════════════════════════════════
-    // BRANCHE MOBILE (Ciblage sous-barre sous l'onglet actif sans impacter Desktop)
+    // BRANCHE MOBILE (Ciblage scopé au chat-panel — sans .closest() d'exclusion)
+    // Stratégie : scoper toutes les requêtes au chatPanel pour éliminer
+    // automatiquement les faux positifs (barre d'onglets, panneau Sources, Studio).
+    // Réf. skill notebooklm-dom-selectors §2 : ne jamais utiliser de classes
+    // obfusquées comme sélecteurs primaires.
     // ═══════════════════════════════════════════════════════════════════
-    const MOBILE_EXCLUSIONS = 'section.source-panel, [class*="source-panel"], .left-sidebar, mat-tab-header, [class*="tab-header"], [role="tablist"], .mobile-header, mat-tab-nav-bar, [class*="emoji"], [class*="keyboard"], .chat-input, [class*="input-container"]';
+    const chatPanel = document.querySelector(
+      'section.chat-panel, [class*="chat-panel"], [class*="conversation-panel"]'
+    );
+    if (!chatPanel) {
+      console.debug('[MM] [ChatExport] Mobile : aucun chat-panel trouvé dans le DOM.');
+      return null;
+    }
 
-    // 1. Détection par l'icône de réglages 'tune' ou 'more_vert' dans la sous-barre mobile
-    const chatIcons = document.querySelectorAll('mat-icon, svg, button');
+    // 1. Détection par l'icône de réglages 'tune' dans la sous-barre mobile du chat
+    //    Scopé à chatPanel → pas besoin de filtrer les icônes des autres panneaux
+    const chatIcons = chatPanel.querySelectorAll('mat-icon');
     for (const icon of chatIcons) {
       const text = (icon.textContent || '').trim();
-      const aria = icon.getAttribute('aria-label') || '';
-      if (text === 'tune' || text === 'sliders' || (text === 'more_vert' && !icon.closest('.source-panel, [class*="source-card"]')) || /settings|options|paramètres/i.test(aria)) {
-        if (icon.closest(MOBILE_EXCLUSIONS)) continue;
-        const toolbar = icon.closest('.panel-header, [class*="panel-header"], [class*="header"], [class*="toolbar"], div');
-        if (toolbar && !toolbar.closest(MOBILE_EXCLUSIONS) && toolbar.offsetWidth > 40) {
-          return toolbar;
+      if (text === 'tune' || text === 'sliders') {
+        // Remonter au conteneur de ligne (div flex contenant tune + more_vert)
+        // sans jamais dépasser le chatPanel
+        let row = icon.parentElement;
+        while (row && row !== chatPanel && row.getBoundingClientRect().width < 100) {
+          row = row.parentElement;
+        }
+        if (row && row !== chatPanel && row.offsetHeight > 0) {
+          console.debug('[MM] [ChatExport] Mobile : sous-barre trouvée via icône', text);
+          return row;
         }
       }
     }
 
-    // 2. Cibler l'en-tête de sous-barre interne du panneau de chat
-    const chatPanel = document.querySelector('section.chat-panel, [class*="chat-panel"], [class*="conversation-panel"], div[role="region"]');
-    if (chatPanel) {
-      const innerHeaders = chatPanel.querySelectorAll('.panel-header, [class*="panel-header"], [class*="header"], [class*="toolbar"]');
-      for (const ih of innerHeaders) {
-        if (!ih.closest(MOBILE_EXCLUSIONS) && ih.offsetWidth > 40) {
-          return ih;
-        }
+    // 2. Fallback : chercher le panel-header interne du chat-panel
+    const innerHeader = chatPanel.querySelector(
+      '.panel-header, [class*="panel-header"]'
+    );
+    if (innerHeader && innerHeader.offsetWidth > 60) {
+      console.debug('[MM] [ChatExport] Mobile : sous-barre trouvée via panel-header interne');
+      return innerHeader;
+    }
+
+    // 3. Dernier recours : premier div enfant direct visible avec largeur suffisante
+    //    (la sous-barre est généralement le premier ou deuxième enfant direct du chat-panel)
+    for (const child of chatPanel.children) {
+      if (child.tagName === 'DIV' && child.offsetHeight > 20 && child.offsetHeight < 80
+          && child.offsetWidth > 100) {
+        // Vérifier que ce n'est pas le conteneur de messages (qui est beaucoup plus haut)
+        console.debug('[MM] [ChatExport] Mobile : sous-barre trouvée via enfant direct du chat-panel');
+        return child;
       }
     }
 
