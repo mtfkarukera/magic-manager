@@ -519,6 +519,20 @@
       return match || { id: null, title: title, kind: undefined };
     });
 
+    // 1. Lancer le processus de transfert inter-carnets
+    await startTransferProcess(sourcesToTransfer);
+  }
+
+  /**
+   * Lance le processus de transfert inter-carnets (sélection carnet destination + progression).
+   * @param {Array<Object>} sourcesToTransfer - Liste des objets sources enrichis à transférer
+   */
+  async function startTransferProcess(sourcesToTransfer) {
+    if (!sourcesToTransfer || sourcesToTransfer.length === 0) return;
+
+    const currentNotebookId = window.MM.getActiveNotebookId();
+    if (!currentNotebookId) return;
+
     // 1. Demander le carnet destination
     await showNotebookSelectionDialog(sourcesToTransfer, async (targetNotebookId) => {
       // 2. Ouvrir le dialogue de progression
@@ -718,8 +732,8 @@
 
     const transferBtn = createElement('button', {
       className: 'mm-individual-transfer-btn mm-btn-icon',
-      title: t('transferModalTitle') || 'Copier vers un carnet',
-      'aria-label': t('transferModalTitle') || 'Copier vers un carnet',
+      title: t('transferButton') || 'Copier vers un carnet',
+      'aria-label': t('transferButton') || 'Copier vers un carnet',
       onClick: async function (e) {
         e.stopPropagation();
 
@@ -749,10 +763,12 @@
             };
           }
 
-          openTransferModal([targetSource]);
+          await startTransferProcess([targetSource]);
         } catch (err) {
           console.error('[MM] Erreur lors du transfert individuel :', err);
-          window.MM.showAlertDialog('transferError', 'Échec du transfert : ' + err.message);
+          if (typeof window.MM.showAlertDialog === 'function') {
+            window.MM.showAlertDialog('transferError', 'Échec du transfert : ' + (err.message || err));
+          }
         }
       }
     }, [createTransferIcon()]);
