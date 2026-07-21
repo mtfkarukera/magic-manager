@@ -52,14 +52,17 @@
    * Debouncé pour regrouper les rafales de clics et d'événements change.
    */
   const debouncedPanelInteraction = window.MM.debounce(function () {
-    if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
-      window.MM.updateBatchExportButtonState();
+    if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateBatchDeleteButtonState === 'function') {
+      window.MM.updateBatchDeleteButtonState();
+    }
+    if (window.MM.isFeatureEnabled('transfer') && typeof window.MM.updateBatchTransferButtonState === 'function') {
+      window.MM.updateBatchTransferButtonState();
     }
     if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
       window.MM.updateBatchMergeButtonState();
     }
-    if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateBatchDeleteButtonState === 'function') {
-      window.MM.updateBatchDeleteButtonState();
+    if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
+      window.MM.updateBatchExportButtonState();
     }
   }, 150);
 

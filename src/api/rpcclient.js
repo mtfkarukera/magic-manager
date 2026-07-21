@@ -162,9 +162,15 @@
           throw new Error(`Erreur renvoyée par le serveur Google pour ${rpcId} (code: ${item[2]})`);
         }
 
-        // Cas de succès : ["wrb.fr", rpcId, "json_string", ...]
+        // Cas de succès ou d'erreur applicative wrb.fr : ["wrb.fr", rpcId, resultData, ..., ..., errorArray]
         if (item[0] === 'wrb.fr' && item[1] === rpcId) {
           const resultData = item[2];
+          // Si resultData est null et qu'il y a un tableau d'erreur (ex: item[5] = [9] ou [3])
+          if (resultData === null && Array.isArray(item[5]) && item[5].length > 0) {
+            const errCode = item[5][0];
+            throw new RpcError(rpcId, `ERR_CODE_${errCode}`, `Le serveur Google a rejeté la requête pour ${rpcId} (code d'erreur applicatif: ${errCode}).`);
+          }
+
           if (typeof resultData === 'string') {
             try {
               return JSON.parse(resultData);
@@ -511,6 +517,169 @@
   }
 
   /**
+   * Liste tous les carnets de l'utilisateur.
+   * RPC : wXbhsf | source-path : "/" (contexte global)
+   * @returns {Promise<Array<{id: string, title: string, sourceCount: number, isShared: boolean, modifiedAt: number|null}>>}
+   */
+  async function listNotebooks() {
+    const rpcId = 'wXbhsf';
+    const params = [null, 1, null, [2]];
+    console.log('[MM] Appel RPC listNotebooks (wXbhsf)');
+    const result = await sendBatchExecute(rpcId, params, null);
+    if (!Array.isArray(result) || !Array.isArray(result[0])) return [];
+    return result[0]
+      .filter(data => Array.isArray(data) && typeof data[2] === 'string')
+      .map(data => ({
+        id: data[2],
+        title: (data[0] || '').replace(/^thought\n/, ''),
+        sourceCount: Array.isArray(data[1]) ? data[1].length : 0,
+        isShared: !!(data[5] && data[5][1]),
+        modifiedAt: data[5] && data[5][5] ? data[5][5][0] * 1000 : null
+      }));
+  }
+
+  /**
+   * Ajoute une source URL dans un carnet.
+   * RPC : izAoDd | source-path : "/notebook/<targetNotebookId>"
+   */
+  async function addUrlSource(targetNotebookId, url) {
+    if (!targetNotebookId || !url) {
+      throw new Error('[MM] addUrlSource : targetNotebookId ou url manquant.');
+    }
+    const rpcId = 'izAoDd';
+    const params = [
+      [[null, null, [url], null, null, null, null, null, null, null, 1]],
+      targetNotebookId,
+      [2, null, null, [1, null, null, null, null, null, null, null, null, null, [1]]]
+    ];
+    console.log(`[MM] Appel RPC addUrlSource (notebook: ${targetNotebookId}, url: ${url})`);
+    const result = await sendBatchExecute(rpcId, params, targetNotebookId);
+    console.log('[MM] RPC addUrlSource exécuté avec succès.');
+    return result;
+  }
+
+  /**
+   * Ajoute une source YouTube dans un carnet.
+   * RPC : izAoDd | source-path : "/notebook/<targetNotebookId>"
+   */
+  async function addYoutubeSource(targetNotebookId, url) {
+    if (!targetNotebookId || !url) {
+      throw new Error('[MM] addYoutubeSource : targetNotebookId ou url manquant.');
+    }
+    const rpcId = 'izAoDd';
+    const params = [
+      [[null, null, null, null, null, null, null, [url], null, null, 1]],
+      targetNotebookId,
+      [2, null, null, [1, null, null, null, null, null, null, null, null, null, [1]]]
+    ];
+    console.log(`[MM] Appel RPC addYoutubeSource (notebook: ${targetNotebookId})`);
+    const result = await sendBatchExecute(rpcId, params, targetNotebookId);
+    console.log('[MM] RPC addYoutubeSource exécuté avec succès.');
+    return result;
+  }
+
+  /**
+   * Résout le type MIME Drive exact d'après le type (kind) et les métadonnées.
+   */
+  function resolveDriveMimeType(kind, rawMime) {
+    if (typeof rawMime === 'string' && rawMime.length > 5) {
+      return rawMime;
+    }
+    switch (kind) {
+      case 1:  // GOOGLE_DOCS
+        return 'application/vnd.google-apps.document';
+      case 2:  // GOOGLE_SLIDES
+        return 'application/vnd.google-apps.presentation';
+      case 14: // GOOGLE_SPREADSHEET
+        return 'application/vnd.google-apps.spreadsheet';
+      case 3:  // PDF
+        return 'application/pdf';
+      default:
+        return 'application/vnd.google-apps.document';
+    }
+  }
+
+  /**
+   * Ajoute une source Google Drive (izAoDd).
+   */
+  async function addDriveSource(targetNotebookId, fileId, mimeType, title) {
+    if (!targetNotebookId || !fileId) {
+      throw new Error('[MM] addDriveSource : targetNotebookId ou fileId manquant.');
+    }
+    const rpcId = 'izAoDd';
+    const finalMime = mimeType || 'application/vnd.google-apps.document';
+    const sourceData = [
+      [fileId, finalMime, 1, title || ''],
+      null, null, null, null, null, null, null, null, null, 1
+    ];
+    const params = [
+      [sourceData],
+      targetNotebookId,
+      [2],
+      [1, null, null, null, null, null, null, null, null, null, [1]]
+    ];
+    console.log(`[MM] Appel RPC addDriveSource (notebook: ${targetNotebookId}, drive: ${fileId}, mime: ${finalMime})`);
+    const result = await sendBatchExecute(rpcId, params, targetNotebookId);
+    console.log('[MM] RPC addDriveSource exécuté avec succès.');
+    return result;
+  }
+
+  /**
+   * Crée un nouveau carnet avec le titre spécifié (RPC CCqFvf).
+   * @param {string} title - Titre du carnet à créer
+   * @returns {Promise<{id: string, title: string, sourceCount: number}>}
+   */
+  async function createNotebook(title) {
+    if (!title || !title.trim()) {
+      throw new Error('[MM] createNotebook : le titre est requis.');
+    }
+    const rpcId = 'CCqFvf';
+    const params = [
+      title.trim(),
+      null,
+      null,
+      [2, null, null, [1, null, null, null, null, null, null, null, null, null, [1]]]
+    ];
+    console.log(`[MM] Appel RPC createNotebook (titre: ${title})`);
+    const result = await sendBatchExecute(rpcId, params, null);
+    // En accord avec notebooklm-py-ref : result[0] = titre, result[2] = UUID de carnet
+    const notebookId = (Array.isArray(result) && typeof result[2] === 'string' && result[2].length > 0)
+      ? result[2]
+      : (Array.isArray(result) && typeof result[0] === 'string' && result[0].length > 20 ? result[0] : null);
+    if (!notebookId || typeof notebookId !== 'string') {
+      throw new Error('Impossible de créer le carnet (réponse inattendue du serveur).');
+    }
+    console.log(`[MM] Carnet créé avec succès (titre: "${title.trim()}", UUID: ${notebookId})`);
+    return { id: notebookId, title: title.trim(), sourceCount: 0 };
+  }
+
+  /**
+   * Ajoute une source Google Drive dans un carnet.
+   * RPC : izAoDd | source-path : "/notebook/<targetNotebookId>"
+   */
+  async function addDriveSource(targetNotebookId, fileId, mimeType, title) {
+    if (!targetNotebookId || !fileId) {
+      throw new Error('[MM] addDriveSource : targetNotebookId ou fileId manquant.');
+    }
+    const rpcId = 'izAoDd';
+    const sourceData = [
+      [fileId, mimeType || 'application/vnd.google-apps.document', 1, title || ''],
+      null, null, null, null, null, null, null, null, null, 1
+    ];
+    const params = [
+      [sourceData],
+      targetNotebookId,
+      [2],
+      [1, null, null, null, null, null, null, null, null, null, [1]]
+    ];
+    console.log(`[MM] Appel RPC addDriveSource (notebook: ${targetNotebookId}, drive: ${fileId})`);
+    const result = await sendBatchExecute(rpcId, params, targetNotebookId);
+    console.log('[MM] RPC addDriveSource exécuté avec succès.');
+    return result;
+  }
+
+
+  /**
    * Upload un fichier binaire (Blob) via resumable upload 3 étapes.
    */
   async function uploadBlob(notebookId, blob, filename) {
@@ -758,11 +927,20 @@
       .filter(src => Array.isArray(src))
       .map((src, index) => {
         var rawId = src[0];
-        // Déballage si le sourceId est wrappé dans un tableau [uuid]
-        var id = Array.isArray(rawId) ? rawId[0] : rawId;
+        var id = "";
+
+        // 1. Extraction de l'UUID de source NotebookLM
+        if (typeof rawId === 'string') {
+          id = rawId;
+        } else if (Array.isArray(rawId)) {
+          if (typeof rawId[0] === 'string') {
+            id = rawId[0];
+          } else if (rawId[0] === null && Array.isArray(rawId[2]) && typeof rawId[2][0] === 'string') {
+            id = rawId[2][0];
+          }
+        }
         
-        // Extraction robuste du type de source (kind)
-        // Généralement situé dans le sous-tableau des métadonnées src[2] à l'index 4
+        // 2. Extraction du type (kind)
         var kind = undefined;
         if (src[2] && Array.isArray(src[2]) && src[2].length > 4) {
           kind = src[2][4];
@@ -770,10 +948,68 @@
           kind = src[16];
         }
 
+        const url = (src[2] && src[2][7] && src[2][7][0]) || null;
+        const youtubeUrl = (src[2] && src[2][5] && src[2][5][0]) || null;
+
+        // Helper de validation d'un ID Google Drive (20+ chars, non-UUID v4)
+        const isValidDriveId = (str) => {
+          if (typeof str !== 'string' || str.length < 20) return false;
+          // Rejeter les UUID v4 (36 chars avec 4 tirets)
+          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str)) return false;
+          return /^[A-Za-z0-9_-]{20,}$/.test(str);
+        };
+
+        // Helper de déballage récursif des structures imbriquées d'API Google (ex: src[2][0] = [[["id", ...]]])
+        const findDriveIdInSlot = (slot) => {
+          if (typeof slot === 'string' && isValidDriveId(slot)) {
+            return slot;
+          }
+          if (Array.isArray(slot)) {
+            for (let i = 0; i < slot.length; i++) {
+              const found = findDriveIdInSlot(slot[i]);
+              if (found) return found;
+            }
+          }
+          return null;
+        };
+
+        // 3. Extraction certifiée du driveFileId en 4 niveaux
+        var driveFileId = null;
+
+        // Niveau 1 : Via le descripteur metadata[9] (fichiers Drive téléversés)
+        if (src[2] && src[2][9]) {
+          driveFileId = findDriveIdInSlot(src[2][9]);
+        }
+
+        // Niveau 2 : Emplacement metadata[0] (src[2][0]) — Google Docs natifs (sources_add_drive.yaml:105)
+        if (!driveFileId && src[2] && src[2][0]) {
+          driveFileId = findDriveIdInSlot(src[2][0]);
+        }
+
+        // Niveau 3 : Extraction Regex dans l'URL canonique src[2][7][0]
+        if (!driveFileId && url) {
+          const match = url.match(/(?:file\/)?d\/([A-Za-z0-9_-]{20,})/);
+          if (match && isValidDriveId(match[1])) {
+            driveFileId = match[1];
+          }
+        }
+
+        // Niveau 4 : Extraction Regex dans l'URL secondaire src[2][5][0]
+        if (!driveFileId && youtubeUrl) {
+          const matchYt = youtubeUrl.match(/(?:file\/)?d\/([A-Za-z0-9_-]{20,})/);
+          if (matchYt && isValidDriveId(matchYt[1])) {
+            driveFileId = matchYt[1];
+          }
+        }
+
         return {
           id: id,
           title: src[1],
-          kind: kind
+          kind: kind,
+          url: url,
+          driveFileId: driveFileId,
+          driveMimeType: resolveDriveMimeType(kind, (src[2] && src[2][9] && src[2][9][2]) || (src[2] && src[2][19])),
+          topLevelMime: (src[2] && src[2][19]) || null
         };
       })
       .filter(s => typeof s.id === 'string' && s.id.length > 5);
@@ -840,6 +1076,11 @@
     sendBatchExecute: sendBatchExecute,
     _sendBatchExecute: sendBatchExecute,
     addTextSource: addTextSource,
+    addUrlSource: addUrlSource,
+    addYoutubeSource: addYoutubeSource,
+    addDriveSource: addDriveSource,
+    listNotebooks: listNotebooks,
+    createNotebook: createNotebook,
     uploadBlob: uploadBlob,
     getSourceContent: getSourceContent,
     getSourceContentHtml: getSourceContentHtml,

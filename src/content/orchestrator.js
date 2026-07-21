@@ -27,7 +27,8 @@
     batchDelete: 'feature_batchDelete',
     studioSearch: 'feature_studioSearch',
     syntax: 'feature_syntax',
-    chatExport: 'feature_chatExport'
+    chatExport: 'feature_chatExport',
+    transfer: 'feature_transfer'
   };
 
   /** Préférences par défaut (toutes actives) */
@@ -105,7 +106,8 @@
       { key: FEATURES.batchDelete, init: 'initStudioDelete', label: 'Suppression Studio' },
       { key: FEATURES.studioSearch, init: 'initStudioSearch', label: 'Recherche Studio' },
       { key: FEATURES.syntax, init: 'initSyntax', label: 'Syntaxe' },
-      { key: FEATURES.chatExport, init: 'initChatExport', label: 'ChatExport' }
+      { key: FEATURES.chatExport, init: 'initChatExport', label: 'ChatExport' },
+      { key: FEATURES.transfer, init: 'initTransfer', label: 'Transfert' }
     ];
 
     for (const mod of modules) {
@@ -118,8 +120,8 @@
       }
     }
 
-    // Panel observer centralisé : actif si export, delete, badges, batchDelete ou studioSearch est activé
-    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.badges) || isFeatureEnabled(FEATURES.batchDelete) || isFeatureEnabled(FEATURES.studioSearch)) {
+    // Panel observer centralisé : actif si export, delete, badges, batchDelete, studioSearch ou transfer est activé
+    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.badges) || isFeatureEnabled(FEATURES.batchDelete) || isFeatureEnabled(FEATURES.studioSearch) || isFeatureEnabled(FEATURES.transfer)) {
       try {
         window.MM.initPanelObserver();
       } catch (err) {
@@ -145,7 +147,8 @@
       { name: 'StudioDelete', fn: window.MM.cleanupStudioDelete },
       { name: 'StudioSearch', fn: window.MM.cleanupStudioSearch },
       { name: 'Syntax', fn: window.MM.cleanupSyntax },
-      { name: 'ChatExport', fn: window.MM.cleanupChatExport }
+      { name: 'ChatExport', fn: window.MM.cleanupChatExport },
+      { name: 'Transfer', fn: window.MM.cleanupTransfer }
     ];
 
     modules.forEach(function (m) {

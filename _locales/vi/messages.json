@@ -424,5 +424,81 @@
   "truncationWarning": {
     "message": "Cảnh báo: Ở chế độ Đầy đủ, nội dung có thể bị Google cắt bớt nếu tài liệu chứa hình ảnh nặng. Nếu xảy ra điều này, hãy sử dụng chế độ Đơn giản (đảm bảo đầy đủ).",
     "description": "Warning about Google truncation limit"
+  },
+  "transferButton": {
+    "message": "Sao chép sang...",
+    "description": "Cross-notebook copy button label"
+  },
+  "transferBatchButton": {
+    "message": "Sao chép sang sổ tay",
+    "description": "Batch copy sources button label"
+  },
+  "transferDialogTitle": {
+    "message": "Sao chép sang sổ tay khác",
+    "description": "Transfer modal dialog title"
+  },
+  "transferSelectTarget": {
+    "message": "Chọn sổ tay đích:",
+    "description": "Instruction for selecting target notebook"
+  },
+  "transferSearchNotebook": {
+    "message": "Tìm kiếm sổ tay...",
+    "description": "Search input placeholder in transfer dialog"
+  },
+  "transferCurrentNotebook": {
+    "message": "Sổ tay hiện tại",
+    "description": "Label for disabled current notebook"
+  },
+  "transferNotebookFull": {
+    "message": "Đầy (50/50)",
+    "description": "Label when notebook reached max source limit"
+  },
+  "transferNotebookAlmostFull": {
+    "message": "Gần đầy ($1/50)",
+    "description": "Label when notebook is almost full"
+  },
+  "transferInProgress": {
+    "message": "Đang sao chép...",
+    "description": "Title for transfer progress dialog"
+  },
+  "transferComplete": {
+    "message": "Sao chép hoàn tất",
+    "description": "Title for transfer complete state"
+  },
+  "transferPartialSuccess": {
+    "message": "Đã sao chép $1 nguồn, $2 thất bại",
+    "description": "Summary of transfer results"
+  },
+  "transferError": {
+    "message": "Lỗi khi sao chép",
+    "description": "General transfer error title"
+  },
+  "transferFallbackInfo": {
+    "message": "Tệp cục bộ sẽ được chuyển đổi sang Markdown phong phú. Nguồn Web và Drive sẽ được nhập lại nguyên bản.",
+    "description": "Info message about source handling"
+  },
+  "transferConfirmButton": {
+    "message": "Sao chép ($1 nguồn)",
+    "description": "Confirm button label with count"
+  },
+  "settingsFeatureTransfer": {
+    "message": "Sao chép giữa các sổ tay",
+    "description": "Setting toggle label for transfer feature"
+  },
+  "transferSourcesCount": {
+    "message": "$1 nguồn",
+    "description": "Sources count display per notebook"
+  },
+  "transferNewNotebookBtn": {
+    "message": "+ Sổ tay mới",
+    "description": "Button to create a new notebook in transfer dialog"
+  },
+  "transferNewNotebookPrompt": {
+    "message": "Tên sổ tay mới:",
+    "description": "Prompt message for creating a new notebook"
+  },
+  "transferNewNotebookPlaceholder": {
+    "message": "Ví dụ: Sổ tay mới của tôi...",
+    "description": "Placeholder for new notebook name"
   }
 }

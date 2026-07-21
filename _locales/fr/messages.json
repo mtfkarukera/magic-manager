@@ -424,5 +424,81 @@
   "truncationWarning": {
     "message": "Attention : En mode Riche, le contenu peut être tronqué par Google si le document contient des images volumineuses. Si cela se produit, utilisez le mode Simple (garanti complet).",
     "description": "Warning about Google truncation limit"
+  },
+  "transferButton": {
+    "message": "Copier vers...",
+    "description": "Libellé du bouton de copie inter-carnets"
+  },
+  "transferBatchButton": {
+    "message": "Copier vers un carnet",
+    "description": "Bouton d'action globale pour copier les sources cochées"
+  },
+  "transferDialogTitle": {
+    "message": "Copier vers un autre carnet",
+    "description": "Titre du dialogue modal de transfert"
+  },
+  "transferSelectTarget": {
+    "message": "Sélectionne le carnet de destination :",
+    "description": "Consigne de sélection du carnet cible"
+  },
+  "transferSearchNotebook": {
+    "message": "Rechercher un carnet...",
+    "description": "Placeholder de recherche de carnet"
+  },
+  "transferCurrentNotebook": {
+    "message": "Carnet actuel",
+    "description": "Label pour griser le carnet courant"
+  },
+  "transferNotebookFull": {
+    "message": "Carnet plein (50/50)",
+    "description": "Label si le carnet a atteint la limite"
+  },
+  "transferNotebookAlmostFull": {
+    "message": "Presque plein ($1/50)",
+    "description": "Label si le carnet est presque plein"
+  },
+  "transferInProgress": {
+    "message": "Copie en cours...",
+    "description": "Titre du dialogue de progression"
+  },
+  "transferComplete": {
+    "message": "Copie terminée",
+    "description": "Titre du dialogue de fin de copie"
+  },
+  "transferPartialSuccess": {
+    "message": "$1 source(s) copiée(s), $2 échec(s)",
+    "description": "Résumé des résultats du transfert"
+  },
+  "transferError": {
+    "message": "Erreur lors de la copie",
+    "description": "Titre d'erreur générale de transfert"
+  },
+  "transferFallbackInfo": {
+    "message": "Les fichiers locaux seront convertis en Markdown enrichi. Les sources Web et Drive seront ré-importées nativement.",
+    "description": "Information sur le traitement des sources"
+  },
+  "transferConfirmButton": {
+    "message": "Copier ($1 sources)",
+    "description": "Bouton de confirmation avec nombre"
+  },
+  "settingsFeatureTransfer": {
+    "message": "Copie inter-carnets",
+    "description": "Toggle de la feature transfert dans les paramètres"
+  },
+  "transferSourcesCount": {
+    "message": "$1 sources",
+    "description": "Compteur de sources par carnet"
+  },
+  "transferNewNotebookBtn": {
+    "message": "+ Nouveau carnet",
+    "description": "Bouton pour créer un nouveau carnet dans le dialogue de transfert"
+  },
+  "transferNewNotebookPrompt": {
+    "message": "Nom du nouveau carnet :",
+    "description": "Invite pour la création d'un nouveau carnet"
+  },
+  "transferNewNotebookPlaceholder": {
+    "message": "Ex : Mon nouveau carnet...",
+    "description": "Placeholder pour le nom du nouveau carnet"
   }
 }

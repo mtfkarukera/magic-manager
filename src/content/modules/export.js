@@ -412,23 +412,12 @@
         ]);
 
 
-        if (isHeader) {
-          if (isMobileSticky) {
-            anchor.appendChild(batchExportButton);
+        if (isHeader && !isMobileSticky) {
+          const collapseBtn = window.MM.getNativeCollapseBtn(anchor);
+          if (collapseBtn) {
+            collapseBtn.parentNode.insertBefore(batchExportButton, collapseBtn);
           } else {
-            // Trouver le bouton collapse natif
-            const nativeButtons = Array.from(anchor.querySelectorAll(
-              'button:not(.mm-batch-merge-btn):not(.mm-batch-export-btn):not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
-            ));
-            const collapseBtn = nativeButtons[nativeButtons.length - 1];
-            if (collapseBtn) {
-              // Insérer à gauche du bouton de fusion s'il existe déjà
-              const mergeBtn = anchor.querySelector('.mm-batch-merge-btn');
-              const targetBefore = mergeBtn || collapseBtn;
-              targetBefore.parentNode.insertBefore(batchExportButton, targetBefore);
-            } else {
-              anchor.appendChild(batchExportButton);
-            }
+            anchor.appendChild(batchExportButton);
           }
         } else {
           anchor.appendChild(batchExportButton);

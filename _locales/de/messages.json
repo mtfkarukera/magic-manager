@@ -424,5 +424,81 @@
   "truncationWarning": {
     "message": "Warnung: Im Modus 'Reich' kann der Inhalt von Google gekürzt werden, wenn das Dokument schwere Bilder enthält. Verwenden Sie in diesem Fall den Modus 'Einfach' (garantiert vollständig).",
     "description": "Warning about Google truncation limit"
+  },
+  "transferButton": {
+    "message": "Kopieren nach...",
+    "description": "Cross-notebook copy button label"
+  },
+  "transferBatchButton": {
+    "message": "In Notizbuch kopieren",
+    "description": "Batch copy sources button label"
+  },
+  "transferDialogTitle": {
+    "message": "In ein anderes Notizbuch kopieren",
+    "description": "Transfer modal dialog title"
+  },
+  "transferSelectTarget": {
+    "message": "Ziel-Notizbuch auswählen:",
+    "description": "Instruction for selecting target notebook"
+  },
+  "transferSearchNotebook": {
+    "message": "Notizbuch suchen...",
+    "description": "Search input placeholder in transfer dialog"
+  },
+  "transferCurrentNotebook": {
+    "message": "Aktuelles Notizbuch",
+    "description": "Label for disabled current notebook"
+  },
+  "transferNotebookFull": {
+    "message": "Voll (50/50)",
+    "description": "Label when notebook reached max source limit"
+  },
+  "transferNotebookAlmostFull": {
+    "message": "Fast voll ($1/50)",
+    "description": "Label when notebook is almost full"
+  },
+  "transferInProgress": {
+    "message": "Kopieren läuft...",
+    "description": "Title for transfer progress dialog"
+  },
+  "transferComplete": {
+    "message": "Kopieren abgeschlossen",
+    "description": "Title for transfer complete state"
+  },
+  "transferPartialSuccess": {
+    "message": "$1 Quelle(n) kopiert, $2 Fehler",
+    "description": "Summary of transfer results"
+  },
+  "transferError": {
+    "message": "Fehler beim Kopieren",
+    "description": "General transfer error title"
+  },
+  "transferFallbackInfo": {
+    "message": "Lokale Dateien werden in formatiertes Markdown konvertiert. Web- und Drive-Quellen werden nativ reimportiert.",
+    "description": "Info message about source handling"
+  },
+  "transferConfirmButton": {
+    "message": "Kopieren ($1 Quellen)",
+    "description": "Confirm button label with count"
+  },
+  "settingsFeatureTransfer": {
+    "message": "Notizbuch-übergreifendes Kopieren",
+    "description": "Setting toggle label for transfer feature"
+  },
+  "transferSourcesCount": {
+    "message": "$1 Quellen",
+    "description": "Sources count display per notebook"
+  },
+  "transferNewNotebookBtn": {
+    "message": "+ Neues Notizbuch",
+    "description": "Button to create a new notebook in transfer dialog"
+  },
+  "transferNewNotebookPrompt": {
+    "message": "Name des neuen Notizbuchs:",
+    "description": "Prompt message for creating a new notebook"
+  },
+  "transferNewNotebookPlaceholder": {
+    "message": "z.B.: Mein neues Notizbuch...",
+    "description": "Placeholder for new notebook name"
   }
 }

@@ -424,5 +424,81 @@
   "truncationWarning": {
     "message": "Advertencia: En el modo 'Rico', el contenido puede ser truncado por Google si el documento contiene imágenes pesadas. Si esto sucede, use el modo 'Simple' (garantizado completo).",
     "description": "Warning about Google truncation limit"
+  },
+  "transferButton": {
+    "message": "Copiar a...",
+    "description": "Cross-notebook copy button label"
+  },
+  "transferBatchButton": {
+    "message": "Copiar a un cuaderno",
+    "description": "Batch copy sources button label"
+  },
+  "transferDialogTitle": {
+    "message": "Copiar a otro cuaderno",
+    "description": "Transfer modal dialog title"
+  },
+  "transferSelectTarget": {
+    "message": "Selecciona el cuaderno de destino:",
+    "description": "Instruction for selecting target notebook"
+  },
+  "transferSearchNotebook": {
+    "message": "Buscar cuaderno...",
+    "description": "Search input placeholder in transfer dialog"
+  },
+  "transferCurrentNotebook": {
+    "message": "Cuaderno actual",
+    "description": "Label for disabled current notebook"
+  },
+  "transferNotebookFull": {
+    "message": "Lleno (50/50)",
+    "description": "Label when notebook reached max source limit"
+  },
+  "transferNotebookAlmostFull": {
+    "message": "Casi lleno ($1/50)",
+    "description": "Label when notebook is almost full"
+  },
+  "transferInProgress": {
+    "message": "Copiando...",
+    "description": "Title for transfer progress dialog"
+  },
+  "transferComplete": {
+    "message": "Copia completada",
+    "description": "Title for transfer complete state"
+  },
+  "transferPartialSuccess": {
+    "message": "$1 fuente(s) copiada(s), $2 error(es)",
+    "description": "Summary of transfer results"
+  },
+  "transferError": {
+    "message": "Error al copiar",
+    "description": "General transfer error title"
+  },
+  "transferFallbackInfo": {
+    "message": "Los archivos locales se convertirán a Markdown enriquecido. Las fuentes Web y Drive se reimportarán nativamente.",
+    "description": "Info message about source handling"
+  },
+  "transferConfirmButton": {
+    "message": "Copiar ($1 fuentes)",
+    "description": "Confirm button label with count"
+  },
+  "settingsFeatureTransfer": {
+    "message": "Copia entre cuadernos",
+    "description": "Setting toggle label for transfer feature"
+  },
+  "transferSourcesCount": {
+    "message": "$1 fuentes",
+    "description": "Sources count display per notebook"
+  },
+  "transferNewNotebookBtn": {
+    "message": "+ Nuevo cuaderno",
+    "description": "Button to create a new notebook in transfer dialog"
+  },
+  "transferNewNotebookPrompt": {
+    "message": "Nombre del nuevo cuaderno:",
+    "description": "Prompt message for creating a new notebook"
+  },
+  "transferNewNotebookPlaceholder": {
+    "message": "Ej.: Mi nuevo cuaderno...",
+    "description": "Placeholder for new notebook name"
   }
 }

@@ -424,5 +424,81 @@
   "truncationWarning": {
     "message": "注意: リッチモードでは、ドキュメントに容量の大きい画像が含まれている場合、Googleによってコンテンツが途中で切れることがあります。その場合は、シンプルモード（完全保証）を使用してください。",
     "description": "Warning about Google truncation limit"
+  },
+  "transferButton": {
+    "message": "次へコピー...",
+    "description": "Cross-notebook copy button label"
+  },
+  "transferBatchButton": {
+    "message": "ノートブックへコピー",
+    "description": "Batch copy sources button label"
+  },
+  "transferDialogTitle": {
+    "message": "別のノートブックへコピー",
+    "description": "Transfer modal dialog title"
+  },
+  "transferSelectTarget": {
+    "message": "転送先のノートブックを選択:",
+    "description": "Instruction for selecting target notebook"
+  },
+  "transferSearchNotebook": {
+    "message": "ノートブックを検索...",
+    "description": "Search input placeholder in transfer dialog"
+  },
+  "transferCurrentNotebook": {
+    "message": "現在のノートブック",
+    "description": "Label for disabled current notebook"
+  },
+  "transferNotebookFull": {
+    "message": "満杯 (50/50)",
+    "description": "Label when notebook reached max source limit"
+  },
+  "transferNotebookAlmostFull": {
+    "message": "ほぼ満杯 ($1/50)",
+    "description": "Label when notebook is almost full"
+  },
+  "transferInProgress": {
+    "message": "コピー中...",
+    "description": "Title for transfer progress dialog"
+  },
+  "transferComplete": {
+    "message": "コピー完了",
+    "description": "Title for transfer complete state"
+  },
+  "transferPartialSuccess": {
+    "message": "$1 件のソースをコピー、$2 件失敗",
+    "description": "Summary of transfer results"
+  },
+  "transferError": {
+    "message": "コピーエラー",
+    "description": "General transfer error title"
+  },
+  "transferFallbackInfo": {
+    "message": "ローカルファイルはリッチMarkdownに変換されます。WebおよびDriveソースはネイティブに再インポートされます。",
+    "description": "Info message about source handling"
+  },
+  "transferConfirmButton": {
+    "message": "コピー ($1 件のソース)",
+    "description": "Confirm button label with count"
+  },
+  "settingsFeatureTransfer": {
+    "message": "ノートブック間コピー",
+    "description": "Setting toggle label for transfer feature"
+  },
+  "transferSourcesCount": {
+    "message": "$1 件のソース",
+    "description": "Sources count display per notebook"
+  },
+  "transferNewNotebookBtn": {
+    "message": "+ 新しいノートブック",
+    "description": "Button to create a new notebook in transfer dialog"
+  },
+  "transferNewNotebookPrompt": {
+    "message": "新しいノートブックの名前:",
+    "description": "Prompt message for creating a new notebook"
+  },
+  "transferNewNotebookPlaceholder": {
+    "message": "例: 新しいノートブック...",
+    "description": "Placeholder for new notebook name"
   }
 }

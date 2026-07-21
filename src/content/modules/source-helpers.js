@@ -377,6 +377,19 @@
     return cards;
   }
 
+  /**
+   * Trouve le bouton de réduction natif de NotebookLM dans l'en-tête du panneau (le dernier bouton natif sans classe mm-)
+   * @param {Element} anchor - L'ancre d'injection (panelHeader)
+   * @returns {Element|null} Le bouton natif de réduction
+   */
+  function getNativeCollapseBtn(anchor) {
+    if (!anchor) return null;
+    const nativeButtons = Array.from(anchor.querySelectorAll(
+      'button:not([class*="mm-"]), [role="button"]:not([class*="mm-"])'
+    ));
+    return nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // Exposition dans le namespace global MM
   // ═══════════════════════════════════════════════════════════════════════
@@ -391,4 +404,5 @@
   window.MM.findSourceViewerTitle = findSourceViewerTitle;
   window.MM.findSourceViewerTitleText = findSourceViewerTitleText;
   window.MM.findSourceCards = findSourceCards;
+  window.MM.getNativeCollapseBtn = getNativeCollapseBtn;
 })();

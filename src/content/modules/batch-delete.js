@@ -111,23 +111,16 @@
           })
         ]);
 
-        if (isHeader) {
-          if (isMobileSticky) {
-            anchor.appendChild(batchDeleteBtn);
+        if (isHeader && !isMobileSticky) {
+          const transferBtn = anchor.querySelector('.mm-batch-transfer-btn');
+          const mergeBtn = anchor.querySelector('.mm-batch-merge-btn');
+          const exportBtn = anchor.querySelector('.mm-batch-export-btn');
+          const collapseBtn = window.MM.getNativeCollapseBtn(anchor);
+          const targetBefore = transferBtn || mergeBtn || exportBtn || collapseBtn;
+          if (targetBefore) {
+            targetBefore.parentNode.insertBefore(batchDeleteBtn, targetBefore);
           } else {
-            // Trouver le bouton collapse natif (le bouton retour ←)
-            const nativeButtons = Array.from(anchor.querySelectorAll(
-              'button:not(.mm-batch-merge-btn):not(.mm-batch-export-btn):not(.mm-batch-delete-btn):not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
-            ));
-            const collapseBtn = nativeButtons[nativeButtons.length - 1];
-            if (collapseBtn) {
-              // Insérer à gauche des boutons d'export et de fusion MM, ou collapseBtn
-              const firstMmBtn = anchor.querySelector('.mm-batch-export-btn, .mm-batch-merge-btn');
-              const targetBefore = firstMmBtn || collapseBtn;
-              targetBefore.parentNode.insertBefore(batchDeleteBtn, targetBefore);
-            } else {
-              anchor.appendChild(batchDeleteBtn);
-            }
+            anchor.appendChild(batchDeleteBtn);
           }
         } else {
           anchor.appendChild(batchDeleteBtn);

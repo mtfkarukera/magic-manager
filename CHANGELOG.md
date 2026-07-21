@@ -4,6 +4,15 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.14.0] — 2026-07-21
+
+### Ajouté
+- 🔄 **Copie Inter-Carnets (Sprint 6)** : Copie directe de sources sélectionnées vers n'importe quel autre carnet sans quitter le carnet actif.
+  - 🌐 **Ré-import natif** : Les sources Google Drive (Docs, Sheets, Slides), Web et YouTube sont automatiquement ré-importées de façon native (100% de fidélité).
+  - 📝 **Conversion intelligente fallback** : Les fichiers locaux (PDF, DOCX, texte, images) sont extraits en HTML puis convertis en Markdown enrichi via Turndown.
+  - 📋 **Interface de sélection & progression** : Recherche en temps réel parmi vos carnets, détection de capacité (sources max par carnet), et modalité de suivi de progression avec annulation gracieuse.
+  - ⚡ **Résilience & anti-rate-limiting** : File d'attente asynchrone avec espacement de 400ms et retry automatique par type.
+
 ## [0.13.0] — 2026-07-21
 
 ### Ajouté & Modifié (Release Publique AMO)

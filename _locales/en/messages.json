@@ -424,5 +424,81 @@
   "truncationWarning": {
     "message": "Warning: In Rich mode, content may be truncated by Google if the document contains heavy images. If this happens, use Simple mode (guaranteed complete).",
     "description": "Warning about Google truncation limit"
+  },
+  "transferButton": {
+    "message": "Copy to...",
+    "description": "Cross-notebook copy button label"
+  },
+  "transferBatchButton": {
+    "message": "Copy to notebook",
+    "description": "Batch copy sources button label"
+  },
+  "transferDialogTitle": {
+    "message": "Copy to another notebook",
+    "description": "Transfer modal dialog title"
+  },
+  "transferSelectTarget": {
+    "message": "Select destination notebook:",
+    "description": "Instruction for selecting target notebook"
+  },
+  "transferSearchNotebook": {
+    "message": "Search notebook...",
+    "description": "Search input placeholder in transfer dialog"
+  },
+  "transferCurrentNotebook": {
+    "message": "Current notebook",
+    "description": "Label for disabled current notebook"
+  },
+  "transferNotebookFull": {
+    "message": "Full (50/50)",
+    "description": "Label when notebook reached max source limit"
+  },
+  "transferNotebookAlmostFull": {
+    "message": "Almost full ($1/50)",
+    "description": "Label when notebook is almost full"
+  },
+  "transferInProgress": {
+    "message": "Copying...",
+    "description": "Title for transfer progress dialog"
+  },
+  "transferComplete": {
+    "message": "Copy complete",
+    "description": "Title for transfer complete state"
+  },
+  "transferPartialSuccess": {
+    "message": "$1 source(s) copied, $2 failed",
+    "description": "Summary of transfer results"
+  },
+  "transferError": {
+    "message": "Transfer error",
+    "description": "General transfer error title"
+  },
+  "transferFallbackInfo": {
+    "message": "Local files will be converted to rich Markdown. Web and Drive sources will be re-imported natively.",
+    "description": "Info message about source handling"
+  },
+  "transferConfirmButton": {
+    "message": "Copy ($1 sources)",
+    "description": "Confirm button label with count"
+  },
+  "settingsFeatureTransfer": {
+    "message": "Cross-notebook copy",
+    "description": "Setting toggle label for transfer feature"
+  },
+  "transferSourcesCount": {
+    "message": "$1 sources",
+    "description": "Sources count display per notebook"
+  },
+  "transferNewNotebookBtn": {
+    "message": "+ New notebook",
+    "description": "Button to create a new notebook in transfer dialog"
+  },
+  "transferNewNotebookPrompt": {
+    "message": "New notebook name:",
+    "description": "Prompt message for creating a new notebook"
+  },
+  "transferNewNotebookPlaceholder": {
+    "message": "E.g.: My new notebook...",
+    "description": "Placeholder for new notebook name"
   }
 }

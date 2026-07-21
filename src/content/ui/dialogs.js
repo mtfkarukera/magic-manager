@@ -389,11 +389,90 @@
     okBtn.focus();
   }
 
+  /**
+   * Affiche un dialogue de saisie textuelle non bloquant (remplace prompt()).
+   *
+   * @param {string}   titleKey            - Clé i18n du titre (ou texte brut).
+   * @param {string}   placeholderKey      - Clé i18n du placeholder (ou texte brut).
+   * @param {Function} onSubmit            - Callback appelé avec la valeur saisie non vide.
+   * @param {Function} [onCancel]          - Callback appelé sur annulation.
+   */
+  function showPromptDialog(titleKey, placeholderKey, onSubmit, onCancel) {
+    lastFocusedElement = document.activeElement;
+    closeDialog();
+
+    const inputEl = createElement('input', {
+      type: 'text',
+      className: 'mm-dialog-input',
+      placeholder: t(placeholderKey) || placeholderKey
+    });
+
+    const cancelBtn = createElement('button', {
+      className: 'mm-btn mm-btn-secondary',
+      textContent: t('dialogCancelButton') || 'Annuler',
+      onClick: () => {
+        closeDialog();
+        if (onCancel) onCancel();
+      }
+    });
+
+    const confirmBtn = createElement('button', {
+      className: 'mm-btn mm-btn-primary',
+      textContent: t('dialogConfirmButton') || 'OK',
+      onClick: () => {
+        const val = inputEl.value.trim();
+        if (!val) return;
+        closeDialog();
+        if (typeof onSubmit === 'function') onSubmit(val);
+      }
+    });
+
+    inputEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        confirmBtn.click();
+      }
+    });
+
+    const dialogTitleId = 'mm-dialog-title-' + Date.now();
+    const dialog = createElement('dialog', {
+      className: 'mm-dialog mm-dialog-prompt',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': dialogTitleId
+    }, [
+      createElement('h2', { id: dialogTitleId, className: 'mm-dialog-title', textContent: t(titleKey) || titleKey }),
+      createElement('div', { className: 'mm-dialog-field' }, [inputEl]),
+      createElement('div', { className: 'mm-dialog-actions' }, [cancelBtn, confirmBtn])
+    ]);
+
+    activeDialog = dialog;
+
+    dialog.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      closeDialog();
+      if (onCancel) onCancel();
+    });
+
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) {
+        closeDialog();
+        if (onCancel) onCancel();
+      }
+    });
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    inputEl.focus();
+  }
+
   // Exposition dans le namespace global MM
   window.MM.showConfirmDialog = showConfirmDialog;
   window.MM.showFormatChoiceDialog = showFormatChoiceDialog;
   window.MM.showExportFormatDialog = showExportFormatDialog;
   window.MM.showAlertDialog = showAlertDialog;
+  window.MM.showPromptDialog = showPromptDialog;
   window.MM.closeDialog = closeDialog;
 })();
 

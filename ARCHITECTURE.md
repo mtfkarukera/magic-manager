@@ -29,6 +29,7 @@ magic-manager/
 │   │   │   ├── batch-delete.js # Module de suppression par lot de sources
 │   │   │   ├── studio-delete.js # Module de suppression par lot du Studio
 │   │   │   ├── studio-search.js # Module de recherche et filtrage du Studio
+│   │   │   ├── transfer.js    # Module de copie inter-carnets de sources [NEW]
 │   │   │   ├── syntax.js      # Module de coloration syntaxique
 │   │   │   └── chatexport.js  # Module d'export du chat
 │   │   └── ui/                # Composants d'interface partagés
