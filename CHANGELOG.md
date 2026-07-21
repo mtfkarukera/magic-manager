@@ -4,6 +4,17 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.14.8] — 2026-07-22
+
+### Corrigé & Poliment (Audit de Code)
+- 🔒 **Conformité Règle 11 (Zero innerHTML)** : Remplacement de l'affectation `innerHTML` dans `merge.js` (L344) par une construction DOM sémantique via `document.createElement()` et `replaceChildren`.
+- ⚡ **Robustesse & Fuites de Mémoire (Studio Delete & Search)** :
+  - Déconnexion temporaire de `studioObserver` pendant `injectStudioCheckboxes` dans `studio-delete.js` éliminant les boucles de mutations CPU.
+  - Détachement propre des handlers de clics sur les onglets mobiles `[role="tab"]` dans `cleanupStudioDelete()`.
+  - Retrait inconditionnel de l'écouteur `document` du popover de filtres dans `studio-search.js`.
+- ⚡ **Résolution de la Race Condition (`settings.js`)** : Annulation du timer `outsideClickTimeoutId` via `clearTimeout` lors de la fermeture du popover de réglages.
+- 🎨 **Polissage UI Glassmorphism & Micro-animations (`magic-manager.css`)** : Adoucissement de l'opacité des contours translucides (*Rim Light*) de `0.45` à `0.15`, ajout d'un reflet interne `box-shadow inset`, et harmonisation des surprétentions tactiles de survol (`scale(1.02)`).
+
 ## [0.14.7] — 2026-07-22
 
 ### Corrigé & Amélioré

@@ -391,6 +391,25 @@
   // Composants et UI
   // ═══════════════════════════════════════════════════════════════════════
 
+  let outsideFilterClickListener = null; // Référence à l'écouteur de clic extérieur du popover
+
+  /**
+   * Ferme proprement le popover de filtres et retire l'écouteur global.
+   */
+  function closeStudioFilterPopover(anchorBtn) {
+    if (outsideFilterClickListener) {
+      document.removeEventListener('click', outsideFilterClickListener);
+      outsideFilterClickListener = null;
+    }
+    if (filterPopoverEl) {
+      filterPopoverEl.remove();
+      filterPopoverEl = null;
+    }
+    if (anchorBtn) {
+      anchorBtn.classList.toggle('mm-active', activeTypeFilters.size > 0);
+    }
+  }
+
   /**
    * Crée l'icône SVG du bouton de filtre (filter_list).
    */
@@ -432,9 +451,7 @@
    */
   function toggleFilterPopover(anchorBtn) {
     if (filterPopoverEl && filterPopoverEl.parentNode) {
-      filterPopoverEl.remove();
-      filterPopoverEl = null;
-      anchorBtn.classList.toggle('mm-active', activeTypeFilters.size > 0);
+      closeStudioFilterPopover(anchorBtn);
       return;
     }
 
@@ -499,14 +516,12 @@
 
     // Écouter le clic à l'extérieur pour fermer le popover
     setTimeout(function () {
-      document.addEventListener('click', function closePopover(e) {
+      outsideFilterClickListener = function (e) {
         if (filterPopoverEl && !filterPopoverEl.contains(e.target) && e.target !== anchorBtn) {
-          filterPopoverEl.remove();
-          filterPopoverEl = null;
-          anchorBtn.classList.toggle('mm-active', activeTypeFilters.size > 0);
-          document.removeEventListener('click', closePopover);
+          closeStudioFilterPopover(anchorBtn);
         }
-      });
+      };
+      document.addEventListener('click', outsideFilterClickListener);
     }, 0);
   }
 
@@ -733,10 +748,7 @@
       searchBarContainer.remove();
       searchBarContainer = null;
     }
-    if (filterPopoverEl) {
-      filterPopoverEl.remove();
-      filterPopoverEl = null;
-    }
+    closeStudioFilterPopover(null);
     hideNoResultsMessage();
 
     // Restaurer toutes les cartes masquées

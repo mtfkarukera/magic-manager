@@ -46,6 +46,7 @@
 
   /** Handler du clic extérieur pour fermer le popover */
   let outsideClickHandler = null;
+  let outsideClickTimeoutId = null;
   let popoverKeydownHandler = null;
   let popoverFocusoutHandler = null;
 
@@ -216,7 +217,8 @@
     popoverElement.addEventListener('focusout', popoverFocusoutHandler);
 
     // Fermer au clic extérieur (avec délai pour éviter la fermeture immédiate)
-    setTimeout(function () {
+    outsideClickTimeoutId = setTimeout(function () {
+      outsideClickTimeoutId = null;
       outsideClickHandler = function (e) {
         if (popoverElement && !popoverElement.contains(e.target) && e.target !== settingsButton) {
           closeSettingsPopover();
@@ -230,6 +232,10 @@
    * Ferme le popover de paramétrage.
    */
   function closeSettingsPopover() {
+    if (outsideClickTimeoutId) {
+      clearTimeout(outsideClickTimeoutId);
+      outsideClickTimeoutId = null;
+    }
     if (popoverElement) {
       popoverElement.removeEventListener('focusout', popoverFocusoutHandler);
       popoverElement.remove();

@@ -341,7 +341,14 @@
       statusEl.style.color = '#34A853';
       
       if (anyTruncated) {
-        substatusEl.innerHTML = 'La nouvelle source a été ajoutée. <br><strong style="color: #f59e0b;">Attention : au moins un document a été tronqué par Google en mode Riche. Si des données manquent, recréez la fusion en mode Simple.</strong>';
+        substatusEl.replaceChildren(
+          document.createTextNode('La nouvelle source a été ajoutée. '),
+          document.createElement('br'),
+          createElement('strong', {
+            style: 'color: #f59e0b;',
+            textContent: 'Attention : au moins un document a été tronqué par Google en mode Riche. Si des données manquent, recréez la fusion en mode Simple.'
+          })
+        );
       } else {
         substatusEl.textContent = 'La nouvelle source a été ajoutée. Elle va apparaître dans votre carnet sous peu.';
       }

@@ -491,14 +491,22 @@
     );
   }
 
-  /**
-   * Exécute les injections dans le Studio.
-   */
+  let mobileTabHandler = null;
+  let observedMobileTabs = [];
+
   function dispatchStudioInjections() {
     const studioPanel = findStudioPanel();
     if (!studioPanel) return;
 
+    // Déconnecter temporairement l'observer pour éviter une cascade de mutations auto-déclenchée
+    if (studioObserver) studioObserver.disconnect();
     injectStudioCheckboxes(studioPanel);
+    if (studioObserver) {
+      studioObserver.observe(studioPanel, {
+        childList: true,
+        subtree: true
+      });
+    }
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -526,20 +534,23 @@
       subtree: true
     });
 
-    // Écouter les changements d'onglet mobile pour ré-observer le Studio s'il a changé de nœud
-    document.querySelectorAll('[role="tab"]').forEach(tab => {
-      tab.addEventListener('click', function () {
-        setTimeout(function () {
-          const currentPanel = findStudioPanel();
-          if (currentPanel && currentPanel !== studioPanel) {
-            if (studioObserver) studioObserver.disconnect();
-            studioPanel = currentPanel;
-            studioObserver = new MutationObserver(dispatchStudioInjections);
-            studioObserver.observe(studioPanel, { childList: true, subtree: true });
-          }
-          dispatchStudioInjections();
-        }, 300);
-      });
+    // Écouter les changements d'onglet mobile avec un handler nommé nettoyable
+    mobileTabHandler = function () {
+      setTimeout(function () {
+        const currentPanel = findStudioPanel();
+        if (currentPanel && currentPanel !== studioPanel) {
+          if (studioObserver) studioObserver.disconnect();
+          studioPanel = currentPanel;
+          studioObserver = new MutationObserver(dispatchStudioInjections);
+          studioObserver.observe(studioPanel, { childList: true, subtree: true });
+        }
+        dispatchStudioInjections();
+      }, 300);
+    };
+
+    observedMobileTabs = Array.from(document.querySelectorAll('[role="tab"]'));
+    observedMobileTabs.forEach(tab => {
+      tab.addEventListener('click', mobileTabHandler);
     });
 
     dispatchStudioInjections();
@@ -550,6 +561,14 @@
     if (studioObserver) {
       studioObserver.disconnect();
       studioObserver = null;
+    }
+
+    if (mobileTabHandler && observedMobileTabs.length > 0) {
+      observedMobileTabs.forEach(tab => {
+        tab.removeEventListener('click', mobileTabHandler);
+      });
+      observedMobileTabs = [];
+      mobileTabHandler = null;
     }
 
     if (batchDeleteWrapper) {
