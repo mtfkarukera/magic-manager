@@ -500,5 +500,21 @@
   "transferNewNotebookPlaceholder": {
     "message": "Ví dụ: Sổ tay mới của tôi...",
     "description": "Placeholder for new notebook name"
+  },
+  "exportBatchErrorTitle": {
+    "message": "Lỗi xuất file",
+    "description": "Tiêu đề hộp thoại lỗi xuất file"
+  },
+  "exportBatchErrorMsg": {
+    "message": "Đã xảy ra lỗi không mong muốn trong quá trình xuất file. Vui lòng thử lại.",
+    "description": "Thông báo lỗi xuất file"
+  },
+  "mergeErrorTitle": {
+    "message": "Lỗi gộp file",
+    "description": "Tiêu đề hộp thoại lỗi gộp file"
+  },
+  "mergeErrorMsg": {
+    "message": "Đã xảy ra lỗi không mong muốn trong quá trình gộp file. Vui lòng thử lại.",
+    "description": "Thông báo lỗi gộp file"
   }
 }

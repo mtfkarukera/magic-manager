@@ -500,5 +500,21 @@
   "transferNewNotebookPlaceholder": {
     "message": "例: 新しいノートブック...",
     "description": "Placeholder for new notebook name"
+  },
+  "exportBatchErrorTitle": {
+    "message": "エクスポートエラー",
+    "description": "エクスポートエラーダイアログのタイトル"
+  },
+  "exportBatchErrorMsg": {
+    "message": "エクスポート中に予期しないエラーが発生しました。もう一度お試しください。",
+    "description": "エクスポートエラーメッセージ"
+  },
+  "mergeErrorTitle": {
+    "message": "結合エラー",
+    "description": "結合エラーダイアログのタイトル"
+  },
+  "mergeErrorMsg": {
+    "message": "結合中に予期しないエラーが発生しました。もう一度お試しください。",
+    "description": "結合エラーメッセージ"
   }
 }

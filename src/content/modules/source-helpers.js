@@ -30,11 +30,16 @@
     );
     if (el) return el;
 
-    // Heuristique 3 : Recherche par contenu sémantique du panneau Sources
-    const panels = Array.from(document.querySelectorAll('div, aside, section'));
+    // Heuristique 3 : Recherche ciblée par contenu sémantique (sélecteurs restreints)
+    const panels = Array.from(document.querySelectorAll(
+      'mat-drawer aside, mat-drawer section, mat-sidenav aside, mat-sidenav section, ' +
+      '[class*="drawer"] > aside, [class*="drawer"] > section, ' +
+      '[class*="panel"][class*="source"], [class*="sidebar"] > section'
+    ));
     for (let i = 0; i < panels.length; i++) {
       const panel = panels[i];
-      const text = panel.textContent || '';
+      const firstChild = panel.querySelector('h1, h2, h3, [class*="header"], [class*="title"]');
+      const text = firstChild ? firstChild.textContent : (panel.textContent || '').substring(0, 500);
       if (text.includes('Sources') && text.includes('Ajouter des sources')) {
         const scrollable = panel.querySelector('[class*="scroll"], div[style*="overflow"]');
         if (scrollable) return scrollable;

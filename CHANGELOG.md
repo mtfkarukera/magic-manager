@@ -4,6 +4,23 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.14.9] — 2026-07-22
+
+### Corrigé & Optimisé (Sprint de Correction d'Audit)
+- ⚡ **Optimisation Majeure des Performances DOM (`source-helpers.js`)** : Restriction ciblée de l'heuristique de recherche sémantique du conteneur des sources, éliminant les reflows et scans CPU excessifs sur l'ensemble de la page.
+- 🛡️ **Robustesse & Gestion d'Erreurs (`export.js` & `merge.js`)** : Encapsulation globale des opérations asynchrones `startBatchProcess` et `runMergeProcess` dans des blocs `try/catch/finally` avec dialogues d'erreur explicites.
+- ♿ **Accessibilité WCAG 2.1 AA (`merge.js` & `search.js`)** :
+  - Liaisance sémantique label↔input via `htmlFor` et `id` dans le formulaire de fusion.
+  - Ajout des attributs `aria-pressed` dynamiques sur les boutons de sélection de format de fusion.
+  - Annonce vocale dynamique de la progression de fusion via `role="status"` et `aria-live="polite"`.
+  - Calcul dynamique de contraste texte/fond conforme WCAG AA sur les badges de doublons HSL.
+- 🎨 **Design System & Polissage CSS (`magic-manager.css`)** :
+  - Centralisation des couleurs d'action dans des Custom Properties CSS avec adaptation complète en mode sombre.
+  - Restauration de l'effet d'éclairage de bord (*Rim Lighting*) `box-shadow inset` en Dark Mode sur les popovers et boîtes de dialogue modales.
+  - Dynamisation du halo de focus sur les champs via `color-mix()` et adaptation responsive `min(320px, 100%)`.
+  - Ajout d'une micro-animation cinématique `scale(0.8) → scale(1)` sur l'apparition des boutons de réinitialisation de recherche.
+- 🌍 **Internationalisation** : Prise en charge à 100% des nouvelles clés d'erreur dans les 7 langues de l'extension.
+
 ## [0.14.8] — 2026-07-22
 
 ### Corrigé & Poliment (Audit de Code)

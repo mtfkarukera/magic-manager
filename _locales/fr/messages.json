@@ -500,5 +500,21 @@
   "transferNewNotebookPlaceholder": {
     "message": "Ex : Mon nouveau carnet...",
     "description": "Placeholder pour le nom du nouveau carnet"
+  },
+  "exportBatchErrorTitle": {
+    "message": "Erreur d'exportation",
+    "description": "Titre du dialogue d'erreur d'exportation"
+  },
+  "exportBatchErrorMsg": {
+    "message": "Une erreur inattendue est survenue pendant l'exportation. Veuillez réessayer.",
+    "description": "Message d'erreur lors de l'exportation"
+  },
+  "mergeErrorTitle": {
+    "message": "Erreur de fusion",
+    "description": "Titre du dialogue d'erreur de fusion"
+  },
+  "mergeErrorMsg": {
+    "message": "Une erreur inattendue est survenue pendant la fusion. Veuillez réessayer.",
+    "description": "Message d'erreur lors de la fusion"
   }
 }

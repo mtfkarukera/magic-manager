@@ -60,10 +60,12 @@
     const titleField = createElement('div', { className: 'mm-merge-field' }, [
       createElement('label', { 
         className: 'mm-merge-label', 
+        htmlFor: 'mm-merge-title-input',
         textContent: t('mergedTitleLabel') || 'Titre de la nouvelle source' 
       }),
       createElement('input', {
         type: 'text',
+        id: 'mm-merge-title-input',
         className: 'mm-merge-input',
         value: defaultTitle,
         placeholder: 'Saisissez le titre...'
@@ -76,48 +78,48 @@
       textContent: 'Format du document final' 
     });
     
+    function setActiveFormatBtn(activeBtn) {
+      [mdRicheBtn, mdSimpleBtn, pdfRicheBtn, pdfSimpleBtn].forEach(btn => {
+        const isActive = btn === activeBtn;
+        btn.classList.toggle('active', isActive);
+        btn.setAttribute('aria-pressed', String(isActive));
+      });
+    }
+
     const mdRicheBtn = createElement('button', {
       className: 'mm-merge-format-btn active',
+      'aria-pressed': 'true',
       textContent: t('mergeFormatMarkdownRiche') || 'Markdown Riche',
       onClick: () => {
         selectedFormat = 'Markdown-Riche';
-        mdRicheBtn.classList.add('active');
-        mdSimpleBtn.classList.remove('active');
-        pdfSimpleBtn.classList.remove('active');
-        pdfRicheBtn.classList.remove('active');
+        setActiveFormatBtn(mdRicheBtn);
       }
     });
     const mdSimpleBtn = createElement('button', {
       className: 'mm-merge-format-btn',
+      'aria-pressed': 'false',
       textContent: t('mergeFormatMarkdownSimple') || 'Markdown Simple',
       onClick: () => {
         selectedFormat = 'Markdown-Simple';
-        mdSimpleBtn.classList.add('active');
-        mdRicheBtn.classList.remove('active');
-        pdfSimpleBtn.classList.remove('active');
-        pdfRicheBtn.classList.remove('active');
+        setActiveFormatBtn(mdSimpleBtn);
       }
     });
     const pdfRicheBtn = createElement('button', {
       className: 'mm-merge-format-btn',
+      'aria-pressed': 'false',
       textContent: t('mergeFormatPdfRiche') || 'PDF Riche',
       onClick: () => {
         selectedFormat = 'PDF-Riche';
-        pdfRicheBtn.classList.add('active');
-        mdRicheBtn.classList.remove('active');
-        mdSimpleBtn.classList.remove('active');
-        pdfSimpleBtn.classList.remove('active');
+        setActiveFormatBtn(pdfRicheBtn);
       }
     });
     const pdfSimpleBtn = createElement('button', {
       className: 'mm-merge-format-btn',
+      'aria-pressed': 'false',
       textContent: t('mergeFormatPdfSimple') || 'PDF Simple',
       onClick: () => {
         selectedFormat = 'PDF-Simple';
-        pdfSimpleBtn.classList.add('active');
-        mdRicheBtn.classList.remove('active');
-        mdSimpleBtn.classList.remove('active');
-        pdfRicheBtn.classList.remove('active');
+        setActiveFormatBtn(pdfSimpleBtn);
       }
     });
 
@@ -137,9 +139,17 @@
       className: 'mm-merge-btn-confirm',
       textContent: 'Fusionner',
       onClick: async () => {
-        const titleInput = titleField.querySelector('input');
-        const finalTitle = titleInput.value.trim() || defaultTitle;
-        await runMergeProcess(checkboxes, finalTitle, selectedFormat, dialog);
+        try {
+          const titleInput = titleField.querySelector('input');
+          const finalTitle = (titleInput ? titleInput.value.trim() : '') || defaultTitle;
+          await runMergeProcess(checkboxes, finalTitle, selectedFormat, dialog);
+        } catch (err) {
+          console.error('[MM] Erreur lors de l\'exécution de la fusion :', err);
+          window.MM.showAlertDialog(
+            window.MM.t('mergeErrorTitle') || 'Erreur de fusion',
+            window.MM.t('mergeErrorMsg') || 'Une erreur inattendue est survenue pendant la fusion. Veuillez réessayer.'
+          );
+        }
       }
     });
 
@@ -196,7 +206,11 @@
     });
 
     dialog.replaceChildren();
-    const progressContainer = createElement('div', { className: 'mm-merge-progress-container' }, [
+    const progressContainer = createElement('div', { 
+      className: 'mm-merge-progress-container',
+      role: 'status',
+      'aria-live': 'polite'
+    }, [
       createElement('div', { className: 'mm-merge-spinner' }),
       createElement('div', {
         id: 'mm-merge-status',

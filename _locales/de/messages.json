@@ -500,5 +500,21 @@
   "transferNewNotebookPlaceholder": {
     "message": "z.B.: Mein neues Notizbuch...",
     "description": "Placeholder for new notebook name"
+  },
+  "exportBatchErrorTitle": {
+    "message": "Exportfehler",
+    "description": "Titel des Exportfehler-Dialogs"
+  },
+  "exportBatchErrorMsg": {
+    "message": "Unerwarteter Fehler beim Exportieren. Bitte versuchen Sie es erneut.",
+    "description": "Fehlermeldung beim Exportieren"
+  },
+  "mergeErrorTitle": {
+    "message": "Zusammenführungsfehler",
+    "description": "Titel des Zusammenführungsfehler-Dialogs"
+  },
+  "mergeErrorMsg": {
+    "message": "Unerwarteter Fehler beim Zusammenführen. Bitte versuchen Sie es erneut.",
+    "description": "Fehlermeldung beim Zusammenführen"
   }
 }

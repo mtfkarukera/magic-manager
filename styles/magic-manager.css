@@ -72,6 +72,16 @@
   --mm-token-string: #A31515;
   --mm-token-comment: #008000;
   --mm-token-number: #098658;
+
+  /* Couleurs sémantiques d'action */
+  --mm-color-drive: #34A853;
+  --mm-color-url: #4285F4;
+  --mm-color-local: #9AA0A6;
+  --mm-color-indigo: #6366f1;
+  --mm-color-delete: #dc2626;
+  --mm-color-transfer: #2563eb;
+  --mm-color-merge: #16a34a;
+  --mm-color-export-dark: #334155;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -112,6 +122,16 @@
     --mm-token-string: #CE9178;
     --mm-token-comment: #85C46C;
     --mm-token-number: #B5CEA8;
+
+    /* Couleurs sémantiques d'action en mode sombre */
+    --mm-color-drive: #4ade80;
+    --mm-color-url: #60a5fa;
+    --mm-color-local: #bdc1c6;
+    --mm-color-indigo: #818cf8;
+    --mm-color-delete: #fca5a5;
+    --mm-color-transfer: #60a5fa;
+    --mm-color-merge: #4ade80;
+    --mm-color-export-dark: #ffffff;
   }
 }
 
@@ -633,7 +653,7 @@
   position: absolute;
   right: 40px;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%) scale(0.8);
   background: none;
   border: none;
   color: var(--mm-on-surface-variant);
@@ -644,12 +664,13 @@
   border-radius: var(--mm-radius-full);
   opacity: 0;
   pointer-events: none;
-  transition: opacity var(--mm-transition-fast), color var(--mm-transition-fast),
-              background-color var(--mm-transition-fast);
+  transition: opacity var(--mm-transition-fast), transform var(--mm-transition-fast),
+              color var(--mm-transition-fast), background-color var(--mm-transition-fast);
 }
 
 .mm-search-clear.mm-visible {
   opacity: 1;
+  transform: translateY(-50%) scale(1);
   pointer-events: auto;
 }
 
@@ -1379,7 +1400,7 @@
   position: absolute;
   right: 40px;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(-50%) scale(0.8);
   border: none;
   background: none;
   color: var(--mm-on-surface-variant);
@@ -1387,13 +1408,14 @@
   cursor: pointer;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease, color 0.2s ease;
+  transition: opacity 0.2s ease, transform 0.2s ease, color 0.2s ease;
   padding: 2px 6px;
   line-height: 1;
 }
 
 .mm-studio-search-clear.mm-visible {
   opacity: 1;
+  transform: translateY(-50%) scale(1);
   pointer-events: auto;
 }
 

@@ -500,5 +500,21 @@
   "transferNewNotebookPlaceholder": {
     "message": "Ex.: Meu novo caderno...",
     "description": "Placeholder for new notebook name"
+  },
+  "exportBatchErrorTitle": {
+    "message": "Erro de exportação",
+    "description": "Título do diálogo de erro de exportação"
+  },
+  "exportBatchErrorMsg": {
+    "message": "Ocorreu um erro inesperado durante a exportação. Tente novamente.",
+    "description": "Mensagem de erro de exportação"
+  },
+  "mergeErrorTitle": {
+    "message": "Erro de mesclagem",
+    "description": "Título do diálogo de erro de mesclagem"
+  },
+  "mergeErrorMsg": {
+    "message": "Ocorreu um erro inesperado durante a mesclagem. Tente novamente.",
+    "description": "Mensagem de erro de mesclagem"
   }
 }

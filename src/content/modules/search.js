@@ -393,6 +393,18 @@
     return contentGroups;
   }
 
+  /**
+   * Calcule la couleur de texte (sombre ou claire) pour un ratio de contraste conforme WCAG AA sur fond HSL.
+   * @param {string} hslString - Chaîne de couleur type "hsl(h, s%, l%)"
+   * @returns {string} Hex color (#1a1a1a ou #ffffff)
+   */
+  function getContrastTextColor(hslString) {
+    const match = hslString.match(/hsl\(\s*(\d+),\s*(\d+)%,\s*(\d+)%\)/);
+    if (!match) return '#ffffff';
+    const l = parseInt(match[3], 10);
+    return l > 50 ? '#1a1a1a' : '#ffffff';
+  }
+
   // Couleurs associées aux niveaux de similarité
   const DUPE_COLORS = [
     'hsl(0, 80%, 60%)',    // Groupe 0 : rouge

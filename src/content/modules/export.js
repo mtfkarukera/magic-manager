@@ -92,18 +92,33 @@
       return;
     }
 
-    // Récupérer toutes les sources du carnet via RPC pour le matching par titre
-    let allSources = [];
-    try {
-      allSources = await window.MM.rpc.getNotebookSources(notebookId);
-    } catch (e) {
-      console.warn('[MM] Impossible de lister les sources du notebook via RPC.', e);
+    let isCancelled = false;
+    let progressDialog = null;
+
+    if (checkboxes.length > 1) {
+      progressDialog = window.MM.showProgressDialog(
+        window.MM.t('exportingTitle') || 'Exportation en cours...',
+        checkboxes.length,
+        function () {
+          console.log('[MM] Exportation annulée par l\'utilisateur.');
+          isCancelled = true;
+        }
+      );
     }
 
-    const zipFiles = [];
-    const activeNotebookName = getActiveNotebookName();
-    const timestamp = getFormattedTimestamp();
-    let anyTruncated = false;
+    try {
+      // Récupérer toutes les sources du carnet via RPC pour le matching par titre
+      let allSources = [];
+      try {
+        allSources = await window.MM.rpc.getNotebookSources(notebookId);
+      } catch (e) {
+        console.warn('[MM] Impossible de lister les sources du notebook via RPC.', e);
+      }
+
+      const zipFiles = [];
+      const activeNotebookName = getActiveNotebookName();
+      const timestamp = getFormattedTimestamp();
+      let anyTruncated = false;
 
     for (let i = 0; i < checkboxes.length; i++) {
       if (window.MM.getActiveNotebookId() !== notebookId) {
@@ -203,6 +218,17 @@
     }
 
     console.log('[MM] Exportation par lot terminée');
+    } catch (globalErr) {
+      console.error('[MM] Erreur globale lors du processus d\'exportation par lot :', globalErr);
+      window.MM.showAlertDialog(
+        window.MM.t('exportBatchErrorTitle') || 'Erreur d\'exportation',
+        window.MM.t('exportBatchErrorMsg') || 'Une erreur inattendue est survenue pendant l\'exportation. Veuillez réessayer.'
+      );
+    } finally {
+      if (progressDialog && typeof progressDialog.close === 'function') {
+        progressDialog.close();
+      }
+    }
   }
 
   function getActiveNotebookName() {

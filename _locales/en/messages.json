@@ -500,5 +500,21 @@
   "transferNewNotebookPlaceholder": {
     "message": "E.g.: My new notebook...",
     "description": "Placeholder for new notebook name"
+  },
+  "exportBatchErrorTitle": {
+    "message": "Export Error",
+    "description": "Export error dialog title"
+  },
+  "exportBatchErrorMsg": {
+    "message": "An unexpected error occurred during export. Please try again.",
+    "description": "Export error message"
+  },
+  "mergeErrorTitle": {
+    "message": "Merge Error",
+    "description": "Merge error dialog title"
+  },
+  "mergeErrorMsg": {
+    "message": "An unexpected error occurred during merging. Please try again.",
+    "description": "Merge error message"
   }
 }
