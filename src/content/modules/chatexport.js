@@ -492,27 +492,36 @@
     '[class*="chat-actions"]'
   ];
 
-  const CHAT_HEADER_EXCLUSIONS = 'section.source-panel, [class*="source-panel"], .left-sidebar, mat-tab-header, [class*="tab-header"], [role="tablist"], .mobile-header, mat-tab-nav-bar';
+  const CHAT_HEADER_EXCLUSIONS = 'section.source-panel, [class*="source-panel"], .left-sidebar, mat-tab-header, [class*="tab-header"], [role="tablist"], .mobile-header, mat-tab-nav-bar, [class*="emoji"], [class*="keyboard"], .chat-input, [class*="input-container"]';
 
   /**
    * Tente de trouver l'en-tête du panneau Discussion de manière ultra-robuste.
-   * Exclut formellement la barre d'onglets mobiles globale (mat-tab-header).
+   * Exclut formellement la barre d'onglets mobiles globale (mat-tab-header)
+   * et le clavier d'émojis (DIV.emoji-keyboard__toolbar).
    * @returns {Element|null}
    */
   function findChatPanelHeader() {
-    // 1. Approche prioritaire : cibler directement le conteneur du chat/discussion
-    const chatPanel = document.querySelector('section.chat-panel, [class*="chat-panel"], [class*="conversation-panel"], div[role="region"]');
-    if (chatPanel) {
-      const innerHeader = chatPanel.querySelector('.panel-header, [class*="panel-header"], [class*="header"], [class*="toolbar"]');
-      if (innerHeader && !innerHeader.closest(CHAT_HEADER_EXCLUSIONS)) {
-        return innerHeader;
+    // 1. Approche prioritaire : détection de la sous-barre par les icônes d'actions natives du chat (tune / sliders ou more_vert)
+    // Particulièrement efficace en mode mobile où les curseurs 'tune' sont dans la sous-barre du chat
+    const chatIcons = document.querySelectorAll('mat-icon, svg, button');
+    for (const icon of chatIcons) {
+      const text = (icon.textContent || '').trim();
+      const aria = icon.getAttribute('aria-label') || '';
+      if (text === 'tune' || text === 'sliders' || (text === 'more_vert' && !icon.closest('.source-panel, [class*="source-card"]')) || /settings|options|paramètres/i.test(aria)) {
+        if (icon.closest(CHAT_HEADER_EXCLUSIONS)) continue;
+
+        // Remonter jusqu'au conteneur toolbar de cette icône
+        const toolbar = icon.closest('.panel-header, [class*="panel-header"], [class*="header"], [class*="toolbar"], [class*="actions"], [class*="controls"], div');
+        if (toolbar && !toolbar.closest(CHAT_HEADER_EXCLUSIONS) && toolbar.offsetWidth > 60) {
+          return toolbar;
+        }
       }
     }
 
     // 2. Approche par texte : chercher un panel-header contenant "Discussion" ou "Chat"
     const panelHeaders = document.querySelectorAll('.panel-header, [class*="panel-header"], [class*="header"]');
     for (const h of panelHeaders) {
-      // Écarter à coup sûr le panneau des sources et la barre d'onglets mobiles
+      // Écarter à coup sûr le panneau des sources, la barre d'onglets et le clavier d'émojis
       if (h.closest(CHAT_HEADER_EXCLUSIONS)) {
         continue;
       }
@@ -522,24 +531,13 @@
       }
     }
 
-    // 3. Approche descendante : Partir du textarea du chat pour cibler son conteneur
-    const chatInput = document.querySelector(
-      'textarea[aria-label*="Ask" i], ' +
-      'textarea[placeholder*="Ask" i], ' +
-      'textarea[aria-label*="tapez" i], ' +
-      'textarea[aria-label*="Start typing" i], ' +
-      '.chat-input textarea'
-    );
-    if (chatInput) {
-      const chatPanelContainer = chatInput.closest(
-        'section, div[role="region"], [class*="chat-panel"], [class*="conversation-panel"]'
-      );
-      if (chatPanelContainer) {
-        const header = chatPanelContainer.querySelector(
-          '.panel-header, [class*="header"], [class*="toolbar"]'
-        );
-        if (header && !header.closest(CHAT_HEADER_EXCLUSIONS)) {
-          return header;
+    // 3. Approche descendante : Partir du conteneur du chat
+    const chatPanel = document.querySelector('section.chat-panel, [class*="chat-panel"], [class*="conversation-panel"], div[role="region"]');
+    if (chatPanel) {
+      const innerHeaders = chatPanel.querySelectorAll('.panel-header, [class*="panel-header"], [class*="header"], [class*="toolbar"]');
+      for (const ih of innerHeaders) {
+        if (!ih.closest(CHAT_HEADER_EXCLUSIONS)) {
+          return ih;
         }
       }
     }

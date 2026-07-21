@@ -4,6 +4,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.14.3] — 2026-07-21
+
+### Corrigé
+- 📱 **Correctif de Positionnement Chat Export Mobile** : Exclusion stricte de tout composant d'entrée / clavier d'émojis (`DIV.emoji-keyboard__toolbar`) et détection prioritaire de la sous-barre de conversation via l'emplacement des icônes d'actions natives (`tune` / `more_vert`). Le bouton d'exportation se place à 100% à l'extrême gauche de la sous-barre en mode mobile (à gauche des réglages).
+
 ## [0.14.2] — 2026-07-21
 
 ### Corrigé & Amélioré
