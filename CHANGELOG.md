@@ -4,6 +4,16 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.13.0] — 2026-07-21
+
+### Ajouté & Modifié (Release Publique AMO)
+- 🚀 **Version Majeure Publique AMO** : Publication de la version v0.13.0 regroupant l'ensemble des fonctionnalités et optimisations de la roadmap (Sprints 3 à 7.2) :
+  - 🔎 **Recherche & Filtres Studio** : Recherche textuelle et filtres par types d'artéfacts (audio, cartes mentales, quiz, etc.) avec le raccourci dédié `Cmd/Ctrl+Shift+L`.
+  - 📤 **Exports & Fusions Riche vs Simple** : Modes Riche (Markdown/PDF structurés via Turndown & jsPDF avec images et tableaux) et Simple (texte brut garanti 100% non-tronqué par RPC `hizoJc`).
+  - ⚠️ **Alerte de troncature proactive** : Encadrement visuel préventif sur les risques de coupures réseau pour les fichiers volumineux.
+  - 🗑️ **Suppression en lot du Studio & Empreinte de liste** : Sélection sécurisée avec protection anti-desynchronisation.
+  - 🔄 **Stabilité & Gestion Inter-carnets** : Réinitialisation automatique intelligente au changement de carnet et préservation du contexte lors de la lecture d'artéfacts.
+
 ## [0.12.2] — 2026-07-21
 
 ### Corrigé
