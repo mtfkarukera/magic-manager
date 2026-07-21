@@ -496,69 +496,94 @@
 
   /**
    * Tente de trouver l'en-tête du panneau Discussion de manière ultra-robuste.
-   * Exclut formellement la barre d'onglets mobiles globale (mat-tab-header)
-   * et le clavier d'émojis (DIV.emoji-keyboard__toolbar).
+   * Branched hermétiquement entre Desktop (100% logique v0.14.1 éprouvée) et Mobile.
    * @returns {Element|null}
    */
   function findChatPanelHeader() {
-    // 1. Approche prioritaire : détection de la sous-barre par les icônes d'actions natives du chat (tune / sliders ou more_vert)
-    // Particulièrement efficace en mode mobile où les curseurs 'tune' sont dans la sous-barre du chat
+    const isDesktop = typeof window.MM.detectDesktopLayout === 'function'
+      ? window.MM.detectDesktopLayout()
+      : window.innerWidth > 900;
+
+    if (isDesktop) {
+      // ═══════════════════════════════════════════════════════════════════
+      // BRANCHE DESKTOP (Logique v0.14.1 exacte, 100% stable et testée)
+      // ═══════════════════════════════════════════════════════════════════
+
+      // 1. Approche par texte : chercher un panel-header contenant "Discussion" ou "Chat"
+      const panelHeaders = document.querySelectorAll('.panel-header, [class*="panel-header"], [class*="header"]');
+      for (const h of panelHeaders) {
+        // Écarter uniquement le panneau des sources de gauche
+        if (h.closest('section.source-panel, [class*="source-panel"], .left-sidebar')) {
+          continue;
+        }
+        const text = h.textContent || '';
+        if (/discussion|chat/i.test(text)) {
+          return h;
+        }
+      }
+
+      // 2. Approche descendante : Partir du textarea du chat pour cibler son conteneur
+      const chatInput = document.querySelector(
+        'textarea[aria-label*="Ask" i], ' +
+        'textarea[placeholder*="Ask" i], ' +
+        'textarea[aria-label*="tapez" i], ' +
+        'textarea[aria-label*="Start typing" i], ' +
+        '.chat-input textarea'
+      );
+      if (chatInput) {
+        const chatPanel = chatInput.closest(
+          'section, div[role="region"], [class*="chat-panel"], [class*="conversation-panel"]'
+        );
+        if (chatPanel) {
+          const header = chatPanel.querySelector(
+            '.panel-header, [class*="header"], [class*="toolbar"]'
+          );
+          if (header && !header.closest('section.source-panel, [class*="source-panel"], .left-sidebar')) {
+            return header;
+          }
+        }
+      }
+
+      // 3. Repli candidats directs Desktop
+      for (const sel of CHAT_HEADER_SELECTORS) {
+        const candidates = document.querySelectorAll(sel);
+        for (const el of candidates) {
+          if (!el.closest('section.source-panel, [class*="source-panel"], .left-sidebar')) {
+            return el;
+          }
+        }
+      }
+
+      return null;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════
+    // BRANCHE MOBILE (Ciblage sous-barre sous l'onglet actif sans impacter Desktop)
+    // ═══════════════════════════════════════════════════════════════════
+    const MOBILE_EXCLUSIONS = 'section.source-panel, [class*="source-panel"], .left-sidebar, mat-tab-header, [class*="tab-header"], [role="tablist"], .mobile-header, mat-tab-nav-bar, [class*="emoji"], [class*="keyboard"], .chat-input, [class*="input-container"]';
+
+    // 1. Détection par l'icône de réglages 'tune' ou 'more_vert' dans la sous-barre mobile
     const chatIcons = document.querySelectorAll('mat-icon, svg, button');
     for (const icon of chatIcons) {
       const text = (icon.textContent || '').trim();
       const aria = icon.getAttribute('aria-label') || '';
       if (text === 'tune' || text === 'sliders' || (text === 'more_vert' && !icon.closest('.source-panel, [class*="source-card"]')) || /settings|options|paramètres/i.test(aria)) {
-        if (icon.closest(CHAT_HEADER_EXCLUSIONS)) continue;
-
-        // Remonter jusqu'au conteneur toolbar de cette icône
-        const toolbar = icon.closest('.panel-header, [class*="panel-header"], [class*="header"], [class*="toolbar"], [class*="actions"], [class*="controls"], div');
-        if (toolbar && !toolbar.closest(CHAT_HEADER_EXCLUSIONS) && toolbar.offsetWidth > 60) {
+        if (icon.closest(MOBILE_EXCLUSIONS)) continue;
+        const toolbar = icon.closest('.panel-header, [class*="panel-header"], [class*="header"], [class*="toolbar"], div');
+        if (toolbar && !toolbar.closest(MOBILE_EXCLUSIONS) && toolbar.offsetWidth > 40) {
           return toolbar;
         }
       }
     }
 
-    // 2. Approche par texte : chercher un panel-header contenant "Discussion" ou "Chat"
-    const panelHeaders = document.querySelectorAll('.panel-header, [class*="panel-header"], [class*="header"]');
-    for (const h of panelHeaders) {
-      // Écarter à coup sûr le panneau des sources, la barre d'onglets et le clavier d'émojis
-      if (h.closest(CHAT_HEADER_EXCLUSIONS)) {
-        continue;
-      }
-      const text = h.textContent || '';
-      if (/discussion|chat/i.test(text)) {
-        return h;
-      }
-    }
-
-    // 3. Approche descendante : Partir du conteneur du chat
+    // 2. Cibler l'en-tête de sous-barre interne du panneau de chat
     const chatPanel = document.querySelector('section.chat-panel, [class*="chat-panel"], [class*="conversation-panel"], div[role="region"]');
     if (chatPanel) {
       const innerHeaders = chatPanel.querySelectorAll('.panel-header, [class*="panel-header"], [class*="header"], [class*="toolbar"]');
       for (const ih of innerHeaders) {
-        if (!ih.closest(CHAT_HEADER_EXCLUSIONS)) {
+        if (!ih.closest(MOBILE_EXCLUSIONS) && ih.offsetWidth > 40) {
           return ih;
         }
-      }
-    }
-
-    // 4. Approche alternative : Recherche par sélecteurs candidats directs
-    for (const sel of CHAT_HEADER_SELECTORS) {
-      const candidates = document.querySelectorAll(sel);
-      for (const el of candidates) {
-        if (!el.closest(CHAT_HEADER_EXCLUSIONS)) {
-          return el;
-        }
-      }
-    }
-
-    // 5. Recherche de repli dans le Shadow DOM
-    const shadowCandidates = window.MM.findElementsInShadows(
-      CHAT_HEADER_SELECTORS.join(', ')
-    );
-    for (const el of shadowCandidates) {
-      if (!el.closest(CHAT_HEADER_EXCLUSIONS)) {
-        return el;
       }
     }
 

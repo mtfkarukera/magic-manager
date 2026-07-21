@@ -4,6 +4,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.14.4] — 2026-07-21
+
+### Corrigé
+- 📱 **Repositionnement Hermétique Chat Export (Desktop / Mobile)** : Séparation stricte de l'ancrage du bouton d'exportation de conversation (`.mm-chat-export-btn`). Sur Desktop, restauration à 100% du code v0.14.1 éprouvé (affichage en haut à gauche de la colonne Discussion). Sur Mobile, ancrage ciblé sur la sous-barre sous l'onglet actif sans aucune régression.
+
 ## [0.14.3] — 2026-07-21
 
 ### Corrigé
