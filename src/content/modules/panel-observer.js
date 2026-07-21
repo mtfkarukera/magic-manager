@@ -42,7 +42,7 @@
    * Supprime les boutons MM injectés dans le panel-header.
    */
   function cleanupPanelButtons() {
-    document.querySelectorAll('.mm-individual-delete-btn, .mm-individual-export-btn').forEach(
+    document.querySelectorAll('.mm-individual-delete-btn, .mm-individual-export-btn, .mm-individual-transfer-btn').forEach(
       function (btn) { btn.remove(); }
     );
   }
@@ -222,7 +222,7 @@
         window.MM.checkAndInjectStudioSearch();
       }
 
-      // 5. Injections individuelles (Poubelle & Export) s'il y a un source-viewer actif
+      // 5. Injections individuelles (Poubelle, Export & Transfert) s'il y a un source-viewer actif
       const sourceViewer = document.querySelector('source-viewer');
       if (sourceViewer) {
         if (window.MM.isFeatureEnabled('delete') && typeof window.MM.checkAndInjectIndividualDelete === 'function') {
@@ -230,6 +230,9 @@
         }
         if (window.MM.isFeatureEnabled('export') && typeof window.MM.checkAndInjectIndividualExport === 'function') {
           window.MM.checkAndInjectIndividualExport();
+        }
+        if (window.MM.isFeatureEnabled('transfer') && typeof window.MM.checkAndInjectIndividualTransfer === 'function') {
+          window.MM.checkAndInjectIndividualTransfer();
         }
       }
     } catch (err) {

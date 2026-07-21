@@ -665,6 +665,109 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // Injection du Bouton de Transfert Individuel (source-viewer)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  function cleanSourceTitle(title) {
+    if (!title) return '';
+    return title.replace(/[\n\r]+/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  /**
+   * Injecte le bouton de transfert individuel dans l'en-tête de la consultation (source-viewer).
+   */
+  function checkAndInjectIndividualTransfer() {
+    if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('transfer')) return;
+
+    const sourceViewer = document.querySelector('source-viewer');
+    if (!sourceViewer) return;
+
+    const sourcePanel = document.querySelector('section.source-panel');
+    const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header') : null;
+
+    let anchor = panelHeader;
+    let collapseBtn = null;
+
+    if (panelHeader) {
+      const nativeButtons = Array.from(panelHeader.querySelectorAll(
+        'button:not(.mm-individual-delete-btn):not(.mm-individual-export-btn):not(.mm-individual-transfer-btn)'
+      ));
+      collapseBtn = nativeButtons.length > 0 ? nativeButtons[nativeButtons.length - 1] : null;
+    }
+
+    if (!anchor || !collapseBtn) {
+      const closeBtn = window.MM.findSourceViewerCloseButton(sourceViewer);
+      if (closeBtn) {
+        anchor = closeBtn.parentNode;
+        collapseBtn = closeBtn;
+      }
+    }
+
+    if (!anchor || !collapseBtn) {
+      const retryCount = parseInt(sourceViewer.dataset.mmTransferRetryCount || '0', 10);
+      if (retryCount < 3) {
+        sourceViewer.dataset.mmTransferRetryCount = String(retryCount + 1);
+        setTimeout(function () {
+          checkAndInjectIndividualTransfer();
+        }, retryCount === 0 ? 100 : 300);
+      }
+      return;
+    }
+
+    if (collapseBtn.parentNode.querySelector('.mm-individual-transfer-btn')) return;
+
+    const transferBtn = createElement('button', {
+      className: 'mm-individual-transfer-btn mm-btn-icon',
+      title: t('transferModalTitle') || 'Copier vers un carnet',
+      'aria-label': t('transferModalTitle') || 'Copier vers un carnet',
+      onClick: async function (e) {
+        e.stopPropagation();
+
+        const notebookId = window.MM.getActiveNotebookId();
+        if (!notebookId) return;
+
+        const rawTitle = window.MM.findSourceViewerTitleText(sourceViewer) ||
+                      (window.MM.findSourceViewerTitle(sourceViewer) || { textContent: '' }).textContent.trim();
+        const cleanedTitle = cleanSourceTitle(rawTitle);
+        if (!cleanedTitle) return;
+
+        try {
+          const allSources = await window.MM.rpc.getNotebookSources(notebookId);
+          let targetSource = allSources.find(s => cleanSourceTitle(s.title) === cleanedTitle);
+
+          if (!targetSource) {
+            console.warn('[MM] Source non trouvée par titre exact pour transfert, tentative par sous-chaîne :', cleanedTitle);
+            const prefix = cleanedTitle.substring(0, 20);
+            targetSource = allSources.find(s => s.title && s.title.includes(prefix));
+          }
+
+          if (!targetSource) {
+            targetSource = {
+              id: 'fallback_' + Date.now(),
+              title: cleanedTitle,
+              kind: 1
+            };
+          }
+
+          openTransferModal([targetSource]);
+        } catch (err) {
+          console.error('[MM] Erreur lors du transfert individuel :', err);
+          window.MM.showAlertDialog('transferError', 'Échec du transfert : ' + err.message);
+        }
+      }
+    }, [createTransferIcon()]);
+
+    // Insertion : Placer juste avant le bouton delete s'il existe, sinon avant collapseBtn
+    const deleteBtn = collapseBtn.parentNode.querySelector('.mm-individual-delete-btn');
+    const targetBefore = deleteBtn || collapseBtn;
+    if (targetBefore && targetBefore.parentNode) {
+      targetBefore.parentNode.insertBefore(transferBtn, targetBefore);
+    } else {
+      anchor.appendChild(transferBtn);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // Initialisation et Nettoyage
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -686,4 +789,5 @@
   window.MM.initTransfer = initTransfer;
   window.MM.cleanupTransfer = cleanupTransfer;
   window.MM.updateBatchTransferButtonState = updateBatchTransferButtonState;
+  window.MM.checkAndInjectIndividualTransfer = checkAndInjectIndividualTransfer;
 })();
