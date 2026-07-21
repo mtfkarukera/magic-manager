@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.14.2] — 2026-07-21
+
+### Corrigé & Amélioré
+- 📱 **Repositionnement du Bouton d'Export Chat en Mode Mobile** : Déplacement du bouton d'exportation de conversation (`.mm-chat-export-btn`) en mode mobile depuis la barre d'onglets principale (`mat-tab-header`) vers la sous-barre d'outils du panneau Discussion (à l'extrême gauche, avant les réglages).
+- 🏷️ **Support des Badges Deep Research & Cartes Tronquées** : Prise en charge des points de suspension Unicode `…` (`\u2026`) et correspondance flexible par sous-chaîne dans `source-badges.js`. Attribution systématique de la catégorie locale (`[ ▢ ]`) en fallback, garantissant 100% de badges sur le panneau des sources.
+
 ## [0.14.1] — 2026-07-21
 
 ### Corrigé & Ajouté

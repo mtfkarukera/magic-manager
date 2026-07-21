@@ -492,16 +492,28 @@
     '[class*="chat-actions"]'
   ];
 
+  const CHAT_HEADER_EXCLUSIONS = 'section.source-panel, [class*="source-panel"], .left-sidebar, mat-tab-header, [class*="tab-header"], [role="tablist"], .mobile-header, mat-tab-nav-bar';
+
   /**
    * Tente de trouver l'en-tête du panneau Discussion de manière ultra-robuste.
+   * Exclut formellement la barre d'onglets mobiles globale (mat-tab-header).
    * @returns {Element|null}
    */
   function findChatPanelHeader() {
-    // 1. Approche par texte : chercher un panel-header contenant "Discussion" ou "Chat"
+    // 1. Approche prioritaire : cibler directement le conteneur du chat/discussion
+    const chatPanel = document.querySelector('section.chat-panel, [class*="chat-panel"], [class*="conversation-panel"], div[role="region"]');
+    if (chatPanel) {
+      const innerHeader = chatPanel.querySelector('.panel-header, [class*="panel-header"], [class*="header"], [class*="toolbar"]');
+      if (innerHeader && !innerHeader.closest(CHAT_HEADER_EXCLUSIONS)) {
+        return innerHeader;
+      }
+    }
+
+    // 2. Approche par texte : chercher un panel-header contenant "Discussion" ou "Chat"
     const panelHeaders = document.querySelectorAll('.panel-header, [class*="panel-header"], [class*="header"]');
     for (const h of panelHeaders) {
-      // Écarter à coup sûr le panneau des sources
-      if (h.closest('section.source-panel, [class*="source-panel"], .left-sidebar')) {
+      // Écarter à coup sûr le panneau des sources et la barre d'onglets mobiles
+      if (h.closest(CHAT_HEADER_EXCLUSIONS)) {
         continue;
       }
       const text = h.textContent || '';
@@ -510,7 +522,7 @@
       }
     }
 
-    // 2. Approche descendante : Partir du textarea du chat pour cibler son conteneur
+    // 3. Approche descendante : Partir du textarea du chat pour cibler son conteneur
     const chatInput = document.querySelector(
       'textarea[aria-label*="Ask" i], ' +
       'textarea[placeholder*="Ask" i], ' +
@@ -519,39 +531,35 @@
       '.chat-input textarea'
     );
     if (chatInput) {
-      const chatPanel = chatInput.closest(
+      const chatPanelContainer = chatInput.closest(
         'section, div[role="region"], [class*="chat-panel"], [class*="conversation-panel"]'
       );
-      if (chatPanel) {
-        const header = chatPanel.querySelector(
+      if (chatPanelContainer) {
+        const header = chatPanelContainer.querySelector(
           '.panel-header, [class*="header"], [class*="toolbar"]'
         );
-        if (header) {
-          // Écarter à coup sûr le panneau des sources
-          if (!header.closest('section.source-panel, [class*="source-panel"], .left-sidebar')) {
-            return header;
-          }
+        if (header && !header.closest(CHAT_HEADER_EXCLUSIONS)) {
+          return header;
         }
       }
     }
 
-    // 3. Approche alternative : Recherche par sélecteurs candidats directs
+    // 4. Approche alternative : Recherche par sélecteurs candidats directs
     for (const sel of CHAT_HEADER_SELECTORS) {
       const candidates = document.querySelectorAll(sel);
       for (const el of candidates) {
-        // Ignorer tout élément appartenant au panneau des sources de gauche
-        if (!el.closest('section.source-panel, [class*="source-panel"], .left-sidebar')) {
+        if (!el.closest(CHAT_HEADER_EXCLUSIONS)) {
           return el;
         }
       }
     }
 
-    // 4. Recherche de repli dans le Shadow DOM
+    // 5. Recherche de repli dans le Shadow DOM
     const shadowCandidates = window.MM.findElementsInShadows(
       CHAT_HEADER_SELECTORS.join(', ')
     );
     for (const el of shadowCandidates) {
-      if (!el.closest('section.source-panel, [class*="source-panel"], .left-sidebar')) {
+      if (!el.closest(CHAT_HEADER_EXCLUSIONS)) {
         return el;
       }
     }
@@ -605,9 +613,9 @@
       justCreated = true;
     }
 
-    // Gestion de la visibilité en mode mobile (onglet actif uniquement)
-    const isMobileTabHeader = exportChatBtn.closest('mat-tab-header, .mat-mdc-tab-header');
-    if (isMobileTabHeader) {
+    // Gestion de la visibilité en mode mobile (onglet Discussion actif uniquement)
+    const isMobileMode = typeof window.MM.detectDesktopLayout === 'function' ? !window.MM.detectDesktopLayout() : false;
+    if (isMobileMode) {
       const activeTab = document.querySelector('div[role="tab"][aria-selected="true"], .mat-mdc-tab-active');
       const isChatActive = activeTab && /discussion|chat/i.test(activeTab.textContent || '');
       if (!isChatActive) {

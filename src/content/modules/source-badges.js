@@ -181,55 +181,62 @@
           return;
         }
 
-        // Essayer de faire un match flexible si has() exact échoue (gestion des troncatures ou points de suspension)
+        // Essayer de faire un match flexible si has() exact échoue (gestion des troncatures ou points de suspension ASCII/Unicode)
         let foundKind = null;
         if (sourceTypesCache.has(normalizedTitle)) {
           foundKind = sourceTypesCache.get(normalizedTitle);
         } else {
-          // Recherche partielle (si le titre DOM est de type "nom...")
-          const cleanDomTitle = normalizedTitle.replace(/\.\.\./g, '').trim();
-          for (const [cacheTitle, kind] of sourceTypesCache.entries()) {
-            if (cacheTitle.startsWith(cleanDomTitle) || cleanDomTitle.startsWith(cacheTitle)) {
-              foundKind = kind;
-              break;
+          // Nettoyer les points de suspension ASCII ("..."), Unicode ("…"), tirets et espaces finaux
+          const cleanDomTitle = normalizedTitle.replace(/(?:\.\.\.|\u2026|-|\s)+$/g, '').trim();
+
+          if (cleanDomTitle.length > 3) {
+            for (const [cacheTitle, kind] of sourceTypesCache.entries()) {
+              const cleanCacheTitle = cacheTitle.replace(/(?:\.\.\.|\u2026|-|\s)+$/g, '').trim();
+              if (cleanCacheTitle.startsWith(cleanDomTitle) || cleanDomTitle.startsWith(cleanCacheTitle)) {
+                foundKind = kind;
+                break;
+              }
+              // Recherche par sous-chaîne pour les titres longs tronqués (Deep Research, etc.)
+              if (cleanDomTitle.length >= 12 && (cleanCacheTitle.includes(cleanDomTitle) || cleanDomTitle.includes(cleanCacheTitle))) {
+                foundKind = kind;
+                break;
+              }
             }
           }
         }
 
-        if (foundKind !== null) {
-          const category = getCategoryByKind(foundKind);
-          let svgElement;
-          if (category === 'drive') {
-            svgElement = createDriveSvg();
-          } else if (category === 'url') {
-            svgElement = createUrlSvg();
-          } else {
-            svgElement = createLocalSvg();
-          }
-
-          const badge = document.createElement('span');
-          badge.className = `mm-source-badge mm-source-badge--${category}`;
-          badge.title = category.charAt(0).toUpperCase() + category.slice(1);
-          badge.appendChild(svgElement);
-          // Localiser le nœud de titre visible dans la carte (hors bouton stretched/checkbox)
-          const titleText = stretchedBtn.getAttribute('aria-label') || '';
-          const titleNode = findTitleNode(card, titleText);
-
-          if (titleNode) {
-            titleNode.parentNode.insertBefore(badge, titleNode);
-            card.setAttribute('data-mm-badge', 'true');
-          } else {
-            // Fallback : insérer après le premier enfant de la carte
-            const firstChild = card.firstElementChild;
-            if (firstChild) {
-              firstChild.after(badge);
-            } else {
-              card.prepend(badge);
-            }
-            card.setAttribute('data-mm-badge', 'true');
-          }
+        // Si aucun kind RPC spécifique n'est déterminé (ex. titre non trouvé ou Deep Research),
+        // appliquer par défaut la catégorie 'local' (badge ▢) pour garantir un badge sur 100% des cartes.
+        const category = foundKind !== null ? getCategoryByKind(foundKind) : 'local';
+        let svgElement;
+        if (category === 'drive') {
+          svgElement = createDriveSvg();
+        } else if (category === 'url') {
+          svgElement = createUrlSvg();
         } else {
-          unbadgedCount++;
+          svgElement = createLocalSvg();
+        }
+
+        const badge = document.createElement('span');
+        badge.className = `mm-source-badge mm-source-badge--${category}`;
+        badge.title = category.charAt(0).toUpperCase() + category.slice(1);
+        badge.appendChild(svgElement);
+        // Localiser le nœud de titre visible dans la carte (hors bouton stretched/checkbox)
+        const titleText = stretchedBtn.getAttribute('aria-label') || '';
+        const titleNode = findTitleNode(card, titleText);
+
+        if (titleNode) {
+          titleNode.parentNode.insertBefore(badge, titleNode);
+          card.setAttribute('data-mm-badge', 'true');
+        } else {
+          // Fallback : insérer après le premier enfant de la carte
+          const firstChild = card.firstElementChild;
+          if (firstChild) {
+            firstChild.after(badge);
+          } else {
+            card.prepend(badge);
+          }
+          card.setAttribute('data-mm-badge', 'true');
         }
       });
     } else {
