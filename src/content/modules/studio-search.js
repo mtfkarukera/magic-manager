@@ -527,9 +527,14 @@
       return;
     }
 
-    // Garde 1.2 : Réinitialisation au changement de carnet
+    // Garde 1.2 : Réinitialisation stricte au changement de carnet
     const notebookId = window.MM.getActiveNotebookId();
-    if (notebookId !== lastFetchedNotebookId) {
+    if (!notebookId) {
+      lastFetchedNotebookId = null;
+      currentQuery = '';
+      activeTypeFilters.clear();
+      cachedDbItems = null;
+    } else if (lastFetchedNotebookId && notebookId !== lastFetchedNotebookId) {
       lastFetchedNotebookId = notebookId;
       currentQuery = '';
       activeTypeFilters.clear();
@@ -547,6 +552,8 @@
         filterPopoverEl = null;
       }
       applyFilters();
+    } else {
+      lastFetchedNotebookId = notebookId;
     }
 
     const studioPanel = findStudioPanel();
@@ -741,10 +748,14 @@
       });
     }
 
-    currentQuery = '';
-    activeTypeFilters.clear();
-    cachedDbItems = null;
-    lastFetchedNotebookId = null;
+    // Ne réinitialiser les requêtes que si nous ne sommes plus sur un carnet
+    const currentId = typeof window.MM.getActiveNotebookId === 'function' ? window.MM.getActiveNotebookId() : null;
+    if (!currentId) {
+      currentQuery = '';
+      activeTypeFilters.clear();
+      cachedDbItems = null;
+      lastFetchedNotebookId = null;
+    }
     console.log('[MM] Module studio-search nettoyé');
   }
 

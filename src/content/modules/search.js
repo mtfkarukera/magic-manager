@@ -604,12 +604,15 @@
       return;
     }
 
-    // Réinitialiser la recherche lors d'un changement de carnet
+    // Réinitialiser la recherche lors d'un changement de carnet strict
     const activeNotebookId = typeof window.MM.getActiveNotebookId === 'function'
       ? window.MM.getActiveNotebookId()
       : null;
 
-    if (activeNotebookId !== lastNotebookId) {
+    if (!activeNotebookId) {
+      lastNotebookId = null;
+      currentQuery = '';
+    } else if (lastNotebookId && activeNotebookId !== lastNotebookId) {
       lastNotebookId = activeNotebookId;
       currentQuery = '';
       if (isDuplicateMode) {
@@ -627,6 +630,8 @@
         if (clearBtn) clearBtn.classList.remove('mm-visible');
       }
       applyFilter('');
+    } else {
+      lastNotebookId = activeNotebookId;
     }
 
     // Détecter si le panneau des sources est présent et visible, ou s'il est minimisé/replié.
@@ -783,9 +788,12 @@
     isDuplicateMode = false;
     clearDuplicateView();
 
-    // Réinitialiser la requête de recherche courante et le carnet courant
-    currentQuery = '';
-    lastNotebookId = null;
+    // Ne réinitialiser la requête que si nous ne sommes plus sur un carnet
+    const currentId = typeof window.MM.getActiveNotebookId === 'function' ? window.MM.getActiveNotebookId() : null;
+    if (!currentId) {
+      currentQuery = '';
+      lastNotebookId = null;
+    }
 
     // Restaurer le style d'affichage de toutes les cartes masquées
     const cards = findSourceCards();

@@ -4,6 +4,16 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.12.2] — 2026-07-21
+
+### Corrigé
+- ⌨️ **Raccourci Clavier Studio** : Remplacement du raccourci `Option/Alt + Shift + F` par `Cmd/Ctrl + Shift + L` pour éliminer le conflit avec la composition de caractères diacritiques sous macOS (`Ï`/`ƒ`) et garantir un focus instantané sur la recherche du Studio.
+
+## [0.12.1] — 2026-07-21
+
+### Corrigé
+- 🐛 **Stabilité du Studio au clic sur un artéfact** : Correction d'une réinitialisation intempestive du Studio déclenchée lors de l'ouverture d'un viewer de note ou d'artéfact. Les variables `lastFetchedNotebookId` et `lastNotebookId` sont désormais conservées pendant le masquage temporaire des panneaux au sein du même carnet.
+
 ## [0.12.0] — 2026-07-21
 
 ### Corrigé

@@ -62,7 +62,7 @@
     const key = e.key.toLowerCase();
 
     // Cmd/Ctrl + Shift + F → Focus recherche sources
-    if (cmdOrCtrl && e.shiftKey && !e.altKey && key === 'f') {
+    if (cmdOrCtrl && e.shiftKey && !e.altKey && (key === 'f' || e.code === 'KeyF')) {
       if (focusFirst(SEARCH_INPUT, true)) {
         e.preventDefault();
         e.stopPropagation();
@@ -70,9 +70,13 @@
       return;
     }
 
-    // Option/Alt + Shift + F → Focus recherche Studio (Sprint 4)
-    if (e.altKey && e.shiftKey && !cmdOrCtrl && key === 'f') {
-      if (focusFirst(STUDIO_SEARCH_INPUT, true)) {
+    // Cmd/Ctrl + Shift + L → Focus recherche Studio
+    if (cmdOrCtrl && e.shiftKey && !e.altKey && (key === 'l' || e.code === 'KeyL')) {
+      if (typeof window.MM.focusStudioSearch === 'function') {
+        window.MM.focusStudioSearch();
+        e.preventDefault();
+        e.stopPropagation();
+      } else if (focusFirst(STUDIO_SEARCH_INPUT, true)) {
         e.preventDefault();
         e.stopPropagation();
       }
@@ -80,7 +84,7 @@
     }
 
     // Cmd/Ctrl + Shift + E → Focus saisie chat
-    if (cmdOrCtrl && e.shiftKey && !e.altKey && key === 'e') {
+    if (cmdOrCtrl && e.shiftKey && !e.altKey && (key === 'e' || e.code === 'KeyE')) {
       if (focusFirst(CHAT_INPUT_SELECTORS, false)) {
         e.preventDefault();
         e.stopPropagation();
