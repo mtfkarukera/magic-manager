@@ -413,6 +413,26 @@
   margin: 0 0 var(--mm-spacing-lg) 0;
 }
 
+.mm-dialog-warning {
+  font-family: var(--mm-font-family);
+  font-size: var(--mm-font-size-sm);
+  color: #d97706;
+  background: rgba(245, 158, 11, 0.08);
+  border-left: 3px solid #f59e0b;
+  padding: var(--mm-spacing-sm) var(--mm-spacing-md);
+  border-radius: 4px;
+  line-height: 1.4;
+  margin: 0 0 var(--mm-spacing-lg) 0;
+  text-align: left;
+}
+
+@media (prefers-color-scheme: dark) {
+  .mm-dialog-warning {
+    color: #fbbf24;
+    background: rgba(245, 158, 11, 0.12);
+  }
+}
+
 .mm-dialog-actions {
   display: flex;
   justify-content: flex-end;
@@ -1466,6 +1486,92 @@
   .mm-studio-search,
   .mm-studio-filter-popover {
     animation: none;
+  }
+}
+
+/* Styles pour la modale riche d'exportation (Sprint 5) */
+.mm-export-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mm-spacing-sm);
+  margin: var(--mm-spacing-md) 0 var(--mm-spacing-lg) 0;
+}
+
+.mm-export-format-option {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--mm-spacing-sm);
+  padding: var(--mm-spacing-md);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: var(--mm-radius-md);
+  background: rgba(255, 255, 255, 0.4);
+  cursor: pointer;
+  transition: border-color var(--mm-transition-fast), background-color var(--mm-transition-fast), transform var(--mm-transition-fast);
+}
+
+.mm-export-format-option:hover {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: var(--mm-primary-hover);
+  transform: translateY(-0.5px);
+}
+
+.mm-export-format-option.selected {
+  border-color: var(--mm-primary);
+  background: color-mix(in srgb, var(--mm-primary) 8%, rgba(255, 255, 255, 0.6));
+  box-shadow: 0 0 0 1px var(--mm-primary);
+}
+
+.mm-export-format-option input[type="radio"] {
+  margin-top: 4px;
+  cursor: pointer;
+  accent-color: var(--mm-primary);
+}
+
+.mm-export-format-label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mm-spacing-xs);
+  cursor: pointer;
+  user-select: none;
+}
+
+.mm-export-format-title {
+  font-family: var(--mm-font-family);
+  font-size: var(--mm-font-size-md);
+  font-weight: 600;
+  color: var(--mm-on-surface);
+}
+
+.mm-export-format-desc {
+  font-family: var(--mm-font-family);
+  font-size: 12px;
+  color: var(--mm-on-surface-variant);
+  line-height: 1.4;
+}
+
+/* Thème sombre pour l'export riche */
+@media (prefers-color-scheme: dark) {
+  .mm-export-format-option {
+    border-color: rgba(255, 255, 255, 0.08);
+    background: rgba(15, 23, 42, 0.3);
+  }
+
+  .mm-export-format-option:hover {
+    background: rgba(15, 23, 42, 0.5);
+    border-color: var(--mm-primary-hover);
+  }
+
+  .mm-export-format-option.selected {
+    border-color: var(--mm-primary);
+    background: color-mix(in srgb, var(--mm-primary) 12%, rgba(15, 23, 42, 0.5));
+  }
+}
+
+/* Accessibilité et animations réduites */
+@media (prefers-reduced-motion: reduce) {
+  .mm-export-format-option {
+    transition: none;
+    transform: none;
   }
 }
 

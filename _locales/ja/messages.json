@@ -360,5 +360,69 @@
   "studioClearSelection": {
     "message": "選択解除",
     "description": "Button to clear all selected Studio artifacts at once"
+  },
+  "exportFormatDialogTitle": {
+    "message": "出力フォーマット",
+    "description": "Title of the format selection dialog"
+  },
+  "exportFormatPdfSimple": {
+    "message": "シンプル PDF",
+    "description": "Simple PDF export"
+  },
+  "exportFormatPdfSimpleDesc": {
+    "message": "プレーンテキストレイアウト • 完全な状態を保証",
+    "description": "Simple PDF description"
+  },
+  "exportBtnLabel": {
+    "message": "エクスポート",
+    "description": "Export button label"
+  },
+  "mergeFormatPdfStructured": {
+    "message": "構造化 PDF",
+    "description": "Structured PDF merge format option"
+  },
+  "exportFormatMarkdownRiche": {
+    "message": "リッチ Markdown",
+    "description": "Rich Markdown export"
+  },
+  "exportFormatMarkdownRicheDesc": {
+    "message": "太字、リスト、表、画像 • 重い画像がある場合は途中で切れるリスクがあります",
+    "description": "Rich Markdown description"
+  },
+  "exportFormatMarkdownSimple": {
+    "message": "シンプル Markdown",
+    "description": "Simple Markdown export"
+  },
+  "exportFormatMarkdownSimpleDesc": {
+    "message": "完全なプレーンテキスト • 途中で切れることなく100%完全な状態を保証",
+    "description": "Simple Markdown description"
+  },
+  "exportFormatPdfRiche": {
+    "message": "リッチ PDF",
+    "description": "Rich PDF export"
+  },
+  "exportFormatPdfRicheDesc": {
+    "message": "リッチレイアウト、表、画像 • 途中で切れるリスクがあります",
+    "description": "Rich PDF description"
+  },
+  "mergeFormatMarkdownRiche": {
+    "message": "リッチ Markdown",
+    "description": "Rich Markdown merge"
+  },
+  "mergeFormatMarkdownSimple": {
+    "message": "シンプル Markdown",
+    "description": "Simple Markdown merge"
+  },
+  "mergeFormatPdfRiche": {
+    "message": "リッチ PDF",
+    "description": "Rich PDF merge"
+  },
+  "mergeFormatPdfSimple": {
+    "message": "シンプル PDF",
+    "description": "Simple PDF merge"
+  },
+  "truncationWarning": {
+    "message": "注意: リッチモードでは、ドキュメントに容量の大きい画像が含まれている場合、Googleによってコンテンツが途中で切れることがあります。その場合は、シンプルモード（完全保証）を使用してください。",
+    "description": "Warning about Google truncation limit"
   }
 }

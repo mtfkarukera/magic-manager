@@ -12,6 +12,10 @@ magic-manager/
 ├── src/
 │   ├── api/
 │   │   └── rpcclient.js       # Client RPC pour l'API Gemini Notebook (batchexecute)
+│   ├── shared/
+│   │   ├── utils.js           # Fonctions utilitaires génériques
+│   │   ├── html-to-md.js      # Wrapper TurndownService + règles personnalisées Google [NEW]
+│   │   └── export-utils.js    # Walker DOM, pipeline d'images et génération PDF [NEW]
 │   ├── content/
 │   │   ├── orchestrator.js    # Point d'entrée — orchestrateur des modules
 │   │   ├── modules/           # Sous-modules de l'extension
@@ -24,7 +28,7 @@ magic-manager/
 │   │   │   ├── delete.js      # Module de suppression en ligne
 │   │   │   ├── batch-delete.js # Module de suppression par lot de sources
 │   │   │   ├── studio-delete.js # Module de suppression par lot du Studio
-│   │   │   ├── studio-search.js # Module de recherche et filtrage du Studio [NEW]
+│   │   │   ├── studio-search.js # Module de recherche et filtrage du Studio
 │   │   │   ├── syntax.js      # Module de coloration syntaxique
 │   │   │   └── chatexport.js  # Module d'export du chat
 │   │   └── ui/                # Composants d'interface partagés
@@ -152,7 +156,27 @@ Pour garantir une expérience utilisateur fluide sur la SPA Gemini Notebook sans
   - **Mapping RPC direct** : Lors du clic sur "Supprimer la sélection", les requêtes de suppression RPC sont générées directement à partir des IDs réels stockés dans le `Set`, éliminant toute comparaison approximative par titre. Les cartes DOM à animer sont retrouvées de façon robuste via le sélecteur CSS `[data-mm-id="${id}"]`.
   - **Invalidation post-viewer & Auto-guérison** : L'extension détecte la fermeture du note viewer (lorsque la Garde 2 redevient fausse) et invalide immédiatement le cache local de studio-delete. Si une désynchronisation est détectée entre le DOM et le cache RPC (due à un lag de réplication du serveur suite à une édition/un renommage), ou si des cartes restent sans ID, un refetch asynchrone forcé est planifié après 1,5s (avec un cooldown de 4s) pour restaurer l'état visuel correct. Les checkboxes dont l'ID n'est pas encore résolu sont temporairement décochées pour éviter les fausses sélections.
   - **Garde de sécurité anti-homonymes** : Avant de préparer les requêtes RPC de suppression, l'extension vérifie que chacun des éléments sélectionnés possède un titre unique dans le Studio. Si l'un des titres est en double, la suppression est bloquée préventivement et une alerte explicite est affichée, prévenant toute suppression accidentelle due à un décalage de matching.
-
+- **Exportation et Fusion Riche vs Simple (v0.11.0)** :
+  - **Dual-mode RPC (GET_SOURCE)** : L'extension propose désormais un double mode de récupération de contenu via le RPC `hizoJc` de l'API interne :
+    - *Mode Riche* : Requête au format HTML structuré (`[3],[3]`) qui conserve la sémantique d'origine, les tableaux complexes et charge les images embarquées au format base64.
+    - *Mode Simple* : Requête au format texte brut (`[2],[2]`) qui extrait uniquement les chaînes textuelles, éliminant tout contenu lourd (images) pour garantir un transfert rapide (quelques dizaines de Ko) et immunisé contre la troncature.
+  - **Heuristique de détection de troncature** : Le module `export-utils.js` intègre la fonction `checkIfTruncated`. Elle analyse la taille du flux extrait (seuil d'alerte > 1.5 Mo) et la présence d'images base64. En mode HTML, elle vérifie s'il manque les balises normales de fermeture (`</html>` ou `</body>`). Si une troncature est détectée, elle déclenche une notification visuelle et invite l'utilisateur à basculer sur le mode Simple.
+  - **Matching robuste** : Normalisation et suppression des extensions de fichiers lors du matching par titre dans `findSourceIdByTitle` pour éviter le saut de fichiers lors de la fusion et des exports en lot.
+  - **Horodatage** : Ajout de la date et de l'heure (`YYYY-MM-DD_HHhmm`) aux noms de fichiers exportés.
+  - **Sauts de page et tableaux** : Rendu ligne par ligne avec sauts de page dynamiques dans le Walker DOM pour éviter les troncatures (notamment pour les Slides Google et documents fusionnés longs). Refonte de `renderTable` pour gérer dynamiquement la hauteur de chaque ligne selon l'enveloppement du texte multi-lignes.
+  - **Sanitisation anti-artéfact** : Nettoyage automatique des caractères Unicode non WinAnsi (comme les puces exotiques) pour éviter les symboles corrompus type `% Ø=P²` dans le PDF.
+  - **Pipeline Turndown HTML→Markdown** : Le module `html-to-md.js` encapsule `turndown.js` et son plugin officiel GFM. Il y applique 5 règles de nettoyage personnalisées pour :
+    1. Reconstruire les styles inline de NotebookLM (ex: spans obfusqués ayant des styles de graisse/italique spécifiques en CSS) en balises Markdown `**` / `*`.
+    2. Nettoyer les balises `<span>` vides introduites par le traitement de texte de Google.
+    3. Traiter les images et fournir un texte alternatif de secours si l'attribut `alt` est absent.
+    4. Supprimer les éléments bruyants (balises script, styles, iframe, etc.) pour produire un document Markdown standard épuré.
+  - **Générateur PDF et Walker DOM Récursif (jsPDF)** : Pour respecter strictement les CSP imposées par la page, la conversion HTML→PDF s'effectue via un Walker DOM récursif fait maison dans `export-utils.js` (sans dépendances comme `html2canvas` ou `autoTable`). Il dessine manuellement les éléments sur les primitives de jsPDF :
+    - *Titres sémantiques* : Marges adaptées et styles pour H1 à H6.
+    - *Styles inline* : Traitement inline récursif du gras, italique et code à l'aide d'un helper de contexte de police (`withFont`) garantissant la restauration de l'état de police initial sans fuites visuelles.
+    - *Blocs de code* : Rendu sous forme de conteneurs rectangulaires à fond gris arrondi avec police Courier à espacement préservé.
+    - *Citations (Blockquotes)* : Dessin d'une bordure verticale grise à gauche avec décalage et texte en italique.
+    - *Tableaux* : Rendu tabulaire à l'aide d'un calcul de largeur de colonnes adaptatif.
+  - **Pipeline d'Images Intégré** : Les images distantes (notamment hébergées sur les serveurs Google avec authentification requise comme `lh3.googleusercontent.com`) sont pré-chargées de façon asynchrone par lot. L'extension utilise un fetch avec credentials (`credentials: 'include'`) pour contourner les erreurs 403, dessine l'image sur un `OffscreenCanvas` temporaire en optimisant la mémoire (appel systématique à `imageBitmap.close()` et réduction des dimensions du canvas à zéro après usage), puis les injecte en base64 via `doc.addImage()`.
 
 ## Conventions
 

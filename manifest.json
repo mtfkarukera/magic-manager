@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
   "short_name": "Magic Manager",
-  "version": "0.9.1",
+  "version": "0.12.0",
   "default_locale": "en",
 
   "description": "__MSG_extensionDescription__",
@@ -22,7 +22,11 @@
       "matches": ["*://notebooklm.google.com/*"],
       "js": [
         "lib/jspdf.umd.min.js",
+        "lib/turndown.js",
+        "lib/turndown-plugin-gfm.js",
         "src/shared/utils.js",
+        "src/shared/html-to-md.js",
+        "src/shared/export-utils.js",
         "src/api/rpcclient.js",
         "src/content/ui/dialogs.js",
         "src/content/ui/settings.js",

@@ -1,6 +1,6 @@
 # 🧩 Magic Manager for Gemini Notebook
 
-![GitHub release](https://img.shields.io/badge/release-v0.9.1-green)
+![GitHub release](https://img.shields.io/badge/release-v0.12.0-green)
 ![GitHub license](https://img.shields.io/github/license/mtfkarukera/magic-manager?color=blue)
 
 **Magic Manager** est une extension Firefox qui enrichit l'interface de **Google Gemini Notebook** (anciennement NotebookLM) sur [notebooklm.google.com](https://notebooklm.google.com/) avec des fonctionnalités avancées de productivité.
@@ -9,8 +9,8 @@
 
 - 🔍 **Recherche globale & Doublons** — Recherchez parmi toutes vos sources (avec bouton de réinitialisation croix ×) et filtrez les doublons potentiels (similarité de titre + checksum du contenu).
 - 🏷️ **Badges visuels de sources** — Identifiez instantanément la nature de vos sources (🔄 Google Drive, 🌐 Lien Web/YouTube, ▢ Upload Local) directement dans la liste des sources.
-- 🔗 **Fusion intelligente** — Fusionnez plusieurs sources en un seul document Markdown ou PDF.
-- 📤 **Exports simplifiés** — Exportez vos sources aux formats Markdown, PDF ou ZIP en un clic.
+- 🔗 **Fusion intelligente** — Fusionnez plusieurs sources en un seul document.
+- 📤 **Exports & Fusions Riche vs Simple** — Choisissez entre les modes "Riche" (mise en forme structurée complète, tableaux et images incluses) ou "Simple" (texte brut 100% garanti non-tronqué par les limites réseau de Google pour les documents très lourds). Disponible en Markdown et PDF pour les exports individuels, par lot et les fusions.
 - 🗑️ **Suppression en ligne & par lot** — Supprimez des sources individuellement ou par lot, ainsi que les notes et artéfacts du Studio, directement depuis l'interface. La sélection est sécurisée par une empreinte de liste : si la liste subit des modifications (renommage, ajout, suppression, réordonnancement), la sélection est automatiquement réinitialisée avec une alerte utilisateur pour éviter toute erreur.
 - 🔎 **Recherche & Filtres Studio** — Recherchez et filtrez les notes et artéfacts du Studio par texte et par type (résumés audio, quiz, cartes mentales, infographies, etc.) avec une pilule de recherche rétractable.
 - 🎨 **Coloration syntaxique** — Mise en valeur du code dans les réponses du chat avec coloration syntaxique.

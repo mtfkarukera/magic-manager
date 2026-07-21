@@ -360,5 +360,69 @@
   "studioClearSelection": {
     "message": "Bỏ chọn tất cả",
     "description": "Button to clear all selected Studio artifacts at once"
+  },
+  "exportFormatDialogTitle": {
+    "message": "Định dạng xuất bản",
+    "description": "Title of the format selection dialog"
+  },
+  "exportFormatPdfSimple": {
+    "message": "PDF Đơn Giản",
+    "description": "Simple PDF export"
+  },
+  "exportFormatPdfSimpleDesc": {
+    "message": "Bố cục văn bản thuần • Đảm bảo đầy đủ",
+    "description": "Simple PDF description"
+  },
+  "exportBtnLabel": {
+    "message": "Xuất bản",
+    "description": "Export button label"
+  },
+  "mergeFormatPdfStructured": {
+    "message": "PDF Cấu trúc",
+    "description": "Structured PDF merge format option"
+  },
+  "exportFormatMarkdownRiche": {
+    "message": "Markdown Đầy Đủ",
+    "description": "Rich Markdown export"
+  },
+  "exportFormatMarkdownRicheDesc": {
+    "message": "Chữ đậm, danh sách, bảng, hình ảnh • Có nguy cơ bị cắt bớt nếu quá nặng",
+    "description": "Rich Markdown description"
+  },
+  "exportFormatMarkdownSimple": {
+    "message": "Markdown Đơn Giản",
+    "description": "Simple Markdown export"
+  },
+  "exportFormatMarkdownSimpleDesc": {
+    "message": "Văn bản thuần đầy đủ • Đảm bảo đầy đủ 100% không bị cắt bớt",
+    "description": "Simple Markdown description"
+  },
+  "exportFormatPdfRiche": {
+    "message": "PDF Đầy Đủ",
+    "description": "Rich PDF export"
+  },
+  "exportFormatPdfRicheDesc": {
+    "message": "Bố cục phong phú, bảng, hình ảnh • Có nguy cơ bị cắt bớt",
+    "description": "Rich PDF description"
+  },
+  "mergeFormatMarkdownRiche": {
+    "message": "Markdown Đầy Đủ",
+    "description": "Rich Markdown merge"
+  },
+  "mergeFormatMarkdownSimple": {
+    "message": "Markdown Đơn Giản",
+    "description": "Simple Markdown merge"
+  },
+  "mergeFormatPdfRiche": {
+    "message": "PDF Đầy Đủ",
+    "description": "Rich PDF merge"
+  },
+  "mergeFormatPdfSimple": {
+    "message": "PDF Đơn Giản",
+    "description": "Simple PDF merge"
+  },
+  "truncationWarning": {
+    "message": "Cảnh báo: Ở chế độ Đầy đủ, nội dung có thể bị Google cắt bớt nếu tài liệu chứa hình ảnh nặng. Nếu xảy ra điều này, hãy sử dụng chế độ Đơn giản (đảm bảo đầy đủ).",
+    "description": "Warning about Google truncation limit"
   }
 }

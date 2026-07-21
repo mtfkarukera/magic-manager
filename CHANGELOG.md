@@ -4,6 +4,55 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.12.0] — 2026-07-21
+
+### Corrigé
+- 🔄 **Réinitialisation automatique des filtres** : Détection du changement de carnet ou du retour à la liste principale via `getActiveNotebookId()` et réinitialisation synchrone de tous les filtres de recherche (sources et Studio) afin d'éviter la persistance intempestive de requêtes et le masquage accidentel des éléments dans les nouveaux carnets.
+
+## [0.11.1] — 2026-07-21
+
+### Corrigé
+- 🔘 **Anomalie de sélection & surbrillance** : Correction de la désynchronisation dans les dialogues modaux d'export et de fusion où la coche du bouton radio ne correspondait pas à l'élément de liste mis en surbrillance bleue (causée par l'application de `checked="false"` traitée par le navigateur comme un élément activé).
+- ⚙️ **Helper DOM createElement** : Correction de la gestion des propriétés booléennes (`checked`, `disabled`, `readOnly`, `required`) qui sont désormais appliquées comme des propriétés DOM directes et non plus comme des attributs HTML textuels.
+
+## [0.11.0] — 2026-07-21
+
+### Ajouté
+- 🗂️ **Généralisation des modes Riche vs Simple** : Intégration globale des modes "Markdown Riche", "Markdown Simple", "PDF Riche" et "PDF Simple" pour l'exportation individuelle, par lot et la fusion de sources.
+- ⚡ **Extraction simple non-tronquée** : Implémentation du mode "Markdown Simple" (extraction de texte brut via le RPC `hizoJc` en format `[2],[2]`) assurant une extraction 100% complète et sans risque de coupure réseau pour les fichiers volumineux.
+- ⚠️ **Alerte de troncature proactive** : Ajout d'une détection intelligente côté client (basée sur la taille du payload et la présence d'images base64) avec affichage d'un encadré d'avertissement dans les modales et d'alertes explicites après exportation/fusion si un document a été tronqué par les limites serveurs de Google.
+
+## [0.10.1] — 2026-07-21
+
+### Modifié & Corrigé
+- 📁 **Horodatage par défaut** : Ajout automatique de la date et de l'heure (`YYYY-MM-DD_HHhmm`) aux noms des fichiers exportés individuellement (Markdown, PDF) et aux archives ZIP d'export en lot.
+- 🔗 **Robustesse de la fusion (Correspondance des sources)** : Normalisation et retrait des extensions de fichiers lors du matching par titre dans `findSourceIdByTitle` pour éviter le saut silencieux de fichiers lors de la fusion ou de l'export par lot.
+- 🧮 **Tableaux Markdown** : Ajout d'un pré-nettoyage du DOM dans le convertisseur `html-to-md.js` pour supprimer les nœuds de texte vides et éléments HTML invalides entre les lignes `<tr>`, empêchant l'aplatissement sur une seule ligne.
+- 📊 **Tableaux PDF** : Refonte complète de `renderTable` pour calculer dynamiquement la hauteur de ligne par cellule en fonction de l'enveloppement du texte multi-lignes, éliminant la troncature à la première ligne.
+- 📜 **Pagination dynamique et non-troncature (PDF)** : Rendu ligne par ligne avec détection dynamique de sauts de page dans `walkDOM` pour les nœuds textuels et les blocs de code longs (`pre`), corrigeant la troncature du texte (slides Google Slides et longs documents fusionnés).
+- 🧹 **Anti-artéfact PDF** : Ajout de la sanitisation des caractères Unicode complexes non supportés par Helvetica (WinAnsi) dans `sanitizePdfText` pour éviter l'apparition de symboles corrompus comme `% Ø=P²`.
+
+## [0.10.0] — 2026-07-20
+
+### Ajouté
+- 📦 **Dépendances tierces** :
+  - Intégration de `turndown.js` (v7.2.0, build UMD non-minifié) et `turndown-plugin-gfm.js` (build UMD) sous le dossier `lib/` pour la conversion robuste HTML→Markdown.
+- 📝 **Conversion HTML→Markdown enrichie** :
+  - Création du module `src/shared/html-to-md.js` pour encapsuler TurndownService.
+  - Ajout de 5 règles de nettoyage personnalisées pour le HTML Google (classes de styles de texte gras/italique obfusquées, suppression des spans vides, images de secours sans alt, filtrage des balises script/style).
+- 📄 **Exportation et Fusion en PDF Structuré** :
+  - Rendu riche du PDF via un Walker DOM récursif manuel CSP-safe sans dépendances externes.
+  - Prise en charge sémantique de la structure : titres (H1-H6), gras/italique inline (avec helper `withFont` résolvant les fuites de police), blocs de code (Courier 9pt, fond gris arrondi, espaces préservés), blockquotes (italique, ligne latérale grise), tableaux HTML simples.
+  - Pipeline d'images robuste : téléchargement asynchrone des images de session avec credentials, conversion Canvas en base64 offscreen et injection conditionnelle.
+- 📦 **Modale d'exportation riche par lot** :
+  - Intégration d'un dialogue à radio-boutons avec descriptions détaillées pour choisir entre Markdown, PDF Simple et PDF Structuré.
+
+### Modifié & Refactorisé
+- 🔄 **Orchestrateur & Manifest** : Version bump à 0.10.0 et configuration de l'ordre de chargement des scripts.
+- 🔧 **Dual-mode RPC** : Mise à jour de `getSourceContent` pour interroger le mode HTML structuré (`[3],[3]`) en priorité, avec extraction en 3 fonctions (dispatcher, HTML, texte) et repli explicite vers le texte brut en cas d'absence du HTML.
+- 🛠️ **Factorisation export/merge** : Suppression de plus de 150 lignes dupliquées entre `export.js` et `merge.js` au profit d'un module partagé `src/shared/export-utils.js`.
+- ⚙️ **Sécurisation anti rate-limiting** : Passage du délai d'attente asynchrone entre deux extractions de sources à 400ms.
+
 ## [0.9.1] — 2026-07-20
 
 ### Corrigé & Refactorisé

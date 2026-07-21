@@ -133,10 +133,11 @@
   }
 
   /**
-   * Affiche un dialogue de choix de format (Markdown ou PDF).
+   * Affiche un dialogue de choix de format (Markdown, PDF Simple ou PDF Structuré).
+   * Utilisé pour l'export individuel.
    *
    * @param {string|Function} titleOrCallback - Clé i18n du titre OU callback onChoice si pas de titre.
-   * @param {Function}        [onChoice]      - Callback appelé avec 'md' ou 'pdf' (si titre fourni).
+   * @param {Function}        [onChoice]      - Callback appelé avec 'md', 'pdf-simple' ou 'pdf-structured' (si titre fourni).
    */
   function showFormatChoiceDialog(titleOrCallback, onChoice) {
     // Mémoriser l'élément déclencheur
@@ -156,16 +157,34 @@
     }
 
     // Boutons de format
-    const mdBtn = createElement('button', {
+    const isExport = titleKey === 'exportButton';
+    const mdRicheText = isExport ? (t('exportFormatMarkdownRiche') || 'Markdown Riche') : (t('mergeFormatMarkdownRiche') || 'Markdown Riche');
+    const mdSimpleText = isExport ? (t('exportFormatMarkdownSimple') || 'Markdown Simple') : (t('mergeFormatMarkdownSimple') || 'Markdown Simple');
+    const pdfRicheText = isExport ? (t('exportFormatPdfRiche') || 'PDF Riche') : (t('mergeFormatPdfRiche') || 'PDF Riche');
+    const pdfSimpleText = isExport ? (t('exportFormatPdfSimple') || 'PDF Simple') : (t('mergeFormatPdfSimple') || 'PDF Simple');
+
+    const mdRicheBtn = createElement('button', {
       className: 'mm-btn mm-btn-secondary',
-      textContent: t('mergeFormatMd'),
-      onClick: () => { closeDialog(); callback('md'); }
+      textContent: mdRicheText,
+      onClick: () => { closeDialog(); callback('md-riche'); }
     });
 
-    const pdfBtn = createElement('button', {
+    const mdSimpleBtn = createElement('button', {
+      className: 'mm-btn mm-btn-secondary',
+      textContent: mdSimpleText,
+      onClick: () => { closeDialog(); callback('md-simple'); }
+    });
+
+    const pdfRicheBtn = createElement('button', {
       className: 'mm-btn mm-btn-primary',
-      textContent: t('mergeFormatPdf'),
-      onClick: () => { closeDialog(); callback('pdf'); }
+      textContent: pdfRicheText,
+      onClick: () => { closeDialog(); callback('pdf-riche'); }
+    });
+
+    const pdfSimpleBtn = createElement('button', {
+      className: 'mm-btn mm-btn-secondary',
+      textContent: pdfSimpleText,
+      onClick: () => { closeDialog(); callback('pdf-simple'); }
     });
 
     const cancelBtn = createElement('button', {
@@ -183,8 +202,9 @@
       'aria-labelledby': dialogTitleId
     }, [
       createElement('h2', { id: dialogTitleId, className: 'mm-dialog-title', textContent: t(titleKey) }),
-      createElement('p', { className: 'mm-dialog-message', textContent: t('mergeFormatLabel') }),
-      createElement('div', { className: 'mm-dialog-actions' }, [cancelBtn, mdBtn, pdfBtn])
+      createElement('p', { className: 'mm-dialog-message', textContent: t('mergeFormatLabel') || 'Sélectionne le format d\'export :' }),
+      createElement('div', { className: 'mm-dialog-warning', textContent: t('truncationWarning') }),
+      createElement('div', { className: 'mm-dialog-actions' }, [cancelBtn, mdRicheBtn, mdSimpleBtn, pdfSimpleBtn, pdfRicheBtn])
     ]);
 
     activeDialog = dialog;
@@ -202,6 +222,118 @@
     dialog.showModal();
 
     cancelBtn.focus();
+  }
+
+  /**
+   * Affiche un dialogue riche pour le choix de format en lot (export batch).
+   * Présente 3 options avec boutons radio et descriptions détaillées.
+   *
+   * @param {Function} callback - Appelé avec le format choisi ('md', 'pdf-simple', 'pdf-structured')
+   */
+  function showExportFormatDialog(callback) {
+    lastFocusedElement = document.activeElement;
+    closeDialog();
+
+    let selectedFormat = 'md-riche'; // Format par défaut
+
+    const formats = [
+      { id: 'md-riche', title: 'exportFormatMarkdownRiche', desc: 'exportFormatMarkdownRicheDesc' },
+      { id: 'md-simple', title: 'exportFormatMarkdownSimple', desc: 'exportFormatMarkdownSimpleDesc' },
+      { id: 'pdf-riche', title: 'exportFormatPdfRiche', desc: 'exportFormatPdfRicheDesc' },
+      { id: 'pdf-simple', title: 'exportFormatPdfSimple', desc: 'exportFormatPdfSimpleDesc' }
+    ];
+
+    const optionContainer = createElement('div', { className: 'mm-export-options-list' });
+
+    // Générer chaque élément d'option avec radio
+    const optionEls = formats.map(f => {
+      const radio = createElement('input', {
+        type: 'radio',
+        name: 'mm-export-format',
+        id: `mm-format-${f.id}`,
+        value: f.id,
+        checked: f.id === selectedFormat,
+        onChange: () => {
+          selectedFormat = f.id;
+          updateSelectionStyles();
+        }
+      });
+
+      const label = createElement('label', {
+        htmlFor: `mm-format-${f.id}`,
+        className: 'mm-export-format-label'
+      }, [
+        createElement('span', { className: 'mm-export-format-title', textContent: t(f.title) }),
+        createElement('span', { className: 'mm-export-format-desc', textContent: t(f.desc) })
+      ]);
+
+      const optionWrapper = createElement('div', {
+        className: `mm-export-format-option${f.id === selectedFormat ? ' selected' : ''}`,
+        onClick: () => {
+          selectedFormat = f.id;
+          updateSelectionStyles();
+        }
+      }, [radio, label]);
+
+      return { id: f.id, el: optionWrapper, radio };
+    });
+
+    optionEls.forEach(opt => optionContainer.appendChild(opt.el));
+
+    function updateSelectionStyles() {
+      optionEls.forEach(opt => {
+        if (opt.id === selectedFormat) {
+          opt.el.classList.add('selected');
+          opt.radio.checked = true;
+        } else {
+          opt.el.classList.remove('selected');
+        }
+      });
+    }
+
+    const cancelBtn = createElement('button', {
+      className: 'mm-btn mm-btn-secondary',
+      textContent: t('dialogCancelButton'),
+      onClick: () => closeDialog()
+    });
+
+    const actionBtn = createElement('button', {
+      className: 'mm-btn mm-btn-primary',
+      textContent: t('exportBtnLabel') || 'Exporter',
+      onClick: () => {
+        closeDialog();
+        callback(selectedFormat);
+      }
+    });
+
+    const dialogTitleId = 'mm-dialog-title-' + Date.now();
+    const dialog = createElement('dialog', {
+      className: 'mm-dialog mm-export-dialog',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': dialogTitleId
+    }, [
+      createElement('h2', { id: dialogTitleId, className: 'mm-dialog-title', textContent: t('exportFormatDialogTitle') || 'Format d\'exportation' }),
+      optionContainer,
+      createElement('div', { className: 'mm-dialog-warning', textContent: t('truncationWarning') }),
+      createElement('div', { className: 'mm-dialog-actions' }, [cancelBtn, actionBtn])
+    ]);
+
+    activeDialog = dialog;
+
+    dialog.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      closeDialog();
+    });
+
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) closeDialog();
+    });
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    actionBtn.focus();
   }
 
   /**
@@ -260,6 +392,7 @@
   // Exposition dans le namespace global MM
   window.MM.showConfirmDialog = showConfirmDialog;
   window.MM.showFormatChoiceDialog = showFormatChoiceDialog;
+  window.MM.showExportFormatDialog = showExportFormatDialog;
   window.MM.showAlertDialog = showAlertDialog;
   window.MM.closeDialog = closeDialog;
 })();

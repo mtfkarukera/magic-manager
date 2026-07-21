@@ -360,5 +360,69 @@
   "studioClearSelection": {
     "message": "Limpar seleção",
     "description": "Button to clear all selected Studio artifacts at once"
+  },
+  "exportFormatDialogTitle": {
+    "message": "Formato de Exportação",
+    "description": "Title of the format selection dialog"
+  },
+  "exportFormatPdfSimple": {
+    "message": "PDF Simples",
+    "description": "Simple PDF export"
+  },
+  "exportFormatPdfSimpleDesc": {
+    "message": "Layout de texto simples • Garantido completo",
+    "description": "Simple PDF description"
+  },
+  "exportBtnLabel": {
+    "message": "Exportar",
+    "description": "Export button label"
+  },
+  "mergeFormatPdfStructured": {
+    "message": "PDF Estruturado",
+    "description": "Structured PDF merge format option"
+  },
+  "exportFormatMarkdownRiche": {
+    "message": "Markdown Rico",
+    "description": "Rich Markdown export"
+  },
+  "exportFormatMarkdownRicheDesc": {
+    "message": "Negrito, listas, tabelas, imagens • Risco de truncamento se pesado",
+    "description": "Rich Markdown description"
+  },
+  "exportFormatMarkdownSimple": {
+    "message": "Markdown Simples",
+    "description": "Simple Markdown export"
+  },
+  "exportFormatMarkdownSimpleDesc": {
+    "message": "Texto simples completo • Garantido 100% completo sem truncamento",
+    "description": "Simple Markdown description"
+  },
+  "exportFormatPdfRiche": {
+    "message": "PDF Rico",
+    "description": "Rich PDF export"
+  },
+  "exportFormatPdfRicheDesc": {
+    "message": "Layout enriquecido, tabelas, imagens • Risco de truncamento",
+    "description": "Rich PDF description"
+  },
+  "mergeFormatMarkdownRiche": {
+    "message": "Markdown Rico",
+    "description": "Rich Markdown merge"
+  },
+  "mergeFormatMarkdownSimple": {
+    "message": "Markdown Simples",
+    "description": "Simple Markdown merge"
+  },
+  "mergeFormatPdfRiche": {
+    "message": "PDF Rico",
+    "description": "Rich PDF merge"
+  },
+  "mergeFormatPdfSimple": {
+    "message": "PDF Simples",
+    "description": "Simple PDF merge"
+  },
+  "truncationWarning": {
+    "message": "Aviso: No modo 'Rico', o conteúdo pode ser truncado pelo Google se o documento contiver imagens pesadas. Se isso acontecer, use o modo 'Simples' (garantido completo).",
+    "description": "Warning about Google truncation limit"
   }
 }

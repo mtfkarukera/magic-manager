@@ -360,5 +360,69 @@
   "studioClearSelection": {
     "message": "Clear selection",
     "description": "Button to clear all selected Studio artifacts at once"
+  },
+  "exportFormatDialogTitle": {
+    "message": "Export Format",
+    "description": "Title of the format selection dialog"
+  },
+  "exportFormatPdfSimple": {
+    "message": "Simple PDF",
+    "description": "Simple PDF export"
+  },
+  "exportFormatPdfSimpleDesc": {
+    "message": "Plain text layout • Guaranteed complete",
+    "description": "Simple PDF description"
+  },
+  "exportBtnLabel": {
+    "message": "Export",
+    "description": "Export button label"
+  },
+  "mergeFormatPdfStructured": {
+    "message": "Structured PDF",
+    "description": "Structured PDF merge format option"
+  },
+  "exportFormatMarkdownRiche": {
+    "message": "Rich Markdown",
+    "description": "Rich Markdown export"
+  },
+  "exportFormatMarkdownRicheDesc": {
+    "message": "Bold, lists, tables, images • Risk of truncation if heavy",
+    "description": "Rich Markdown description"
+  },
+  "exportFormatMarkdownSimple": {
+    "message": "Simple Markdown",
+    "description": "Simple Markdown export"
+  },
+  "exportFormatMarkdownSimpleDesc": {
+    "message": "Full plain text • Guaranteed 100% complete without truncation",
+    "description": "Simple Markdown description"
+  },
+  "exportFormatPdfRiche": {
+    "message": "Rich PDF",
+    "description": "Rich PDF export"
+  },
+  "exportFormatPdfRicheDesc": {
+    "message": "Rich layout, tables, images • Risk of truncation if heavy",
+    "description": "Rich PDF description"
+  },
+  "mergeFormatMarkdownRiche": {
+    "message": "Rich Markdown",
+    "description": "Rich Markdown merge"
+  },
+  "mergeFormatMarkdownSimple": {
+    "message": "Simple Markdown",
+    "description": "Simple Markdown merge"
+  },
+  "mergeFormatPdfRiche": {
+    "message": "Rich PDF",
+    "description": "Rich PDF merge"
+  },
+  "mergeFormatPdfSimple": {
+    "message": "Simple PDF",
+    "description": "Simple PDF merge"
+  },
+  "truncationWarning": {
+    "message": "Warning: In Rich mode, content may be truncated by Google if the document contains heavy images. If this happens, use Simple mode (guaranteed complete).",
+    "description": "Warning about Google truncation limit"
   }
 }

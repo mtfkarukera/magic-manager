@@ -88,6 +88,8 @@ function createElement(tag, attrs = {}, children = []) {
       el.textContent = value;
     } else if (key.startsWith('on') && typeof value === 'function') {
       el.addEventListener(key.slice(2).toLowerCase(), value);
+    } else if (key === 'checked' || key === 'disabled' || key === 'readOnly' || key === 'required') {
+      el[key] = !!value;
     } else {
       el.setAttribute(key, value);
     }
@@ -235,138 +237,17 @@ function extractSourceId(container) {
 }
 
 /**
- * Convertit une chaîne de caractères HTML en Markdown formaté de façon sémantique et propre.
- * Utilise le DOMParser natif du navigateur pour une analyse robuste.
+ * Obsolète — Utilise désormais window.MM.convertHtmlToMarkdown(html).
+ * Conservé temporairement comme alias de compatibilité.
  *
- * @param {string} html - Chaîne HTML source.
- * @returns {string} Chaîne Markdown résultante.
+ * @deprecated
  */
 function htmlToMarkdown(html) {
-  if (!html) return '';
-
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(html, 'text/html');
-
-  // Traiter récursivement chaque nœud HTML
-  function walk(node, listContext = null) {
-    if (node.nodeType === Node.TEXT_NODE) {
-      return node.nodeValue;
-    }
-
-    if (node.nodeType !== Node.ELEMENT_NODE) {
-      return '';
-    }
-
-    const tagName = node.tagName.toUpperCase();
-    let childrenContent = '';
-
-    // Déterminer le type de liste
-    let newListContext = listContext;
-    if (tagName === 'UL') {
-      newListContext = { type: 'ul', index: 0 };
-    } else if (tagName === 'OL') {
-      newListContext = { type: 'ol', index: 0 };
-    }
-
-    for (const child of node.childNodes) {
-      childrenContent += walk(child, newListContext);
-    }
-
-    switch (tagName) {
-      case 'H1':
-        return `\n\n# ${childrenContent.trim()}\n\n`;
-      case 'H2':
-        return `\n\n## ${childrenContent.trim()}\n\n`;
-      case 'H3':
-        return `\n\n### ${childrenContent.trim()}\n\n`;
-      case 'H4':
-        return `\n\n#### ${childrenContent.trim()}\n\n`;
-      case 'H5':
-        return `\n\n##### ${childrenContent.trim()}\n\n`;
-      case 'H6':
-        return `\n\n###### ${childrenContent.trim()}\n\n`;
-      
-      case 'P':
-      case 'DIV': {
-        const trimmed = childrenContent.trim();
-        return trimmed ? `\n\n${trimmed}\n\n` : '';
-      }
-      
-      case 'BR':
-        return '\n';
-      
-      case 'STRONG':
-      case 'B': {
-        const strVal = childrenContent.trim();
-        return strVal ? `**${strVal}**` : '';
-      }
-      
-      case 'EM':
-      case 'I': {
-        const emVal = childrenContent.trim();
-        return emVal ? `*${emVal}*` : '';
-      }
-
-      case 'U': {
-        const uVal = childrenContent.trim();
-        return uVal ? `_${uVal}_` : '';
-      }
-
-      case 'CODE':
-        return `\`${childrenContent}\``;
-
-      case 'PRE':
-        return `\n\n\`\`\`\n${childrenContent}\n\`\`\`\n\n`;
-      
-      case 'A': {
-        const href = node.getAttribute('href');
-        const text = childrenContent.trim();
-        if (href && text) {
-          return `[${text}](${href})`;
-        }
-        return text || href || '';
-      }
-      
-      case 'IMG': {
-        const src = node.getAttribute('src') || '';
-        const alt = node.getAttribute('alt') || 'Image';
-        return `\n![${alt}](${src})\n`;
-      }
-
-      case 'LI': {
-        let prefix = '- ';
-        if (listContext && listContext.type === 'ol') {
-          listContext.index++;
-          prefix = `${listContext.index}. `;
-        }
-        const liContent = childrenContent.trim().replace(/\n+/g, ' ');
-        return `\n${prefix}${liContent}`;
-      }
-
-      case 'UL':
-      case 'OL':
-        return `\n${childrenContent}\n`;
-
-      case 'BLOCKQUOTE':
-        return `\n\n> ${childrenContent.trim().split('\n').join('\n> ')}\n\n`;
-
-      case 'HR':
-        return '\n\n---\n\n';
-
-      default:
-        return childrenContent;
-    }
+  console.warn('[MM] htmlToMarkdown() est déprécié. Utilise window.MM.convertHtmlToMarkdown() à la place.');
+  if (typeof window.MM?.convertHtmlToMarkdown === 'function') {
+    return window.MM.convertHtmlToMarkdown(html);
   }
-
-  let markdown = walk(doc.body);
-
-  // Nettoyage final du texte : sauts de lignes multiples, espaces etc.
-  markdown = markdown
-    .replace(/\n{3,}/g, '\n\n')
-    .replace(/\r/g, '')
-    .trim();
-
-  return markdown;
+  return html || '';
 }
 
 // Exposition dans le namespace global MM

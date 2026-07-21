@@ -527,6 +527,28 @@
       return;
     }
 
+    // Garde 1.2 : Réinitialisation au changement de carnet
+    const notebookId = window.MM.getActiveNotebookId();
+    if (notebookId !== lastFetchedNotebookId) {
+      lastFetchedNotebookId = notebookId;
+      currentQuery = '';
+      activeTypeFilters.clear();
+      cachedDbItems = null;
+      if (searchBarContainer) {
+        const input = searchBarContainer.querySelector('.mm-studio-search-input');
+        if (input) input.value = '';
+        const clearBtn = searchBarContainer.querySelector('.mm-studio-search-clear');
+        if (clearBtn) clearBtn.classList.remove('mm-visible');
+        const filterBtn = searchBarContainer.querySelector('.mm-studio-filter-btn');
+        if (filterBtn) filterBtn.classList.remove('mm-active');
+      }
+      if (filterPopoverEl) {
+        filterPopoverEl.remove();
+        filterPopoverEl = null;
+      }
+      applyFilters();
+    }
+
     const studioPanel = findStudioPanel();
     if (!studioPanel) return;
 
@@ -663,7 +685,6 @@
     }
 
     // Amorcer le cache RPC dès l'injection de la pilule (premier chargement)
-    const notebookId = window.MM.getActiveNotebookId();
     if (notebookId && !cachedDbItems && !isFetchingDbItems) {
       fetchStudioItems(notebookId);
     }

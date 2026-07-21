@@ -22,167 +22,21 @@
   // Identifiant notebook — fourni par utils.js (window.MM.getActiveNotebookId)
   // ═══════════════════════════════════════════════════════════════════════
 
-  function findIndividualSourceData() {
-    const sourceViewer = document.querySelector('source-viewer');
-    if (!sourceViewer) return null;
-
-    const titleEl = sourceViewer.querySelector('.source-title');
-    if (!titleEl) return null;
-    const title = titleEl.textContent.trim();
-
-    const clone = sourceViewer.cloneNode(true);
-    const guide = clone.querySelector('button');
-    if (guide) guide.remove();
-    
-    const ourBtns = clone.querySelectorAll('.mm-delete-btn, .mm-individual-export-btn, .mm-individual-delete-btn');
-    ourBtns.forEach(b => b.remove());
-
-    const textElements = Array.from(clone.querySelectorAll('p, li, [class*="paragraph"], [class*="text-segment"]'));
-    let content = '';
-    if (textElements.length > 0) {
-      content = textElements.map(el => el.textContent.trim()).filter(t => t.length > 0).join('\n\n');
-    }
-    return { title: title, content: content };
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Gestionnaires asynchrones pour l'extraction DOM
-  // ═══════════════════════════════════════════════════════════════════════
-
-  async function waitForSourceViewer(timeout = 3500) {
-    const start = Date.now();
-    while (Date.now() - start < timeout) {
-      const viewer = document.querySelector('source-viewer');
-      if (viewer) {
-        const paragraph = viewer.querySelector('p, li, [class*="paragraph"], [class*="text-segment"]');
-        if (paragraph) {
-          return viewer;
-        }
-      }
-      await new Promise(r => setTimeout(r, 50));
-    }
-    return null;
-  }
-
-  /**
-   * Attend que le titre du source-viewer change par rapport à previousTitle.
-   * Indispensable pour la fusion : sans cela, le viewer de la source précédente
-   * est encore présent quand on clique sur la suivante, et on extrait le mauvais contenu.
-   *
-   * @param {string} previousTitle - Titre affiché avant le clic.
-   * @param {number} timeoutMs - Délai maximum en ms.
-   * @returns {Promise<Element|null>} Le viewer chargé ou null si timeout.
-   */
-  async function waitForViewerToChange(previousTitle, timeoutMs = 4000) {
-    // Délai minimum incompressible : Angular/NotebookLM a besoin d'au moins ~300ms
-    // pour monter le nouveau composant dans le DOM après un clic sur stretchedBtn.
-    await new Promise(r => setTimeout(r, 400));
-
-    const start = Date.now();
-    while (Date.now() - start < timeoutMs) {
-      const viewer = document.querySelector('source-viewer');
-      if (viewer) {
-        // Chercher le titre avec plusieurs sthégies (le sélecteur exact varie selon la version NLM)
-        const titleEl = viewer.querySelector(
-          '.source-title, [class*="source-title"], .title, [class*="viewer-title"]'
-        );
-        const currentTitle = titleEl ? titleEl.textContent.trim() : '';
-
-        // La source est bien chargée si :
-        // 1. Le titre a changé par rapport à l'itération précédente
-        // 2. Il y a du contenu textuel affiché
-        if (currentTitle && currentTitle !== previousTitle) {
-          const hasContent = viewer.querySelector('p, li, [class*="paragraph"], [class*="text-segment"], [class*="content"]');
-          if (hasContent) {
-            console.log(`[MM] Viewer chargé : "${currentTitle.slice(0, 50)}" (attendu != "${previousTitle.slice(0, 30)}")`);
-            return viewer;
-          }
-        }
-      }
-      await new Promise(r => setTimeout(r, 100));
-    }
-    console.warn(`[MM] waitForViewerToChange : timeout après ${timeoutMs + 400}ms (previousTitle="${previousTitle.slice(0, 40)}")`);
-    return null;
-  }
-
-  function closeSourceViewer() {
-    const sourcePanel = document.querySelector('section.source-panel');
-    if (!sourcePanel) return;
-    const panelHeader = sourcePanel.querySelector('.panel-header');
-    if (!panelHeader) return;
-    const nativeButtons = Array.from(panelHeader.querySelectorAll(
-      'button:not(.mm-individual-delete-btn):not(.mm-individual-export-btn)'
-    ));
-    if (nativeButtons.length > 0) {
-      const collapseBtn = nativeButtons[nativeButtons.length - 1];
-      if (collapseBtn) collapseBtn.click();
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════════════════════
-  // Générateur PDF avec jsPDF (similaire à export.js)
-  // ═══════════════════════════════════════════════════════════════════════
-
-  function generatePDFBlob(filename, content) {
-    const jspdfLib = window.jspdf
-      || (typeof globalThis !== 'undefined' && globalThis.jspdf)
-      || (typeof self !== 'undefined' && self.jspdf);
-
-    if (!jspdfLib || !jspdfLib.jsPDF) {
-      throw new Error('[MM] Bibliothèque jsPDF non disponible dans le contexte.');
-    }
-
-    const { jsPDF } = jspdfLib;
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'a4'
-    });
-
-    const margin = 20;
-    const pageWidth = doc.internal.pageSize.getWidth();
-    const pageHeight = doc.internal.pageSize.getHeight();
-    const maxLineWidth = pageWidth - (margin * 2);
-
-    doc.setFont('Helvetica', 'bold');
-    doc.setFontSize(16);
-    const titleLines = doc.splitTextToSize(filename || 'Document Fusionné', maxLineWidth);
-    let y = 25;
-
-    titleLines.forEach(line => {
-      if (y > pageHeight - margin) { doc.addPage(); y = 20; }
-      doc.text(line, margin, y);
-      y += 8;
-    });
-
-    y += 4;
-
-    doc.setFont('Helvetica', 'normal');
-    doc.setFontSize(11);
-
-    const paragraphs = content.split('\n\n');
-    paragraphs.forEach(p => {
-      const pText = p.replace(/\s+/g, ' ').trim();
-      if (!pText) return;
-      const lines = doc.splitTextToSize(pText, maxLineWidth);
-      lines.forEach(line => {
-        if (y > pageHeight - margin) { doc.addPage(); y = 20; }
-        doc.text(line, margin, y);
-        y += 6;
-      });
-      y += 4;
-    });
-
-    return doc.output('blob');
-  }
+  const {
+    cleanSourceTitle,
+    findSourceIdByTitle,
+    getFormattedTimestamp,
+    generatePdfBlob,
+    checkIfTruncated
+  } = window.MM.exportUtils;
 
   // ═══════════════════════════════════════════════════════════════════════
   // Interface utilisateur & modale de fusion
   // ═══════════════════════════════════════════════════════════════════════
 
   function showMergeDialog(checkboxes) {
-    const dateStr = new Date().toISOString().split('T')[0];
-    const defaultTitle = `${t('mergedSourcesTitle') || 'Sources fusionnées'} - ${dateStr}`;
+    const timestamp = getFormattedTimestamp();
+    const defaultTitle = `${t('mergedSourcesTitle') || 'Sources fusionnées'} - ${timestamp}`;
 
     const dialogTitleId = 'mm-merge-title-' + Date.now();
     const dialog = createElement('dialog', {
@@ -216,35 +70,60 @@
       })
     ]);
 
-    let selectedFormat = 'Markdown';
+    let selectedFormat = 'Markdown-Riche';
     const formatLabel = createElement('label', { 
       className: 'mm-merge-label', 
       textContent: 'Format du document final' 
     });
     
-    const mdBtn = createElement('button', {
+    const mdRicheBtn = createElement('button', {
       className: 'mm-merge-format-btn active',
-      textContent: 'Markdown',
+      textContent: t('mergeFormatMarkdownRiche') || 'Markdown Riche',
       onClick: () => {
-        selectedFormat = 'Markdown';
-        mdBtn.classList.add('active');
-        pdfBtn.classList.remove('active');
+        selectedFormat = 'Markdown-Riche';
+        mdRicheBtn.classList.add('active');
+        mdSimpleBtn.classList.remove('active');
+        pdfSimpleBtn.classList.remove('active');
+        pdfRicheBtn.classList.remove('active');
       }
     });
-    const pdfBtn = createElement('button', {
+    const mdSimpleBtn = createElement('button', {
       className: 'mm-merge-format-btn',
-      textContent: 'PDF (jsPDF)',
+      textContent: t('mergeFormatMarkdownSimple') || 'Markdown Simple',
       onClick: () => {
-        selectedFormat = 'PDF';
-        pdfBtn.classList.add('active');
-        mdBtn.classList.remove('active');
+        selectedFormat = 'Markdown-Simple';
+        mdSimpleBtn.classList.add('active');
+        mdRicheBtn.classList.remove('active');
+        pdfSimpleBtn.classList.remove('active');
+        pdfRicheBtn.classList.remove('active');
       }
     });
-
+    const pdfRicheBtn = createElement('button', {
+      className: 'mm-merge-format-btn',
+      textContent: t('mergeFormatPdfRiche') || 'PDF Riche',
+      onClick: () => {
+        selectedFormat = 'PDF-Riche';
+        pdfRicheBtn.classList.add('active');
+        mdRicheBtn.classList.remove('active');
+        mdSimpleBtn.classList.remove('active');
+        pdfSimpleBtn.classList.remove('active');
+      }
+    });
+    const pdfSimpleBtn = createElement('button', {
+      className: 'mm-merge-format-btn',
+      textContent: t('mergeFormatPdfSimple') || 'PDF Simple',
+      onClick: () => {
+        selectedFormat = 'PDF-Simple';
+        pdfSimpleBtn.classList.add('active');
+        mdRicheBtn.classList.remove('active');
+        mdSimpleBtn.classList.remove('active');
+        pdfRicheBtn.classList.remove('active');
+      }
+    });
 
     const formatField = createElement('div', { className: 'mm-merge-field' }, [
       formatLabel,
-      createElement('div', { className: 'mm-merge-formats' }, [mdBtn, pdfBtn])
+      createElement('div', { className: 'mm-merge-formats' }, [mdRicheBtn, mdSimpleBtn, pdfSimpleBtn, pdfRicheBtn])
     ]);
 
     const btnCancel = createElement('button', {
@@ -272,6 +151,14 @@
     dialog.appendChild(titleEl);
     dialog.appendChild(titleField);
     dialog.appendChild(formatField);
+    
+    // Bannière d'avertissement de troncature
+    const warningEl = createElement('div', { 
+      className: 'mm-dialog-warning', 
+      textContent: t('truncationWarning') 
+    });
+    dialog.appendChild(warningEl);
+    
     dialog.appendChild(buttonsContainer);
     
     dialog.addEventListener('click', (e) => {
@@ -293,45 +180,7 @@
     setTimeout(() => titleField.querySelector('input').select(), 50);
   }
 
-  // ═══════════════════════════════════════════════════════════════════════
-  // Processus de Fusion synchrone via DOM + RPC
-  // ═══════════════════════════════════════════════════════════════════════
 
-  /**
-   * Nettoie le titre brut récupéré d'une source pour éliminer les préfixes de l'aria-label.
-   */
-  function cleanSourceTitle(rawTitle) {
-    if (!rawTitle) return '';
-    let title = rawTitle.trim();
-    const prefixes = [
-      /^(Ouvrir la source|Ouvrir|Ouvrir le document)\s+/i,
-      /^(Open source|Open|Open document)\s+/i,
-      /^(Abrir la fuente|Abrir)\s+/i,
-      /^(Quelle öffnen|Öffnen)\s+/i
-    ];
-    for (const regex of prefixes) {
-      title = title.replace(regex, '');
-    }
-    return title.trim();
-  }
-
-  /**
-   * Trouve l'identifiant de source correspondant au titre par matching dans la liste RPC.
-   */
-  function findSourceIdByTitle(cleanedTitle, allSources) {
-    if (!cleanedTitle || !allSources) return null;
-    const titleLower = cleanedTitle.toLowerCase();
-    
-    // Essai 1 : match exact
-    let match = allSources.find(s => s.title && s.title.toLowerCase() === titleLower);
-    if (match) return match.id;
-    
-    // Essai 2 : match de sous-chaîne ou d'inclusion
-    match = allSources.find(s => s.title && (titleLower.includes(s.title.toLowerCase()) || s.title.toLowerCase().includes(titleLower)));
-    if (match) return match.id;
-    
-    return null;
-  }
 
   async function runMergeProcess(checkboxes, title, format, dialog) {
     const notebookId = window.MM.getActiveNotebookId();
@@ -367,6 +216,7 @@
     const substatusEl = progressContainer.querySelector('#mm-merge-substatus');
 
     let mergedContent = '';
+    let anyTruncated = false;
 
     try {
       // Récupérer toutes les sources du carnet via RPC pour le fallback de matching
@@ -397,7 +247,7 @@
 
         console.log(`[MM] Fusion : traitement de "${sourceTitle.slice(0, 50)}" (${i+1}/${checkboxes.length})`);
 
-        // 1. Extraire l'ID de la source (DOM puis RPC fallback)
+        // 1. Extraire l'ID de la source
         let sourceId = window.MM.extractSourceId(sourceInfo.card);
         if (!sourceId && allSources.length > 0) {
           sourceId = findSourceIdByTitle(sourceTitle, allSources);
@@ -408,12 +258,47 @@
           continue;
         }
 
-        // 2. Récupérer le contenu brut via RPC
+        // 2. Récupérer le contenu via RPC
         try {
-          const content = await window.MM.rpc.getSourceContent(sourceId, notebookId);
-          if (isCancelled) return; // double check après l'appel réseau
+          let content;
+          if (format === 'PDF-Riche') {
+            const html = await window.MM.rpc.getSourceContentHtml(sourceId, notebookId);
+            if (isCancelled) return;
+            if (checkIfTruncated(html, true)) {
+              anyTruncated = true;
+            }
+            if (html) {
+              content = `<h1>${sourceTitle}</h1>` + html + `<hr>`;
+            } else {
+              // Fallback au texte brut enveloppé dans du HTML si HTML absent
+              const txt = await window.MM.rpc.getSourceContent(sourceId, notebookId, { format: 'text' });
+              const wrappedTxt = (txt || '').replace(/\n/g, '<br>');
+              content = `<h1>${sourceTitle}</h1><p>${wrappedTxt}</p><hr>`;
+            }
+          } else if (format === 'PDF-Simple') {
+            const txt = await window.MM.rpc.getSourceContent(sourceId, notebookId, { format: 'text' });
+            if (isCancelled) return;
+            if (txt) {
+              const wrappedTxt = (txt || '').replace(/\n/g, '<br>');
+              content = `<h1>${sourceTitle}</h1><p>${wrappedTxt}</p><hr>`;
+            }
+          } else {
+            // Markdown-Riche ou Markdown-Simple
+            const isRiche = format === 'Markdown-Riche';
+            const txt = await window.MM.rpc.getSourceContent(sourceId, notebookId, {
+              format: isRiche ? 'html' : 'text'
+            });
+            if (isCancelled) return;
+            if (isRiche && checkIfTruncated(txt, false)) {
+              anyTruncated = true;
+            }
+            if (txt) {
+              content = `# ${sourceTitle}\n\n${txt}\n\n---\n\n`;
+            }
+          }
+
           if (content) {
-            mergedContent += `# ${sourceTitle}\n\n${content}\n\n---\n\n`;
+            mergedContent += content;
           } else {
             console.warn(`[MM] Contenu vide reçu pour "${sourceTitle}"`);
           }
@@ -421,25 +306,28 @@
           console.error(`[MM] Échec de la récupération du contenu pour "${sourceTitle}" :`, err);
         }
 
-        // Espacement temporel de sécurité pour éviter le rate limiting (429)
+        // Espacement de sécurité anti-rate-limit (400ms)
         if (i < checkboxes.length - 1) {
-          await new Promise(r => setTimeout(r, 200));
+          await new Promise(r => setTimeout(r, 400));
         }
       }
 
       if (isCancelled) return;
 
       if (!mergedContent) {
-        throw new Error('Aucun contenu textuel n\'a pu être extrait des sources sélectionnées.');
+        throw new Error('Aucun contenu n\'a pu être extrait des sources sélectionnées.');
       }
 
       statusEl.textContent = 'Création du document fusionné...';
       substatusEl.textContent = 'Envoi vers NotebookLM via RPC';
 
-      if (format === 'Markdown') {
+      if (format === 'Markdown-Riche' || format === 'Markdown-Simple') {
         await window.MM.rpc.addTextSource(notebookId, title, mergedContent);
-      } else {
-        const pdfBlob = generatePDFBlob(title, mergedContent);
+      } else if (format === 'PDF-Simple') {
+        const pdfBlob = await generatePdfBlob(mergedContent, title, { structured: false });
+        await window.MM.rpc.uploadBlob(notebookId, pdfBlob, `${title}.pdf`);
+      } else if (format === 'PDF-Riche') {
+        const pdfBlob = await generatePdfBlob(mergedContent, title, { structured: true, loadImages: true });
         await window.MM.rpc.uploadBlob(notebookId, pdfBlob, `${title}.pdf`);
       }
 
@@ -449,10 +337,14 @@
       const spinner = dialog.querySelector('.mm-merge-spinner');
       if (spinner) spinner.style.display = 'none';
 
-
       statusEl.textContent = 'Fusion terminée !';
       statusEl.style.color = '#34A853';
-      substatusEl.textContent = 'La nouvelle source a été ajoutée. Elle va apparaître dans votre carnet sous peu.';
+      
+      if (anyTruncated) {
+        substatusEl.innerHTML = 'La nouvelle source a été ajoutée. <br><strong style="color: #f59e0b;">Attention : au moins un document a été tronqué par Google en mode Riche. Si des données manquent, recréez la fusion en mode Simple.</strong>';
+      } else {
+        substatusEl.textContent = 'La nouvelle source a été ajoutée. Elle va apparaître dans votre carnet sous peu.';
+      }
       
       const btnClose = createElement('button', {
         className: 'mm-merge-btn-confirm',

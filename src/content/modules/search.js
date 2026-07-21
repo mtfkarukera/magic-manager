@@ -20,6 +20,9 @@
   /** Requête de recherche courante pour assurer la persistance lors des transitions SPA */
   let currentQuery = '';
 
+  /** Identifiant du dernier carnet connu pour réinitialiser la recherche au changement de carnet */
+  let lastNotebookId = null;
+
   // ═══════════════════════════════════════════════════════════════════════
   // Sélecteurs et Heuristiques DOM
   // ═══════════════════════════════════════════════════════════════════════
@@ -601,6 +604,31 @@
       return;
     }
 
+    // Réinitialiser la recherche lors d'un changement de carnet
+    const activeNotebookId = typeof window.MM.getActiveNotebookId === 'function'
+      ? window.MM.getActiveNotebookId()
+      : null;
+
+    if (activeNotebookId !== lastNotebookId) {
+      lastNotebookId = activeNotebookId;
+      currentQuery = '';
+      if (isDuplicateMode) {
+        isDuplicateMode = false;
+        clearDuplicateView();
+        const dupeBtn = searchBarContainer ? searchBarContainer.querySelector('.mm-search-dupes-btn') : null;
+        if (dupeBtn) {
+          dupeBtn.classList.remove('mm-active', 'mm-scanning');
+        }
+      }
+      if (searchBarContainer) {
+        const input = searchBarContainer.querySelector('.mm-search-input');
+        if (input) input.value = '';
+        const clearBtn = searchBarContainer.querySelector('.mm-search-clear');
+        if (clearBtn) clearBtn.classList.remove('mm-visible');
+      }
+      applyFilter('');
+    }
+
     // Détecter si le panneau des sources est présent et visible, ou s'il est minimisé/replié.
     const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
     if (sourcePanel) {
@@ -755,8 +783,9 @@
     isDuplicateMode = false;
     clearDuplicateView();
 
-    // Réinitialiser la requête de recherche courante
+    // Réinitialiser la requête de recherche courante et le carnet courant
     currentQuery = '';
+    lastNotebookId = null;
 
     // Restaurer le style d'affichage de toutes les cartes masquées
     const cards = findSourceCards();

@@ -360,5 +360,69 @@
   "studioClearSelection": {
     "message": "Auswahl aufheben",
     "description": "Button to clear all selected Studio artifacts at once"
+  },
+  "exportFormatDialogTitle": {
+    "message": "Exportformat",
+    "description": "Title of the format selection dialog"
+  },
+  "exportFormatPdfSimple": {
+    "message": "Einfaches PDF",
+    "description": "Simple PDF export"
+  },
+  "exportFormatPdfSimpleDesc": {
+    "message": "Klartext-Layout • Garantiert vollständig",
+    "description": "Simple PDF description"
+  },
+  "exportBtnLabel": {
+    "message": "Exportieren",
+    "description": "Export button label"
+  },
+  "mergeFormatPdfStructured": {
+    "message": "Strukturiertes PDF",
+    "description": "Structured PDF merge format option"
+  },
+  "exportFormatMarkdownRiche": {
+    "message": "Reiches Markdown",
+    "description": "Rich Markdown export"
+  },
+  "exportFormatMarkdownRicheDesc": {
+    "message": "Fettgedruckt, Listen, Tabellen, Bilder • Risiko der Kürzung, wenn schwer",
+    "description": "Rich Markdown description"
+  },
+  "exportFormatMarkdownSimple": {
+    "message": "Einfaches Markdown",
+    "description": "Simple Markdown export"
+  },
+  "exportFormatMarkdownSimpleDesc": {
+    "message": "Vollständiger Klartext • Garantiert 100% vollständig ohne Kürzung",
+    "description": "Simple Markdown description"
+  },
+  "exportFormatPdfRiche": {
+    "message": "Reiches PDF",
+    "description": "Rich PDF export"
+  },
+  "exportFormatPdfRicheDesc": {
+    "message": "Reiches Layout, Tabellen, Bilder • Risiko der Kürzung",
+    "description": "Rich PDF description"
+  },
+  "mergeFormatMarkdownRiche": {
+    "message": "Reiches Markdown",
+    "description": "Rich Markdown merge"
+  },
+  "mergeFormatMarkdownSimple": {
+    "message": "Einfaches Markdown",
+    "description": "Simple Markdown merge"
+  },
+  "mergeFormatPdfRiche": {
+    "message": "Reiches PDF",
+    "description": "Rich PDF merge"
+  },
+  "mergeFormatPdfSimple": {
+    "message": "Einfaches PDF",
+    "description": "Simple PDF merge"
+  },
+  "truncationWarning": {
+    "message": "Warnung: Im Modus 'Reich' kann der Inhalt von Google gekürzt werden, wenn das Dokument schwere Bilder enthält. Verwenden Sie in diesem Fall den Modus 'Einfach' (garantiert vollständig).",
+    "description": "Warning about Google truncation limit"
   }
 }

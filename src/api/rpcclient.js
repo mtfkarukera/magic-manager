@@ -598,72 +598,109 @@
    * ⚠️ Ne jamais parcourir récursivement l'ensemble de la réponse sans cibler
    * les index, car cela capture en premier les URLs de Drive Viewer du descripteur.
    */
-  function extractTextFromGetSourceResult(result) {
-    if (!Array.isArray(result)) return null;
-
-    // 1. Tenter en priorité de récupérer le HTML brut (result[4][1]) et le convertir en Markdown
-    if (result.length > 4 && Array.isArray(result[4]) && result[4].length > 1) {
-      const htmlCandidate = result[4][1];
-      if (typeof htmlCandidate === 'string' && htmlCandidate.length > 0) {
-        try {
-          const markdown = window.MM.htmlToMarkdown(htmlCandidate);
-          if (markdown && markdown.trim().length > 0) {
-            console.log('[MM] Texte extrait et structuré avec succès depuis le HTML (RPC hizoJc).');
-            return markdown;
-          }
-        } catch (htmlErr) {
-          console.error('[MM] Échec de la conversion HTML vers Markdown :', htmlErr);
-        }
-      }
-    }
-
-    // 2. Repli (Fallback) : Extraction ciblée dans le bloc de texte brut (result[3][0])
-    if (result.length > 3 && Array.isArray(result[3]) && result[3].length > 0) {
-      const textBlocks = result[3][0];
-      if (Array.isArray(textBlocks)) {
-        const texts = [];
-        
-        function walkText(node) {
-          if (typeof node === 'string' && node.length > 0) {
-            texts.push(node);
-          } else if (Array.isArray(node)) {
-            for (const child of node) {
-              walkText(child);
-            }
-          }
-        }
-        
-        walkText(textBlocks);
-        if (texts.length > 0) {
-          console.log('[MM] Texte brut extrait depuis le fallback text (RPC hizoJc).');
-          return texts.join('\n');
-        }
-      }
-    }
-
-    return null;
+  /**
+   * Extrait le HTML brut depuis result[4][1].
+   * Retourne null si le HTML n'est pas disponible ou invalide.
+   */
+  function extractHtmlFromResult(result) {
+    if (!Array.isArray(result) || result.length <= 4) return null;
+    const block = result[4];
+    if (!Array.isArray(block) || block.length <= 1) return null;
+    const candidate = block[1];
+    return (typeof candidate === 'string' && candidate.length > 0)
+      ? candidate
+      : null;
   }
 
   /**
-   * Récupère le texte complet d'une source via son ID et notebookId (RPC hizoJc).
+   * Extrait le texte brut depuis result[3][0].
+   * Parcourt récursivement le tableau imbriqué de blocs texte.
    */
-  async function getSourceContent(sourceId, notebookId) {
+  function extractTextFromResult(result) {
+    if (!Array.isArray(result) || result.length <= 3) return null;
+    if (!Array.isArray(result[3]) || result[3].length === 0) return null;
+
+    const textBlocks = result[3][0];
+    if (!Array.isArray(textBlocks)) return null;
+
+    const texts = [];
+    function recurse(node) {
+      if (typeof node === 'string' && node.length > 0) {
+        texts.push(node);
+      } else if (Array.isArray(node)) {
+        for (const child of node) {
+          recurse(child);
+        }
+      }
+    }
+    recurse(textBlocks);
+    return texts.length > 0 ? texts.join('\n') : null;
+  }
+
+  /**
+   * Extrait le contenu d'une réponse GET_SOURCE selon le format demandé.
+   * Avec fallback explicite si le HTML est absent en mode 'html'.
+   */
+  function extractContentFromResult(result, format) {
+    if (!Array.isArray(result)) return null;
+
+    if (format === 'html') {
+      // 1. Tenter l'extraction HTML
+      const html = extractHtmlFromResult(result);
+      if (html) {
+        // Convertir via turndown.js
+        if (typeof window.MM?.convertHtmlToMarkdown === 'function') {
+          return window.MM.convertHtmlToMarkdown(html);
+        }
+        console.warn('[MM] convertHtmlToMarkdown non disponible, retour HTML brut');
+        return html;
+      }
+      // 2. Fallback explicite vers le texte brut
+      console.warn('[MM] Pas de HTML disponible pour cette source (YouTube, audio...), fallback texte brut.');
+      return extractTextFromResult(result);
+    }
+
+    // Mode texte brut
+    return extractTextFromResult(result) || extractHtmlFromResult(result);
+  }
+
+  /**
+   * Récupère le contenu d'une source via son ID et notebookId (RPC hizoJc).
+   * Supporte deux formats : 'html' (Markdown enrichi via turndown) ou 'text' (texte brut).
+   */
+  async function getSourceContent(sourceId, notebookId, { format = 'html' } = {}) {
     if (!sourceId || !notebookId) {
       throw new Error('[MM] getSourceContent : sourceId ou notebookId manquant.');
     }
     const rpcId = 'hizoJc';
-    const params = [[sourceId], [2], [2]];
-    console.log(`[MM] Appel RPC getSourceContent (notebook: ${notebookId}, source: ${sourceId})`);
+    const selector = format === 'html' ? [3] : [2];
+    const params = [[sourceId], selector, selector];
+    console.log(`[MM] Appel RPC getSourceContent (notebook: ${notebookId}, source: ${sourceId}, format: ${format})`);
     const result = await sendBatchExecute(rpcId, params, notebookId);
 
-    const text = extractTextFromGetSourceResult(result);
-    if (!text) {
-      console.error(`[MM] getSourceContent : texte introuvable dans la réponse pour ${sourceId}`);
-      throw new Error(`Texte introuvable pour la source ${sourceId}`);
+    const content = extractContentFromResult(result, format);
+    if (!content) {
+      console.error(`[MM] getSourceContent : contenu introuvable dans la réponse pour ${sourceId}`);
+      throw new Error(`Contenu introuvable pour la source ${sourceId}`);
     }
 
-    console.log(`[MM] Texte récupéré pour ${sourceId} : ${text.length} caractères`);
-    return text;
+    console.log(`[MM] Contenu récupéré pour ${sourceId} : ${content.length} caractères`);
+    return content;
+  }
+
+  /**
+   * Récupère le HTML brut d'une source (sans conversion Markdown).
+   * Utilisé par le pipeline PDF structuré (walker DOM jsPDF).
+   */
+  async function getSourceContentHtml(sourceId, notebookId) {
+    if (!sourceId || !notebookId) {
+      throw new Error('[MM] getSourceContentHtml : sourceId ou notebookId manquant.');
+    }
+    const rpcId = 'hizoJc';
+    const params = [[sourceId], [3], [3]];
+    console.log(`[MM] Appel RPC getSourceContentHtml (notebook: ${notebookId}, source: ${sourceId})`);
+    const result = await sendBatchExecute(rpcId, params, notebookId);
+    return extractHtmlFromResult(result);
   }
 
   /**
@@ -805,6 +842,7 @@
     addTextSource: addTextSource,
     uploadBlob: uploadBlob,
     getSourceContent: getSourceContent,
+    getSourceContentHtml: getSourceContentHtml,
     getNotebookSources: getNotebookSources,
     createNoteRpc: createNoteRpc
   };
