@@ -4,6 +4,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.14.6] — 2026-07-22
+
+### Corrigé
+- 📱 **Ancrage Précis du Bouton Chat Export en Mode Mobile** : Ciblage direct de la sous-barre d'outils mobile située sous les onglets (Ligne 4, contenant les icônes `tune` et `more_vert`). Correction du ciblage qui s'orientait à tort vers les div internes masqués du chat. Suppression des fallbacks dangereux. Branche Desktop 100% inchangée.
+
 ## [0.14.5] — 2026-07-21
 
 ### Corrigé
