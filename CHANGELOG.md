@@ -4,6 +4,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.14.7] — 2026-07-22
+
+### Corrigé & Amélioré
+- 📱 **Positionnement Mobile Option 1 (Poussée à Gauche & Centrage Vertical)** : Positionnement du bouton d'exportation du chat (`.mm-chat-export-btn`) à l'extrême gauche de la sous-barre mobile (sous l'onglet Discussion) via `margin-right: auto` en Flexbox, et centrage vertical parfait avec `align-self: center`. Mode Desktop 100% inchangé.
+
 ## [0.14.6] — 2026-07-22
 
 ### Corrigé

@@ -650,7 +650,7 @@
       justCreated = true;
     }
 
-    // Gestion de la visibilité en mode mobile (onglet Discussion actif uniquement)
+    // Gestion de la visibilité et du positionnement en mode mobile (Option 1 : Poussée à gauche & Centrage)
     const isMobileMode = typeof window.MM.detectDesktopLayout === 'function' ? !window.MM.detectDesktopLayout() : false;
     if (isMobileMode) {
       const activeTab = document.querySelector('div[role="tab"][aria-selected="true"], .mat-mdc-tab-active');
@@ -658,11 +658,15 @@
       if (!isChatActive) {
         exportChatBtn.style.setProperty('display', 'none', 'important');
       } else {
-        exportChatBtn.style.setProperty('display', '', '');
+        exportChatBtn.style.setProperty('display', 'inline-flex', '');
+        exportChatBtn.style.setProperty('margin-right', 'auto', 'important');
+        exportChatBtn.style.setProperty('align-self', 'center', 'important');
       }
     } else {
-      // Sur desktop, toujours visible dans l'en-tête dédié
+      // Sur desktop, toujours visible dans l'en-tête dédié (réinitialiser les styles mobile)
       exportChatBtn.style.setProperty('display', '', '');
+      exportChatBtn.style.removeProperty('margin-right');
+      exportChatBtn.style.removeProperty('align-self');
     }
   }
 
