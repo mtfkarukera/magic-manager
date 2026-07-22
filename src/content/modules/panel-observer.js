@@ -66,8 +66,8 @@
     }
   }, 150);
 
-  /** Sélecteurs CSS des checkboxes natives Gemini Notebook (Angular Material) */
-  const CHECKBOX_SELECTOR = 'mat-pseudo-checkbox, .mat-pseudo-checkbox, [role="checkbox"], input[type="checkbox"]';
+  /** Sélecteurs CSS des checkboxes MDC natives de Gemini Notebook (confirmés par inspection DevTools) */
+  const CHECKBOX_SELECTOR = '.select-checkbox-container input[type="checkbox"], .select-checkbox-container mat-checkbox, mat-pseudo-checkbox, [role="checkbox"]';
 
   /**
    * Callback exécuté à chaque mutation d'enfants dans section.source-panel.
@@ -93,6 +93,31 @@
     } else {
       // source-viewer absent → nettoyer les boutons orphelins
       cleanupPanelButtons();
+
+      // Décocher la source qui a été auto-cochée par Angular lors de l'ouverture du viewer
+      const autoTitle = typeof window.MM.getAutoCheckedSource === 'function'
+        ? window.MM.getAutoCheckedSource() : null;
+      if (autoTitle) {
+        // Délai de 300ms pour laisser Angular terminer son re-rendu post-fermeture
+        setTimeout(function () {
+          const allCards = document.querySelectorAll('.single-source-container');
+          for (var i = 0; i < allCards.length; i++) {
+            var btn = allCards[i].querySelector('button.source-stretched-button');
+            if (btn && (btn.getAttribute('aria-label') || '').trim() === autoTitle) {
+              var cb = allCards[i].querySelector('.select-checkbox-container input[type="checkbox"]');
+              if (cb && cb.checked) {
+                cb.click(); // Angular traite le clic → son modèle interne se met à jour
+                console.log('[MM] Source auto-cochée décochée à la fermeture du viewer :', autoTitle);
+              }
+              break;
+            }
+          }
+          if (typeof window.MM.clearAutoCheckedSource === 'function') {
+            window.MM.clearAutoCheckedSource();
+          }
+          debouncedPanelInteraction();
+        }, 300);
+      }
     }
 
     // Détecter si la mutation est pertinente pour un recalcul des boutons batch.
@@ -107,7 +132,7 @@
           break;
         } else if (m.type === 'attributes') {
           const target = m.target;
-          // Si le changement concerne une checkbox (Angular Material mat-pseudo-checkbox)
+          // Si le changement concerne une checkbox (Angular Material MDC checkbox)
           if (target && (target.matches(CHECKBOX_SELECTOR) || target.closest(CHECKBOX_SELECTOR))) {
             shouldRecalculate = true;
             break;
@@ -128,6 +153,51 @@
   }
 
   /**
+   * Intercepte les clics sur le panneau sources en phase de capture.
+   * Distingue les clics intentionnels sur les checkboxes (sélection pour batch)
+   * des clics sur le corps de la carte (lecture dans le source-viewer).
+   * Quand un clic de lecture est détecté sur une source non cochée, on note
+   * le titre pour pouvoir décocher automatiquement à la fermeture du viewer.
+   * @param {MouseEvent} e
+   */
+  function handlePanelClickCapture(e) {
+    const target = e.target;
+    if (!target) return;
+
+    // 1. Clic dans la zone checkbox → sélection intentionnelle
+    if (target.closest('.select-checkbox-container')) {
+      // Effacer le registre auto-coche (l'utilisateur agit volontairement)
+      if (typeof window.MM.clearAutoCheckedSource === 'function') {
+        window.MM.clearAutoCheckedSource();
+      }
+      // Recalculer les boutons batch après qu'Angular ait traité le clic
+      setTimeout(debouncedPanelInteraction, 50);
+      return;
+    }
+
+    // 2. Clic sur une carte source (stretched-button, titre, etc.) → lecture
+    const card = target.closest('.single-source-container');
+    if (!card) return;
+
+    const checkbox = card.querySelector('.select-checkbox-container input[type="checkbox"]');
+    if (!checkbox) return;
+
+    // 3. Mémoriser l'état AVANT le clic (avant qu'Angular ne modifie quoi que ce soit)
+    const wasCheckedBefore = checkbox.checked;
+
+    if (!wasCheckedBefore) {
+      // La checkbox était décochée → Angular va la cocher automatiquement
+      // On note le titre pour pouvoir la décocher à la fermeture du viewer
+      const stretchedBtn = card.querySelector('button.source-stretched-button');
+      const title = stretchedBtn ? (stretchedBtn.getAttribute('aria-label') || '').trim() : null;
+      if (title && typeof window.MM.setAutoCheckedSource === 'function') {
+        window.MM.setAutoCheckedSource(title);
+      }
+    }
+    // Si elle était déjà cochée avant → l'utilisateur l'avait cochée volontairement → on ne note rien
+  }
+
+  /**
    * Tente de connecter le MutationObserver de panneau sur l'élément actif du DOM.
    */
   function tryObservePanel() {
@@ -135,6 +205,9 @@
 
     // Cas 1 : Nouveau panneau détecté
     if (sourcePanel && sourcePanel !== currentObservedPanel) {
+      if (currentObservedPanel && panelClickHandler) {
+        currentObservedPanel.removeEventListener('click', panelClickHandler, true);
+      }
       if (panelObserver) {
         panelObserver.disconnect();
       }
@@ -146,17 +219,24 @@
         childList: true,
         subtree: true,
         attributes: true,
-        attributeFilter: ['class', 'aria-checked']
+        attributeFilter: ['class', 'aria-checked', 'checked']
       });
 
+      panelClickHandler = handlePanelClickCapture;
+      sourcePanel.addEventListener('click', panelClickHandler, true);
+
       currentObservedPanel = sourcePanel;
-      console.log('[MM] Panel observer connecté (childList + attributes checkboxes)');
+      console.log('[MM] Panel observer connecté (childList + attributes checkboxes + protection clic lecture)');
       
       // Exécuter une première vérification des éléments
       onPanelMutation();
     }
     // Cas 2 : Le panneau a été détruit/retiré du DOM actif
     else if (!sourcePanel && currentObservedPanel) {
+      if (panelClickHandler) {
+        currentObservedPanel.removeEventListener('click', panelClickHandler, true);
+        panelClickHandler = null;
+      }
       if (panelObserver) {
         panelObserver.disconnect();
         panelObserver = null;
@@ -298,6 +378,9 @@
       if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
         window.MM.updateBatchExportButtonState();
       }
+      if (window.MM.isFeatureEnabled('transfer') && typeof window.MM.updateBatchTransferButtonState === 'function') {
+        window.MM.updateBatchTransferButtonState();
+      }
       if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
         window.MM.updateBatchMergeButtonState();
       }
@@ -342,6 +425,9 @@
         dispatchCentralInjections();
         if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
           window.MM.updateBatchExportButtonState();
+        }
+        if (window.MM.isFeatureEnabled('transfer') && typeof window.MM.updateBatchTransferButtonState === 'function') {
+          window.MM.updateBatchTransferButtonState();
         }
         if (window.MM.isFeatureEnabled('merge') && typeof window.MM.updateBatchMergeButtonState === 'function') {
           window.MM.updateBatchMergeButtonState();

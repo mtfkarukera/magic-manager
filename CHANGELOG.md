@@ -6,7 +6,15 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [0.14.9] — 2026-07-22
 
-### Corrigé & Optimisé (Sprint de Correction d'Audit)
+### Corrigé & Amélioré (Sprint 2 v3 & Fix Mobile)
+- 🎯 **Anti-cochage Automatique (`Viewer-Close` Strategy)** :
+  - Résolution définitive du conflit avec le modèle interne Angular : capture chirurgicale de la provenance du clic (checkbox intentionnelle vs carte de source pour lecture).
+  - Introduction du registre de source auto-cochée (`autoCheckedByViewerTitle`) alimenté lors de la lecture d'une source non préalablement sélectionnée.
+  - Décochage automatique propre via un `.click()` natif déclenché lors de la fermeture du `source-viewer` (délai de 300ms post-mutation), synchronisant le modèle Angular.
+  - Mise à jour des sélecteurs MDC réels (`.select-checkbox-container input[type="checkbox"]`).
+- 📱 **Correction Bouton Transfert Batch en Mode Mobile (`transfer.js` & `panel-observer.js`)** :
+  - Support complet du layout responsive mobile et redirection vers l'en-tête collant (`.mm-sticky-header-actions`).
+  - Ajout des appels `updateBatchTransferButtonState()` dans les hooks de cycle de vie `onLayoutResize` et `handleTabClick` de `panel-observer.js`.
 - ⚡ **Optimisation Majeure des Performances DOM (`source-helpers.js`)** : Restriction ciblée de l'heuristique de recherche sémantique du conteneur des sources, éliminant les reflows et scans CPU excessifs sur l'ensemble de la page.
 - 🛡️ **Robustesse & Gestion d'Erreurs (`export.js` & `merge.js`)** : Encapsulation globale des opérations asynchrones `startBatchProcess` et `runMergeProcess` dans des blocs `try/catch/finally` avec dialogues d'erreur explicites.
 - ♿ **Accessibilité WCAG 2.1 AA (`merge.js` & `search.js`)** :

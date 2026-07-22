@@ -89,13 +89,49 @@
   }
 
   // ═══════════════════════════════════════════════════════════════════════
+  // Registre de sources auto-cochées par Angular (viewer-open)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  /**
+   * Titre de la source dont la checkbox a été automatiquement cochée par Angular
+   * lors de l'ouverture du source-viewer (clic sur la carte, pas sur la checkbox).
+   * Réinitialisé à null après le décochage à la fermeture du viewer.
+   * @type {string|null}
+   */
+  let autoCheckedByViewerTitle = null;
+
+  /**
+   * Enregistre le titre d'une source qui va être auto-cochée par Angular.
+   * Appelé en phase de capture du clic sur la carte source.
+   * @param {string} title
+   */
+  function setAutoCheckedSource(title) {
+    autoCheckedByViewerTitle = title || null;
+  }
+
+  /**
+   * Retourne le titre de la source auto-cochée par Angular (ou null).
+   * @returns {string|null}
+   */
+  function getAutoCheckedSource() {
+    return autoCheckedByViewerTitle;
+  }
+
+  /**
+   * Réinitialise le registre de source auto-cochée après décochage.
+   */
+  function clearAutoCheckedSource() {
+    autoCheckedByViewerTitle = null;
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════
   // Récupération des checkboxes de sources cochées
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
    * Retourne la liste des checkboxes de sources individuelles cochées.
-   * Exclut automatiquement la case "Tout sélectionner" globale.
-   * Optimisé : un seul querySelectorAll natif, findSelectAllRow mis en cache hors du filtre.
+   * Exclut automatiquement la case "Tout sélectionner" globale et la source actuellement lue dans le viewer.
+   * Utilise les sélecteurs MDC réels découverts par inspection DOM live.
    * @returns {Array<Element>}
    */
   function getCheckedSourceCheckboxes() {
@@ -105,24 +141,44 @@
     // Mise en cache du résultat de findSelectAllRow hors de la boucle de filtre
     const selectAllRow = findSelectAllRow();
 
-    // Sélecteurs précis — querySelectorAll natif (pas de Shadow DOM nécessaire)
+    // Récupérer la source actuellement ouverte en lecture dans le source-viewer
+    const sourceViewer = document.querySelector('source-viewer');
+    let activeViewerTitle = null;
+    if (sourceViewer) {
+      const titleEl = findSourceViewerTitle(sourceViewer);
+      if (titleEl) {
+        activeViewerTitle = (titleEl.textContent || '').trim().toLowerCase();
+      }
+    }
+
+    // Sélecteurs précis — checkboxes MDC natives (structure réelle confirmée par DevTools)
     const checkboxes = Array.from(list.querySelectorAll(
-      'input[type="checkbox"], [role="checkbox"], mat-pseudo-checkbox, .mat-pseudo-checkbox'
+      '.select-checkbox-container input[type="checkbox"], input[type="checkbox"], [role="checkbox"]'
     ));
 
     return checkboxes.filter(function (cb) {
-      const isChecked =
-        cb.getAttribute('aria-checked') === 'true' ||
-        cb.checked === true ||
-        cb.classList.contains('mat-pseudo-checkbox-checked') ||
-        cb.getAttribute('state') === 'checked' ||
-        (typeof cb.className === 'string' && cb.className.includes('checked')) ||
-        cb.getAttribute('aria-selected') === 'true';
-
       // Exclure la case globale "Tout sélectionner" de façon sémantique
       const isGlobal = selectAllRow && (cb === selectAllRow || selectAllRow.contains(cb));
+      if (isGlobal) return false;
 
-      return isChecked && !isGlobal;
+      // Vérifier si la checkbox est cochée (structure MDC réelle)
+      const isCheckedVisually =
+        cb.checked === true ||
+        cb.getAttribute('aria-checked') === 'true';
+
+      if (!isCheckedVisually) return false;
+
+      const cardInfo = findSourceCardFromCheckbox(cb);
+      const cardTitle = cardInfo ? (cardInfo.title || '').trim().toLowerCase() : '';
+
+      // Si la source correspond au document ouvert dans le source-viewer (lecture seule), l'exclure
+      if (activeViewerTitle && cardTitle) {
+        if (cardTitle.includes(activeViewerTitle) || activeViewerTitle.includes(cardTitle)) {
+          return false;
+        }
+      }
+
+      return true;
     });
   }
 
@@ -410,4 +466,9 @@
   window.MM.findSourceViewerTitleText = findSourceViewerTitleText;
   window.MM.findSourceCards = findSourceCards;
   window.MM.getNativeCollapseBtn = getNativeCollapseBtn;
+
+  // Registre de source auto-cochée par Angular (viewer-open)
+  window.MM.setAutoCheckedSource = setAutoCheckedSource;
+  window.MM.getAutoCheckedSource = getAutoCheckedSource;
+  window.MM.clearAutoCheckedSource = clearAutoCheckedSource;
 })();

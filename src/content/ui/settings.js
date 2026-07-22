@@ -209,7 +209,7 @@
         if (!active || active === document.body || active === document.documentElement) {
           return;
         }
-        if (popoverElement && !popoverElement.contains(active) && active !== settingsButton) {
+        if (popoverElement && !popoverElement.contains(active) && active !== settingsButton && !settingsButton.contains(active)) {
           closeSettingsPopover();
         }
       }, 50);
@@ -220,7 +220,7 @@
     outsideClickTimeoutId = setTimeout(function () {
       outsideClickTimeoutId = null;
       outsideClickHandler = function (e) {
-        if (popoverElement && !popoverElement.contains(e.target) && e.target !== settingsButton) {
+        if (popoverElement && !popoverElement.contains(e.target) && settingsButton && !settingsButton.contains(e.target)) {
           closeSettingsPopover();
         }
       };

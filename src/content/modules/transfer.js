@@ -603,22 +603,30 @@
     const checkedCheckboxes = window.MM.getCheckedSourceCheckboxes();
     const count = checkedCheckboxes ? checkedCheckboxes.length : 0;
 
-    let anchor = document.querySelector('section.source-panel .panel-header') ||
-                 document.querySelector('section.source-panel form header') ||
-                 document.querySelector('.source-panel .header');
+    // Ancre prioritaire : panel-header du panneau sources (desktop)
+    const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
+    const panelHeader = sourcePanel ? sourcePanel.querySelector('.panel-header, [class*="header"]') : null;
 
-    let isHeader = true;
+    // Détection du layout mobile pour rediriger vers le sticky-header
+    const isMobileLayout = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
+
+    let anchor = (!isMobileLayout && panelHeader) ? panelHeader : null;
+    let isHeader = !!anchor;
     let isMobileSticky = false;
 
     if (!anchor) {
-      const mobileHeader = document.querySelector('.mobile-source-header, .sticky-source-actions');
-      if (mobileHeader) {
-        anchor = mobileHeader;
+      // Fallback mobile : en-tête collant (sticky-header)
+      const stickyHeader = typeof window.MM.getOrCreateStickyHeader === 'function'
+        ? window.MM.getOrCreateStickyHeader() : null;
+      if (stickyHeader) {
+        anchor = stickyHeader.querySelector('.mm-sticky-header-actions');
         isMobileSticky = true;
+        isHeader = true;
       }
     }
 
     if (!anchor) {
+      // Fallback DOM général
       anchor = document.querySelector('.mm-search-bar') || window.MM.findSelectAllRow();
       isHeader = false;
     }
@@ -633,6 +641,8 @@
       if (buttonIsCorrect) return;
     }
     lastBatchTransferCount = count;
+
+    console.debug(`[MM] updateBatchTransferButtonState : ${count} source(s) cochée(s) détectée(s).`);
 
     if (count > 0) {
       if (!batchTransferButton || !anchor.contains(batchTransferButton)) {
