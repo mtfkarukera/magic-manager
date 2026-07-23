@@ -264,7 +264,12 @@
     // Déconnecter les observers AVANT toute modification du DOM
     // — les mutations générées par nos injections seront ainsi silencieuses
     const observeOptions = { childList: true, subtree: true };
-    const panelObserveOptions = { childList: true, subtree: true };
+    const panelObserveOptions = {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class', 'aria-checked', 'checked']
+    };
     if (globalPageObserver) globalPageObserver.disconnect();
     if (panelObserver && currentObservedPanel) panelObserver.disconnect();
 

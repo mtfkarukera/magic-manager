@@ -243,7 +243,11 @@
       { id: 'pdf-simple', title: 'exportFormatPdfSimple', desc: 'exportFormatPdfSimpleDesc' }
     ];
 
-    const optionContainer = createElement('div', { className: 'mm-export-options-list' });
+    const optionContainer = createElement('div', {
+      className: 'mm-export-options-list',
+      role: 'radiogroup',
+      'aria-label': t('exportFormatLabel') || 'Formats d\'exportation'
+    });
 
     // Générer chaque élément d'option avec radio
     const optionEls = formats.map(f => {

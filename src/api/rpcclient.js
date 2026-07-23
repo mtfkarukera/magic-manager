@@ -653,30 +653,7 @@
     return { id: notebookId, title: title.trim(), sourceCount: 0 };
   }
 
-  /**
-   * Ajoute une source Google Drive dans un carnet.
-   * RPC : izAoDd | source-path : "/notebook/<targetNotebookId>"
-   */
-  async function addDriveSource(targetNotebookId, fileId, mimeType, title) {
-    if (!targetNotebookId || !fileId) {
-      throw new Error('[MM] addDriveSource : targetNotebookId ou fileId manquant.');
-    }
-    const rpcId = 'izAoDd';
-    const sourceData = [
-      [fileId, mimeType || 'application/vnd.google-apps.document', 1, title || ''],
-      null, null, null, null, null, null, null, null, null, 1
-    ];
-    const params = [
-      [sourceData],
-      targetNotebookId,
-      [2],
-      [1, null, null, null, null, null, null, null, null, null, [1]]
-    ];
-    console.log(`[MM] Appel RPC addDriveSource (notebook: ${targetNotebookId}, drive: ${fileId})`);
-    const result = await sendBatchExecute(rpcId, params, targetNotebookId);
-    console.log('[MM] RPC addDriveSource exécuté avec succès.');
-    return result;
-  }
+
 
 
   /**

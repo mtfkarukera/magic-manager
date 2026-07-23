@@ -4,6 +4,22 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.16.0] — 2026-07-24
+
+### Corrigé & Optimisé — Sprint d'Optimisation v0.16.0 (Audit & Analyse d'Impact Systémique)
+- 🎯 **Correction chirurgicale du Studio (`studio-delete.js`)** :
+  - **Match par ID unique (`data-note-id`)** : Suppression intégrale du matching par titre (`dbItems.find(...)`). Chaque note du Studio est désormais associée à son ID serveur unique avec déduplication via `usedIds.has(item.id)`, résolvant définitivement la suppression accidentelle de notes homonymes (ex: 2 notes "Test Note").
+- ⚡ **Robustesse Observer & RPC (`panel-observer.js`, `rpcclient.js`, `merge.js`)** :
+  - **Filtres d'observation réactifs** : Restauration systématique de `attributes: true` et `attributeFilter` dans `panelObserveOptions` lors de la réactivation de l'observer central.
+  - **Appel Namespace Sécurisé** : Utilisation explicite du namespace `window.MM.getCheckedSourceCheckboxes()` au clic sur le bouton de fusion pour éviter toute `ReferenceError`.
+  - **Nettoyage RPC** : Suppression de la seconde déclaration redondante de `addDriveSource` dans `rpcclient.js`.
+- ♿ **Accessibilité WCAG 2.1 AA & Règle 14 (`settings.js`, `dialogs.js`, `transfer.js`)** :
+  - **Focus Trap** : Ajout du confinement de navigation clavier `Tab` / `Shift+Tab` dans le popover de réglages.
+  - **Radiogroup ARIA** : Structuration sémantique `role="radiogroup"` sur la liste d'options d'exportation.
+  - **Suppression Dialogue Bloquant** : Remplacement du fallback `window.prompt()` par `window.MM.showPromptDialog` (Règle 14).
+- 📦 **Packaging & Packaging Ignoré (`.web-ext-ignore`)** :
+  - Correction du motif d'exclusion (`tasks.md` → `task*.md`) pour empêcher l'inclusion des fichiers de suivi interne dans les binaires `.xpi`.
+
 ## [0.15.1] — 2026-07-23
 
 ### Nouveautés — Sprint 4 (Studio & Note Copy)

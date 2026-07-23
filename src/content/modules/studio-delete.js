@@ -408,15 +408,17 @@
           console.log(`[MM] StudioDelete : ${dbItems.length} éléments récupérés du serveur.`);
 
 
-          // Préparer les requêtes de suppression RPC via matching titre → ID serveur
+          // Préparer les requêtes de suppression RPC via matching titre → ID serveur avec déduplication d'IDs uniques
           const requests = [];
           const matchedCards = [];
+          const usedIds = new Set();
 
           selectedTitles.forEach(({ title, index }) => {
             const matchItem = dbItems.find(
-              item => item.title.trim().toLowerCase() === title.toLowerCase()
+              item => item.title.trim().toLowerCase() === title.toLowerCase() && !usedIds.has(item.id)
             );
             if (matchItem) {
+              usedIds.add(matchItem.id);
               const rpcId = matchItem.type === 'note' ? 'AH0mwd' : 'V5N4be';
               const params = matchItem.type === 'note'
                 ? [notebookId, null, [matchItem.id]] // Payload DELETE_NOTE

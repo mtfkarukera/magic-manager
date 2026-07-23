@@ -254,9 +254,7 @@
         if (typeof window.MM.showPromptDialog === 'function') {
           window.MM.showPromptDialog(promptTitleKey, promptPlaceholderKey, doCreate);
         } else {
-          const promptMsg = t(promptTitleKey) || 'Nom du nouveau carnet :';
-          const inputTitle = window.prompt(promptMsg);
-          if (inputTitle) doCreate(inputTitle);
+          console.error('[MM] showPromptDialog non disponible.');
         }
       }
     });

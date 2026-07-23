@@ -484,7 +484,12 @@
           className: isHeader ? 'mm-batch-merge-btn mm-btn-icon' : 'mm-batch-merge-btn mm-btn-row',
           title: `${t('mergeButton') || 'Fusionner'} (${count})`,
           'aria-label': `${t('mergeButton') || 'Fusionner'} (${count})`,
-          onClick: () => showMergeDialog(checked)
+          onClick: () => {
+            const currentChecked = typeof window.MM.getCheckedSourceCheckboxes === 'function'
+              ? window.MM.getCheckedSourceCheckboxes()
+              : checked;
+            showMergeDialog(currentChecked);
+          }
         }, [
           createMergeIcon(),
           createElement('span', {

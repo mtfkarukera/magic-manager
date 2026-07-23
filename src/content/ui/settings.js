@@ -191,11 +191,24 @@
       firstCheckbox.focus();
     }
 
-    // Fermeture avec la touche Echap
+    // Fermeture avec la touche Echap & Focus Trap avec Tab
     popoverKeydownHandler = function (e) {
       if (e.key === 'Escape') {
         closeSettingsPopover();
         if (settingsButton) settingsButton.focus();
+      } else if (e.key === 'Tab' && popoverElement) {
+        const focusables = Array.from(popoverElement.querySelectorAll('input, button, [tabindex="0"]'));
+        if (focusables.length > 0) {
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+          } else if (!e.shiftKey && document.activeElement === last) {
+            e.preventDefault();
+            first.focus();
+          }
+        }
       }
     };
     document.addEventListener('keydown', popoverKeydownHandler);
