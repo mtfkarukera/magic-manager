@@ -115,19 +115,23 @@
    * @returns {Element|null}
    */
   function findNoteContainer() {
-    // 1. Balises et classes exactes de NotebookLM (note-editor, note-form, note-viewer)
-    const explicit = document.querySelector(
-      'note-editor, .note-editor, form.note-form, .note-title-container, note-viewer, .note-viewer, [class*="note-viewer"], [class*="note-editor"], [class*="note-detail"], [class*="artifact-view"], artifact-viewer'
+    // 1. Exclure explicitement tous les artefacts non-notes (infographies, cartes mentales, résumés audio, etc.)
+    const activeArtifact = document.querySelector(
+      'artifact-viewer, [class*="artifact-view"], [class*="infographic"], [class*="mindmap"], [class*="audio-player"]'
     );
+
+    // 2. Balises et classes exactes de NotebookLM pour les NOTES textuelles uniquement
+    const explicit = document.querySelector('note-editor, .note-editor, form.note-form, .note-title-container');
     if (explicit) {
-      return explicit.closest('note-editor, form.note-form') || explicit;
+      // S'assurer qu'il ne s'agit pas d'un sous-élément d'artefact
+      if (!explicit.closest('artifact-viewer, [class*="artifact-view"]')) {
+        return explicit.closest('note-editor, form.note-form') || explicit;
+      }
     }
 
-    // 2. Fallback via le bouton corbeille dans le panneau Studio
-    const deleteBtn = document.querySelector(
-      'button.note-editor-delete-button, button[aria-label*="Supprim" i], button[aria-label*="Delete" i], button[mattooltip*="Supprim" i], button[mattooltip*="Delete" i]'
-    );
-    if (deleteBtn) {
+    // 3. Fallback via le bouton corbeille natif DE NOTE uniquement (note-editor-delete-button)
+    const deleteBtn = document.querySelector('button.note-editor-delete-button');
+    if (deleteBtn && !deleteBtn.closest('artifact-viewer, [class*="artifact-view"]')) {
       return deleteBtn.closest('note-editor, form.note-form, div.note-title-container') || deleteBtn.parentElement;
     }
 
@@ -323,11 +327,11 @@
       deleteBtn.parentNode.insertBefore(copyBtn, deleteBtn);
       console.log('[MM] NoteCopy : Bouton "Copier sans sources" injecté à gauche de la corbeille');
     } else {
-      // Fallback : injecter dans l'en-tête de la note
-      const header = noteContainer.querySelector('.note-title-container, .header, [class*="header"], .action-buttons, [class*="actions"]');
-      if (header) {
-        header.appendChild(copyBtn);
-        console.log('[MM] NoteCopy : Bouton "Copier sans sources" injecté dans l\'en-tête (fallback)');
+      // Fallback strict : injecter uniquement dans la barre de titre explicite d'une note
+      const titleHeader = noteContainer.querySelector('.note-title-container');
+      if (titleHeader) {
+        titleHeader.appendChild(copyBtn);
+        console.log('[MM] NoteCopy : Bouton "Copier sans sources" injecté dans note-title-container (fallback)');
       }
     }
   }
