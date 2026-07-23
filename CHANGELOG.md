@@ -4,7 +4,7 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
-## [0.15.0] — 2026-07-23
+## [0.15.1] — 2026-07-23
 
 ### Nouveautés — Sprint 4 (Studio & Note Copy)
 - 📋 **Sprint 4 : Copie Note Sans Sources (`note-copy.js`)** :
