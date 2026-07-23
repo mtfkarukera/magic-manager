@@ -825,7 +825,7 @@
     const result = await sendBatchExecute(rpcId, params, notebookId);
 
     const content = extractContentFromResult(result, format);
-    if (!content) {
+    if (content === null || content === undefined) {
       console.error(`[MM] getSourceContent : contenu introuvable dans la réponse pour ${sourceId}`);
       throw new Error(`Contenu introuvable pour la source ${sourceId}`);
     }

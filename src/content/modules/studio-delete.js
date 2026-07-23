@@ -95,8 +95,11 @@
       if (!Array.isArray(row) || row.length < 2) return null;
       const id = row[0];
       const data = row[1];
+      const statusFlag = row[2];
+      
+      // Écarter les notes en soft delete côté serveur Google (status 2 ou contenu null)
+      if (statusFlag === 2 || data === null || !Array.isArray(data) || data.length < 5) return null;
       if (typeof id !== 'string' || id.length < 10) return null;
-      if (!Array.isArray(data) || data.length < 5) return null;
       
       const title = data[4] || '';
       return { id: id, title: title.trim(), type: 'note' };
@@ -144,17 +147,21 @@
     const cards = findStudioCards(studioPanel);
     if (cards.length === 0) return;
 
-    // 1. Vérifier la cohérence de la sélection par empreinte de liste
+    // 1. Vérifier la cohérence de la sélection par empreinte de liste (réinitialiser uniquement si la structure de la liste a changé)
     if (selectedItems.size > 0 && selectionFingerprint !== null) {
       const currentFingerprint = computeFingerprint(cards);
       if (currentFingerprint !== selectionFingerprint) {
-        console.log('[MM] StudioDelete : empreinte de liste modifiée, réinitialisation de la sélection.');
-        selectedItems.clear();
-        selectionFingerprint = null;
-        updateBatchDeleteButtonState();
-        // Décocher les checkboxes existantes dans le DOM
-        studioPanel.querySelectorAll('.mm-studio-checkbox').forEach(cb => { cb.checked = false; });
-        window.MM.showAlertDialog('studioSelectionResetTitle', 'studioSelectionResetMessage');
+        const oldLength = selectionFingerprint.split('||').length;
+        if (cards.length !== oldLength) {
+          console.log('[MM] StudioDelete : nombre de cartes modifié, réinitialisation de la sélection.');
+          selectedItems.clear();
+          selectionFingerprint = null;
+          updateBatchDeleteButtonState();
+          studioPanel.querySelectorAll('.mm-studio-checkbox').forEach(cb => { cb.checked = false; });
+        } else {
+          // Si le nombre d'éléments est identique, mettre à jour l'empreinte sans détruire la sélection
+          selectionFingerprint = currentFingerprint;
+        }
       }
     }
 

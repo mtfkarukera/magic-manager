@@ -503,6 +503,9 @@
       tabClickTimer = null;
     }
     if (currentObservedPanel) {
+      if (panelClickHandler) {
+        currentObservedPanel.removeEventListener('click', panelClickHandler, true);
+      }
       currentObservedPanel = null;
     }
     document.removeEventListener('click', handleTabClick);

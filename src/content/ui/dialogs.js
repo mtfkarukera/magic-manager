@@ -349,6 +349,7 @@
    * @param {Function} [onClose]           - Callback exécuté à la fermeture.
    */
   function showAlertDialog(titleKey, messageKey, messageSubstitutions, onClose) {
+    lastFocusedElement = document.activeElement;
     closeDialog();
 
     const okBtn = createElement('button', {
@@ -408,7 +409,8 @@
     const inputEl = createElement('input', {
       type: 'text',
       className: 'mm-dialog-input',
-      placeholder: t(placeholderKey) || placeholderKey
+      placeholder: t(placeholderKey) || placeholderKey,
+      'aria-label': t(placeholderKey) || placeholderKey
     });
 
     const cancelBtn = createElement('button', {
