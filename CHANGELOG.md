@@ -4,14 +4,19 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
-## [0.14.9] — 2026-07-22
+## [0.14.9] — 2026-07-23
 
-### Corrigé & Amélioré (Sprint 2 v3 & Fix Mobile)
-- 🎯 **Anti-cochage Automatique (`Viewer-Close` Strategy)** :
-  - Résolution définitive du conflit avec le modèle interne Angular : capture chirurgicale de la provenance du clic (checkbox intentionnelle vs carte de source pour lecture).
+### Nouveautés & Correctifs UX (Sprints 1, 2 & 3)
+- 🔁 **Sprint 1 : Toggle du Popover de Réglages (`settings.js`)** :
+  - Inversion directe de l'état ouvert/fermé du popover de configuration au clic sur l'icône engrenage dans le header.
+- 🎯 **Sprint 2 : Anti-cochage Automatique (`Viewer-Close` Strategy)** :
+  - Capture chirurgicale de la provenance du clic (checkbox intentionnelle vs carte de source pour lecture).
   - Introduction du registre de source auto-cochée (`autoCheckedByViewerTitle`) alimenté lors de la lecture d'une source non préalablement sélectionnée.
   - Décochage automatique propre via un `.click()` natif déclenché lors de la fermeture du `source-viewer` (délai de 300ms post-mutation), synchronisant le modèle Angular.
-  - Mise à jour des sélecteurs MDC réels (`.select-checkbox-container input[type="checkbox"]`).
+- 🔍 **Sprint 3 : Persistance du Mode Doublons (`search.js`)** :
+  - **Option B (Affichage complet)** : Conservation de 100% des sources du carnet visibles dans le panneau (`card.style.display = ''`) lors de l'activation du dédoublonnage, avec injection des badges colorés sur les paires/groupes.
+  - **Cache Mémoire Réactif (`duplicateCache`)** : Mémorisation de l'instantané du test de doublons, permettant une réhydratation réactive (< 3ms) à la fermeture du `source-viewer` sans aucun recalcul CPU ni appel RPC.
+  - **Invalidation Intelligente** : Vidage automatique du cache et réinitialisation si une source est ajoutée/supprimée ou lors d'un changement de carnet.
 - 📱 **Correction Bouton Transfert Batch en Mode Mobile (`transfer.js` & `panel-observer.js`)** :
   - Support complet du layout responsive mobile et redirection vers l'en-tête collant (`.mm-sticky-header-actions`).
   - Ajout des appels `updateBatchTransferButtonState()` dans les hooks de cycle de vie `onLayoutResize` et `handleTabClick` de `panel-observer.js`.

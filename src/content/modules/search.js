@@ -132,6 +132,9 @@
   /** État du mode doublons */
   let isDuplicateMode = false;
 
+  /** Cache mémoire des résultats du dédoublonnage pour la persistance */
+  let duplicateCache = null;
+
   /** Verrou anti-double-clic pendant le scan de contenu */
   let isScanning = false;
 
@@ -416,23 +419,37 @@
   ];
 
   /**
-   * Applique le mode visuel doublons : masque les non-doublons, ajoute un badge coloré.
+   * Applique le mode visuel doublons : conserve 100% des cartes visibles (Option B) et ajoute les badges colorés.
+   * Hydrate également duplicateCache pour la persistance post-viewer.
    * @param {Map<Element, {group: number, score: number}>} groups
    */
   function applyDuplicateView(groups) {
     const cards = findSourceCards();
     let dupeCount = 0;
 
+    const activeNotebookId = typeof window.MM.getActiveNotebookId === 'function'
+      ? window.MM.getActiveNotebookId()
+      : null;
+    const cacheMap = new Map();
+
     cards.forEach(function (card) {
+      // Option B : TOUTES les cartes restent visibles dans le panneau
+      card.style.display = '';
+
       // Nettoyer les badges précédents
       const oldBadge = card.querySelector('.mm-dupe-badge');
       if (oldBadge) oldBadge.remove();
 
-      if (groups.has(card)) {
-        card.style.display = '';
+      const title = getCardTitle(card);
+
+      if (groups && groups.has(card)) {
         const info = groups.get(card);
         const color = DUPE_COLORS[info.group % DUPE_COLORS.length];
         const pct = Math.round(info.score * 100);
+
+        if (title) {
+          cacheMap.set(title, { group: info.group, score: info.score });
+        }
 
         const badge = createElement('span', {
           className: 'mm-dupe-badge',
@@ -446,9 +463,16 @@
         card.insertBefore(badge, card.firstChild);
         dupeCount++;
       } else {
-        card.style.display = 'none';
+        card.classList.remove('mm-dupe-highlight');
+        card.style.removeProperty('--mm-dupe-border-color');
       }
     });
+
+    duplicateCache = {
+      notebookId: activeNotebookId,
+      titles: cards.map(getCardTitle),
+      data: cacheMap
+    };
 
     if (dupeCount === 0 && groups.size === 0) {
       showNoResultsMessage();
@@ -471,7 +495,47 @@
       const badge = card.querySelector('.mm-dupe-badge');
       if (badge) badge.remove();
     });
+    duplicateCache = null;
     hideNoResultsMessage();
+  }
+
+  /**
+   * Réapplique de façon synchrone et réactive (< 3ms) les badges de doublons à partir du cache mémoire.
+   * Conserve 100% des sources visibles dans le panneau (Option B sans masquage).
+   */
+  function reapplyDuplicateViewFromCache() {
+    if (!isDuplicateMode || !duplicateCache || !duplicateCache.data) return;
+
+    const cards = findSourceCards();
+    cards.forEach(function (card) {
+      card.style.display = ''; // Option B : 100% des sources restent visibles
+
+      const oldBadge = card.querySelector('.mm-dupe-badge');
+      if (oldBadge) oldBadge.remove();
+
+      const title = getCardTitle(card);
+      if (title && duplicateCache.data.has(title)) {
+        const info = duplicateCache.data.get(title);
+        const color = DUPE_COLORS[info.group % DUPE_COLORS.length];
+        const pct = Math.round(info.score * 100);
+
+        const badge = createElement('span', {
+          className: 'mm-dupe-badge',
+          textContent: pct + '%',
+          title: t('searchDupeScore', [String(pct)])
+        });
+        badge.style.setProperty('--mm-dupe-color', color);
+        card.style.setProperty('--mm-dupe-border-color', color);
+        card.classList.add('mm-dupe-highlight');
+        card.insertBefore(badge, card.firstChild);
+      } else {
+        card.classList.remove('mm-dupe-highlight');
+        card.style.removeProperty('--mm-dupe-border-color');
+      }
+    });
+
+    const btn = searchBarContainer ? searchBarContainer.querySelector('.mm-search-dupes-btn') : null;
+    if (btn) btn.classList.add('mm-active');
   }
 
   /**
@@ -624,9 +688,11 @@
     if (!activeNotebookId) {
       lastNotebookId = null;
       currentQuery = '';
+      duplicateCache = null;
     } else if (lastNotebookId && activeNotebookId !== lastNotebookId) {
       lastNotebookId = activeNotebookId;
       currentQuery = '';
+      duplicateCache = null;
       if (isDuplicateMode) {
         isDuplicateMode = false;
         clearDuplicateView();
@@ -671,17 +737,46 @@
       return;
     }
 
+    /**
+     * Rafraîchit la vue du panneau des sources :
+     * - Si isDuplicateMode est true et duplicateCache valide (liste identique) ➔ réapplique les badges.
+     * - Si la liste des sources a changé (ajout/suppression) ➔ invalide le cache et désactive le mode.
+     * - Sinon ➔ applique le filtre de recherche texte courant.
+     */
+    function refreshSearchView() {
+      if (isDuplicateMode && duplicateCache) {
+        const currentCards = findSourceCards();
+        const currentTitles = currentCards.map(getCardTitle);
+        const isSameList = duplicateCache.titles.length === currentTitles.length &&
+          duplicateCache.titles.every(function (t, i) { return t === currentTitles[i]; });
+
+        if (isSameList) {
+          reapplyDuplicateViewFromCache();
+          return;
+        } else {
+          // La liste des sources a été modifiée (ajout / suppression) ➔ Invalidation du cache
+          duplicateCache = null;
+          isDuplicateMode = false;
+          clearDuplicateView();
+          const dupeBtn = searchBarContainer ? searchBarContainer.querySelector('.mm-search-dupes-btn') : null;
+          if (dupeBtn) {
+            dupeBtn.classList.remove('mm-active', 'mm-scanning');
+          }
+        }
+      }
+      applyFilter(currentQuery);
+    }
+
     // Si on n'est plus en train de lire et que la barre était masquée, on la réaffiche
     if (searchBarContainer && searchBarContainer.style.display === 'none') {
       searchBarContainer.style.display = '';
-      // Ré-appliquer le filtrage persistant
-      applyFilter(currentQuery);
+      refreshSearchView();
       return;
     }
 
-    // Si la barre est déjà dans le DOM et visible → on s'assure d'appliquer le filtre courant
+    // Si la barre est déjà dans le DOM et visible → on s'assure d'appliquer la vue courante
     if (searchBarContainer && document.contains(searchBarContainer)) {
-      applyFilter(currentQuery);
+      refreshSearchView();
       return;
     }
 
@@ -778,8 +873,8 @@
       }
     }
 
-    // Ré-appliquer le filtrage s'il y a une recherche active
-    applyFilter(currentQuery);
+    // Ré-appliquer la vue courante (doublons ou filtrage texte)
+    refreshSearchView();
   }
 
   /**
