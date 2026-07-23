@@ -516,5 +516,17 @@
   "mergeErrorMsg": {
     "message": "Une erreur inattendue est survenue pendant la fusion. Veuillez réessayer.",
     "description": "Message d'erreur lors de la fusion"
+  },
+  "noteCopyButton": {
+    "message": "Copier sans sources",
+    "description": "Bouton pour copier une note sans les références aux sources"
+  },
+  "noteCopySuccess": {
+    "message": "Note copiée sans sources !",
+    "description": "Message de confirmation après la copie de la note"
+  },
+  "noteCopyTooltip": {
+    "message": "Copier la note avec sa mise en page, sans les références aux sources",
+    "description": "Info-bulle du bouton copier sans sources"
   }
 }

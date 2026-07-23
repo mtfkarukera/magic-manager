@@ -302,6 +302,11 @@
         window.MM.checkAndInjectStudioSearch();
       }
 
+      // 4.8 Copie sans sources (Note Viewer / Studio — Sprint 4)
+      if (window.MM.isFeatureEnabled('noteCopy') && typeof window.MM.checkAndInjectNoteCopy === 'function') {
+        window.MM.checkAndInjectNoteCopy();
+      }
+
       // 5. Injections individuelles (Poubelle, Export & Transfert) s'il y a un source-viewer actif
       const sourceViewer = document.querySelector('source-viewer');
       if (sourceViewer) {

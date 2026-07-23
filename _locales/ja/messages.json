@@ -514,7 +514,19 @@
     "description": "結合エラーダイアログのタイトル"
   },
   "mergeErrorMsg": {
-    "message": "結合中に予期しないエラーが発生しました。もう一度お試しください。",
-    "description": "結合エラーメッセージ"
+    "message": "マージ中に予期しないエラーが発生しました。もう一度お試しください。",
+    "description": "マージエラーメッセージ"
+  },
+  "noteCopyButton": {
+    "message": "ソースなしでコピー",
+    "description": "ソース参照なしでメモをコピーするボタン"
+  },
+  "noteCopySuccess": {
+    "message": "ソースなしでメモをコピーしました！",
+    "description": "コピー完了メッセージ"
+  },
+  "noteCopyTooltip": {
+    "message": "ソースの参照なしで書式付きでメモをコピー",
+    "description": "コピーボタンのツールチップ"
   }
 }

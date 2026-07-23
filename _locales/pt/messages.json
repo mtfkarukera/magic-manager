@@ -514,7 +514,19 @@
     "description": "Título do diálogo de erro de mesclagem"
   },
   "mergeErrorMsg": {
-    "message": "Ocorreu um erro inesperado durante a mesclagem. Tente novamente.",
+    "message": "Ocorreu um erro inesperado ao mesclar. Tente novamente.",
     "description": "Mensagem de erro de mesclagem"
+  },
+  "noteCopyButton": {
+    "message": "Copiar sem fontes",
+    "description": "Botão para copiar nota sem referências"
+  },
+  "noteCopySuccess": {
+    "message": "Nota copiada sem fontes!",
+    "description": "Mensagem de confirmação"
+  },
+  "noteCopyTooltip": {
+    "message": "Copiar a nota com formatação sem referências a fontes",
+    "description": "Dica de ferramenta do botão"
   }
 }

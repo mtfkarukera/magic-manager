@@ -516,5 +516,17 @@
   "mergeErrorMsg": {
     "message": "An unexpected error occurred during merging. Please try again.",
     "description": "Merge error message"
+  },
+  "noteCopyButton": {
+    "message": "Copy without sources",
+    "description": "Button to copy note without source citations"
+  },
+  "noteCopySuccess": {
+    "message": "Note copied without sources!",
+    "description": "Toast message after copying note without sources"
+  },
+  "noteCopyTooltip": {
+    "message": "Copy note with rich formatting, without source citations",
+    "description": "Tooltip for copy without sources button"
   }
 }

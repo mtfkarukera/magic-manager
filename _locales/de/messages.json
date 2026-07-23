@@ -514,7 +514,19 @@
     "description": "Titel des Zusammenführungsfehler-Dialogs"
   },
   "mergeErrorMsg": {
-    "message": "Unerwarteter Fehler beim Zusammenführen. Bitte versuchen Sie es erneut.",
+    "message": "Ein unerwarteter Fehler ist beim Zusammenführen aufgetreten. Bitte versuchen Sie es erneut.",
     "description": "Fehlermeldung beim Zusammenführen"
+  },
+  "noteCopyButton": {
+    "message": "Ohne Quellen kopieren",
+    "description": "Button zum Kopieren der Notiz ohne Quellenangaben"
+  },
+  "noteCopySuccess": {
+    "message": "Notiz ohne Quellen kopiert!",
+    "description": "Bestätigungsmeldung nach dem Kopieren"
+  },
+  "noteCopyTooltip": {
+    "message": "Notiz mit Formatierung ohne Quellenangaben kopieren",
+    "description": "Tooltip für den Kopierbutton"
   }
 }

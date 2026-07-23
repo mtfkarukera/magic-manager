@@ -514,7 +514,19 @@
     "description": "Tiêu đề hộp thoại lỗi gộp file"
   },
   "mergeErrorMsg": {
-    "message": "Đã xảy ra lỗi không mong muốn trong quá trình gộp file. Vui lòng thử lại.",
-    "description": "Thông báo lỗi gộp file"
+    "message": "Đã xảy ra lỗi không mong muốn trong quá trình hợp nhất. Vui lòng thử lại.",
+    "description": "Thông báo lỗi hợp nhất"
+  },
+  "noteCopyButton": {
+    "message": "Sao chép không có nguồn",
+    "description": "Nút sao chép ghi chú không có trích dẫn"
+  },
+  "noteCopySuccess": {
+    "message": "Đã sao chép ghi chú không có nguồn!",
+    "description": "Thông báo xác nhận sao chép"
+  },
+  "noteCopyTooltip": {
+    "message": "Sao chép ghi chú có định dạng không có trích dẫn nguồn",
+    "description": "Chú thích cho nút sao chép"
   }
 }

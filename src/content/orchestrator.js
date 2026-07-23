@@ -28,7 +28,8 @@
     studioSearch: 'feature_studioSearch',
     syntax: 'feature_syntax',
     chatExport: 'feature_chatExport',
-    transfer: 'feature_transfer'
+    transfer: 'feature_transfer',
+    noteCopy: 'feature_noteCopy'
   };
 
   /** Préférences par défaut (toutes actives) */
@@ -107,7 +108,8 @@
       { key: FEATURES.studioSearch, init: 'initStudioSearch', label: 'Recherche Studio' },
       { key: FEATURES.syntax, init: 'initSyntax', label: 'Syntaxe' },
       { key: FEATURES.chatExport, init: 'initChatExport', label: 'ChatExport' },
-      { key: FEATURES.transfer, init: 'initTransfer', label: 'Transfert' }
+      { key: FEATURES.transfer, init: 'initTransfer', label: 'Transfert' },
+      { key: FEATURES.noteCopy, init: 'initNoteCopy', label: 'Copie Note' }
     ];
 
     for (const mod of modules) {
@@ -120,8 +122,8 @@
       }
     }
 
-    // Panel observer centralisé : actif si export, delete, badges, batchDelete, studioSearch ou transfer est activé
-    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.badges) || isFeatureEnabled(FEATURES.batchDelete) || isFeatureEnabled(FEATURES.studioSearch) || isFeatureEnabled(FEATURES.transfer)) {
+    // Panel observer centralisé : actif si export, delete, badges, batchDelete, studioSearch, transfer ou noteCopy est activé
+    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.badges) || isFeatureEnabled(FEATURES.batchDelete) || isFeatureEnabled(FEATURES.studioSearch) || isFeatureEnabled(FEATURES.transfer) || isFeatureEnabled(FEATURES.noteCopy)) {
       try {
         window.MM.initPanelObserver();
       } catch (err) {
@@ -148,7 +150,8 @@
       { name: 'StudioSearch', fn: window.MM.cleanupStudioSearch },
       { name: 'Syntax', fn: window.MM.cleanupSyntax },
       { name: 'ChatExport', fn: window.MM.cleanupChatExport },
-      { name: 'Transfer', fn: window.MM.cleanupTransfer }
+      { name: 'Transfer', fn: window.MM.cleanupTransfer },
+      { name: 'NoteCopy', fn: window.MM.cleanupNoteCopy }
     ];
 
     modules.forEach(function (m) {

@@ -4,6 +4,18 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.15.0] — 2026-07-23
+
+### Nouveautés — Sprint 4 (Studio & Note Copy)
+- 📋 **Sprint 4 : Copie Note Sans Sources (`note-copy.js`)** :
+  - **Injection Réactive & Finition Design (`note-copy.js` & `magic-manager.css`)** : Injection dynamique du bouton `[ 📋 ]` (aligné à 40px × 40px et 24px d'icône) immédiatement à gauche du bouton de suppression natif (corbeille) dans l'en-tête de la note (`<note-editor>`).
+  - **Prise en charge Dual-MIME (`ClipboardItem`)** :
+    - Format `text/plain` : Conversion du HTML de la note en **Markdown GFM riche** (`#`, `**`, `-`, `| tableaux |`) via Turndown (`html-to-md.js`).
+    - Format `text/html` : Émission du HTML visuel épuré sans aucune citation, permettant un collage parfait dans Google Docs, MS Word et LibreOffice.
+  - **Normalisation Sémantique HTML5** : Traduction dynamique des Web Components Tailwind Angular (`.paragraph.heading3` → `<h3>`, `.paragraph.normal` → `<p>`, `.paragraph.blockquote` → `<blockquote>`, `.paragraph.list-item` → `<li>`) pour garantir une restitution Markdown aérée et structurée dans CotEditor, Obsidian et VSCode.
+  - **Extraction Précise du Titre** : Extraction stricte de la valeur du champ d'en-tête `<input class="note-header__editable-title">` sans capture du texte des icônes Material.
+  - **Nettoyage Chirurgical des Citations** : Suppression des ancres `sup`, boutons `.citation-marker`, `.xap-inline-dialog` et icônes d'accès restreint `lock` / `more_horiz`.
+
 ## [0.14.9] — 2026-07-23
 
 ### Nouveautés & Correctifs UX (Sprints 1, 2 & 3)

@@ -514,7 +514,19 @@
     "description": "Título del diálogo de error de combinación"
   },
   "mergeErrorMsg": {
-    "message": "Ocurrió un error inesperado durante la combinación. Inténtelo de nuevo.",
-    "description": "Mensaje de error de combinación"
+    "message": "Ocurrió un error inesperado al combinar. Por favor, inténtelo de nuevo.",
+    "description": "Mensaje de error al combinar"
+  },
+  "noteCopyButton": {
+    "message": "Copiar sin fuentes",
+    "description": "Boton para copiar nota sin referencias"
+  },
+  "noteCopySuccess": {
+    "message": "¡Nota copiada sin fuentes!",
+    "description": "Mensaje de confirmación"
+  },
+  "noteCopyTooltip": {
+    "message": "Copiar la nota con formato sin referencias a fuentes",
+    "description": "Información sobre herramientas del botón"
   }
 }

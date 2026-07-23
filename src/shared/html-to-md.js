@@ -149,5 +149,8 @@
     }
   };
 
+  // Exposition avec alias court pour la compatibilité dans tous les modules
+  window.MM.htmlToMd = window.MM.convertHtmlToMarkdown;
+
   console.log('[MM] html-to-md.js chargé avec succès (turndown + GFM).');
 })();
