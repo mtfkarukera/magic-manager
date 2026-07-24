@@ -184,16 +184,23 @@
   function injectStudioCheckboxes(studioPanel) {
     const cards = findStudioCards(studioPanel);
     if (cards.length === 0) return;
-
     const isMobile = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
 
-    cards.forEach((card, index) => {
+    cards.forEach((card) => {
       const cardUuid = getStudioCardUuid(card);
       const title = getStudioCardTitle(card);
-      if (!title && !cardUuid) return;
+      
+      // GARANTIE ABSOLUE : Utiliser exclusivement l'UUID unique natif Google.
+      // S'il n'est pas encore hydraté par Angular dans le DOM, on ignore temporairement cet élément.
+      const itemKey = cardUuid;
+      if (!itemKey) return;
 
-      // Utiliser l'UUID natif comme clé unique, ou une clé isolée par index de carte
-      const itemKey = cardUuid || `title:${title.trim().toLowerCase()}__idx:${index}`;
+      // Sécurité : s'assurer que si Angular recycle ce nœud DOM, ses styles d'opacité/visibilité sont nettoyés
+      const host = card.closest('artifact-library-note, artifact-library-item') || card;
+      if (host.style.opacity || host.style.visibility) {
+        host.style.opacity = '';
+        host.style.visibility = '';
+      }
 
       const existingCheckbox = card.querySelector('.mm-studio-checkbox');
 
@@ -359,37 +366,6 @@
   /**
    * Clic sur le bouton de suppression par lot du Studio.
    */
-  const DELETE_KEYWORDS = [
-    'supprimer', 'retirer', 'delete', 'remove', 'eliminar', 'quitar',
-    'löschen', 'entfernen', 'apagar', 'remover', '削除', 'xóa', 'gỡ bỏ'
-  ];
-
-  function simulateClick(el) {
-    if (!el) return;
-    try {
-      el.focus();
-    } catch (e) {}
-    el.click();
-  }
-
-  async function waitForElements(selector, keywords, maxWaitMs) {
-    maxWaitMs = maxWaitMs || 1500;
-    const start = Date.now();
-    while (Date.now() - start < maxWaitMs) {
-      const elements = Array.from(document.querySelectorAll(selector));
-      for (const el of elements) {
-        const txt = (el.textContent || '').trim().toLowerCase();
-        const match = keywords.some(kw => txt.indexOf(kw) !== -1);
-        if (match) return el;
-      }
-      await new Promise(r => setTimeout(r, 50));
-    }
-    return null;
-  }
-
-  /**
-   * Clic sur le bouton de suppression par lot du Studio.
-   */
   async function handleBatchDeleteClick(e) {
     e.stopPropagation();
     if (isProcessing || selectedUuids.size === 0) return;
@@ -404,7 +380,7 @@
 
     const count = selectedUuids.size;
 
-    // Demander confirmation
+    // Demander confirmation globale
     window.MM.showConfirmDialog(
       'studioDeleteConfirmTitle',
       'studioDeleteConfirmMessage',
@@ -418,83 +394,104 @@
         updateBatchDeleteButtonState();
 
         try {
+          console.log('[MM] StudioDelete : chargement de la liste des notes/artéfacts via RPC...');
+          const [notesRaw, artifactsRaw] = await Promise.all([
+            window.MM.rpc.getNotesAndMindMaps(notebookId),
+            window.MM.rpc.getArtifactsList(notebookId)
+          ]);
+
+          const dbNotes = parseNotesResult(notesRaw);
+          const dbArtifacts = parseArtifactsResult(artifactsRaw);
+          const dbItems = dbNotes.concat(dbArtifacts);
+
+          console.log(`[MM] StudioDelete : ${dbItems.length} éléments récupérés du serveur.`);
+
           const studioPanel = findStudioPanel();
           const cards = studioPanel ? findStudioCards(studioPanel) : [];
+          const requests = [];
+          const matchedCards = [];
 
-          console.log(`[MM] StudioDelete : suppression native simulée de ${targetKeys.length} éléments...`);
+          targetKeys.forEach(uuid => {
+            const matchItem = dbItems.find(item => item.id.toLowerCase() === uuid.toLowerCase());
+
+            if (matchItem) {
+              console.log(`[MM] StudioDelete : suppression RPC de [${matchItem.id}] (${matchItem.title})`);
+              const rpcId = matchItem.type === 'note' ? 'AH0mwd' : 'V5N4be';
+              const params = matchItem.type === 'note'
+                ? [notebookId, null, [matchItem.id]]
+                : [[matchItem.typeCode || 1], matchItem.id];
+
+              requests.push({ rpcId, params, type: matchItem.type, id: matchItem.id });
+
+              // Trouver la carte DOM correspondante pour l'animation
+              const matchedCard = cards.find(c => {
+                const cUuid = getStudioCardUuid(c);
+                return cUuid && cUuid.toLowerCase() === matchItem.id.toLowerCase();
+              });
+              if (matchedCard) {
+                matchedCards.push(matchedCard);
+              }
+            } else {
+              // Fallback si l'UUID n'est pas trouvé dans la liste RPC (ex: type spécial non listé)
+              console.warn(`[MM] StudioDelete : UUID non trouvé dans le cache RPC, essai en tant que note pour [${uuid}]`);
+              requests.push({
+                rpcId: 'AH0mwd',
+                params: [notebookId, null, [uuid]],
+                type: 'note',
+                id: uuid
+              });
+              const matchedCard = cards.find(c => {
+                const cUuid = getStudioCardUuid(c);
+                return cUuid && cUuid.toLowerCase() === uuid.toLowerCase();
+              });
+              if (matchedCard) {
+                matchedCards.push(matchedCard);
+              }
+            }
+          });
+
+          if (requests.length === 0) {
+            window.MM.showAlertDialog('deleteError', 'deleteError');
+            isProcessing = false;
+            if (batchDeleteBtn) batchDeleteBtn.disabled = false;
+            return;
+          }
+
+          console.log(`[MM] StudioDelete : suppression séquentielle RPC de ${requests.length} éléments...`);
           let succeeded = 0;
           let failed = 0;
 
-          // Déconnecter temporairement l'observer pendant la suppression pour éviter les faux resets
+          // Déconnecter temporairement l'observer pendant la suppression pour éviter les interférences
           if (studioObserver) studioObserver.disconnect();
 
-          for (let i = 0; i < targetKeys.length; i++) {
-            const key = targetKeys[i];
-            
-            // Trouver la carte DOM correspondante
-            const card = cards.find(c => {
-              const cUuid = getStudioCardUuid(c);
-              if (cUuid) {
-                return cUuid.toLowerCase() === key.toLowerCase();
-              }
-              const title = getStudioCardTitle(c);
-              const idx = cards.indexOf(c);
-              const fallbackKey = `title:${title.trim().toLowerCase()}__idx:${idx}`;
-              return fallbackKey.toLowerCase() === key.toLowerCase();
-            });
-
-            if (!card) {
-              console.warn(`[MM] StudioDelete : impossible de trouver la carte DOM pour la clé ${key}`);
+          for (let i = 0; i < requests.length; i++) {
+            const req = requests[i];
+            try {
+              await window.MM.rpc.sendBatchExecute(req.rpcId, req.params, notebookId);
+              succeeded++;
+            } catch (err) {
               failed++;
-              continue;
+              console.error(`[MM] Échec de suppression RPC pour ${req.rpcId} (${req.id}) :`, err);
             }
 
-            const moreBtn = card.querySelector('.artifact-more-button, [class*="more-button"]');
-            if (!moreBtn) {
-              console.warn('[MM] StudioDelete : bouton options "..." introuvable sur la carte');
-              failed++;
-              continue;
+            if (i < requests.length - 1) {
+              await new Promise(resolve => setTimeout(resolve, 350));
             }
-
-            // 1. Ouvrir le menu contextuel d'options natif d'Angular
-            simulateClick(moreBtn);
-
-            // 2. Attendre et cliquer sur l'option "Supprimer" du menu
-            const deleteOption = await waitForElements(
-              '[role="menuitem"], button, .mat-mdc-menu-item, .mdc-list-item, [class*="menu-item"], [class*="menuitem"]',
-              DELETE_KEYWORDS,
-              1000
-            );
-
-            if (deleteOption) {
-              simulateClick(deleteOption);
-
-              // 3. Confirmer le dialogue natif d'Angular si présent (ex: modale "Supprimer ?")
-              const confirmBtn = await waitForElements(
-                'mat-dialog-container button, .mat-mdc-dialog-container button, [role="dialog"] button, button',
-                DELETE_KEYWORDS,
-                1000
-              );
-
-              if (confirmBtn) {
-                simulateClick(confirmBtn);
-                succeeded++;
-              } else {
-                succeeded++;
-              }
-            } else {
-              console.warn('[MM] StudioDelete : option "Supprimer" introuvable dans le menu contextuel');
-              document.body.click(); // Fermer le menu
-              failed++;
-            }
-
-            // Temps d'attente court pour laisser Angular appliquer la suppression et mettre à jour le DOM
-            await new Promise(resolve => setTimeout(resolve, 450));
           }
 
           console.log(`[MM] StudioDelete terminé : ${succeeded} réussies, ${failed} échouées`);
 
-          // Ré-observer le panneau Studio et relancer une injection propre
+          // Animer uniquement les cartes supprimées avec effet fondu doux et masquage visuel
+          matchedCards.forEach(card => {
+            const host = card.closest('artifact-library-note, artifact-library-item') || card;
+            host.style.transition = 'opacity 0.4s ease';
+            host.style.opacity = '0';
+            setTimeout(() => {
+              host.style.visibility = 'hidden';
+            }, 400);
+          });
+
+          // Rétablir l'observer et relancer l'injection
           if (studioPanel && studioObserver) {
             studioObserver.observe(studioPanel, {
               childList: true,

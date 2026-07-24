@@ -4,6 +4,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.16.7] — 2026-07-24
+
+### Corrigé — Retour à la Suppression RPC et Masquage par UUID Pur (`studio-delete.js`)
+- ⚡ **Suppression RPC Silencieuse** : Retour aux appels RPC rapides (`AH0mwd` / `V5N4be`) exécutés en arrière-plan sous une seule modale globale de validation (suppression fluide et rapide).
+- 🎯 **Masquage Ciblé par UUID** : L'animation visuelle en opacité s'applique exclusivement sur la carte portant l'UUID unique de la note supprimée.
+- 🛡️ **Parade Anti-Recyclage d'Angular** : Réinitialisation automatique des styles d'opacité/visibilité sur l'hôte au moment de l'injection pour guérir tout recyclage ou réutilisation de nœud DOM par `ngFor`.
+- 🔑 **Identification Unique native** : Élimination complète de toute béquille par titre ou index dans la sélection de cartes.
+
 ## [0.16.6] — 2026-07-24
 
 ### Corrigé — Alignement sur la Suppression Native d'Angular (`studio-delete.js`)
