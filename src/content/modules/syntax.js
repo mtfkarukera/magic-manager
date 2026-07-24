@@ -146,6 +146,11 @@
    * @param {Element} preEl - L'élément `<pre>` natif.
    */
   function processPreBlock(preEl) {
+    // Garde de sécurité : ne jamais appliquer de boîte de code sur un contenu éditable (Studio / Note modifiable)
+    if (preEl.isContentEditable || preEl.closest('[contenteditable="true"], [contenteditable=""], .studio-panel, .note-editor')) {
+      return;
+    }
+
     const codeEl = preEl.querySelector('code');
     if (!codeEl) return;
 
@@ -218,7 +223,7 @@
     // Recherche récursive Shadow DOM limitée au seul conteneur de chat pour de hautes performances
     const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])', chatContainer);
     preBlocks.forEach(function (pre) {
-      if (!pre.closest('.mm-code-block')) {
+      if (!pre.isContentEditable && !pre.closest('[contenteditable="true"], [contenteditable=""], .studio-panel, .note-editor') && !pre.closest('.mm-code-block')) {
         processPreBlock(pre);
       }
     });

@@ -32,11 +32,12 @@
     // Cloner pour ne pas modifier le DOM réel
     const clone = el.cloneNode(true);
 
-    // Supprimer les éléments interactifs et nos propres injections
+    // Supprimer les éléments interactifs et nos propres injections UI
     const toRemove = clone.querySelectorAll(
       'button, svg, [class*="action"], [class*="feedback"], ' +
       '[class*="copy-btn"], [class*="thumb"], ' +
-      '.mm-code-block-header, .mm-code-block-copy-btn, .mm-chat-export-btn'
+      '.mm-code-block-header, .mm-code-block-copy-btn, .mm-chat-export-btn, ' +
+      '.mm-code-header, .mm-code-lang, .mm-code-copy-btn'
     );
     toRemove.forEach(function (node) { node.remove(); });
 

@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.18.0] — 2026-07-25
+
+### Corrigé — Sprint 6 : Protection isContentEditable & Résolution du Bégaiement de Note (`syntax.js` & `chatexport.js`)
+- 🛡️ **Garde de Sécurité `isContentEditable` (`syntax.js`)** : Interdiction absolue d'injecter des boîtes de code et des wrappers sur les éléments modifiables (`[contenteditable="true"]`, `.studio-panel`, `.note-editor`). Élimination 100% définitive du bégaiement et des boucles d'injection `codeCopier` observées en mode mobile sur les notes éditables.
+- 🎨 **Maintien du Rendu Sublimé** : Les blocs de code dans la Discussion et les notes figées en lecture seule conservent toute leur coloration syntaxique et leurs boutons de copie.
+- 🧹 **Nettoyage à l'Export (`chatexport.js`)** : Filtrage automatique des éléments d'en-tête d'UI du chat (`.mm-code-header`, `.mm-code-lang`, `.mm-code-copy-btn`) lors de l'exportation pour garantir des notes sauvegardées 100% pures.
+
 ## [0.17.4] — 2026-07-25
 
 ### Corrigé — Pilule Compacte et Respirante (`magic-manager.css`)
