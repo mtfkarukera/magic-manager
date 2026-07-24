@@ -653,6 +653,7 @@
     // Gestion de la visibilité et du positionnement en mode mobile (Option 1 : Poussée à gauche & Centrage)
     const isMobileMode = typeof window.MM.detectDesktopLayout === 'function' ? !window.MM.detectDesktopLayout() : false;
     if (isMobileMode) {
+      exportChatBtn.classList.add('mm-mobile-chat-btn');
       const activeTab = document.querySelector('div[role="tab"][aria-selected="true"], .mat-mdc-tab-active');
       const isChatActive = activeTab && /discussion|chat/i.test(activeTab.textContent || '');
       if (!isChatActive) {
@@ -664,6 +665,7 @@
       }
     } else {
       // Sur desktop, toujours visible dans l'en-tête dédié (réinitialiser les styles mobile)
+      exportChatBtn.classList.remove('mm-mobile-chat-btn');
       exportChatBtn.style.setProperty('display', '', '');
       exportChatBtn.style.removeProperty('margin-right');
       exportChatBtn.style.removeProperty('align-self');

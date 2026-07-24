@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.17.0] — 2026-07-25
+
+### Ajouté & Amélioré — Sprint 5 : Finitions CSS & Ergonomie Mobile
+- 🎨 **Harmonisation des fonds sombres** : Remplacement des fonds sombres rectangulaires en dur (`#1e1e1e`) sur la pilule Studio et le header mobile par `background: inherit` pour épouser le fond natif de Google Gemini Notebook sans démarcation visuelle.
+- 📱 **Ergonomie Mobile du Chat** : Agrandissement et mise en conformité tactile (zone d'appui 40px × 40px) du bouton d'export du Chat (`.mm-chat-export-btn`) et des icônes d'action du panneau Discussion en mode mobile.
+
 ## [0.16.8] — 2026-07-24
 
 ### Ajouté — Politique de Confidentialité & Kit de Soumission AMO
