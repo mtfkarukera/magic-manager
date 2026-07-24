@@ -140,88 +140,13 @@
    * @param {Function}        [onChoice]      - Callback appelé avec 'md', 'pdf-simple' ou 'pdf-structured' (si titre fourni).
    */
   function showFormatChoiceDialog(titleOrCallback, onChoice) {
-    // Mémoriser l'élément déclencheur
-    lastFocusedElement = document.activeElement;
+    let callback = typeof titleOrCallback === 'function' ? titleOrCallback : onChoice;
+    showExportFormatDialog(callback);
+  }
 
-    // Fermer toute modale précédente
-    closeDialog();
-
-    // Support de la signature courte showFormatChoiceDialog(onChoice)
-    let titleKey, callback;
-    if (typeof titleOrCallback === 'function') {
-      titleKey = 'mergeDialogTitle';
-      callback = titleOrCallback;
-    } else {
-      titleKey = titleOrCallback || 'mergeDialogTitle';
-      callback = onChoice;
-    }
-
-    // Boutons de format
-    const isExport = titleKey === 'exportButton';
-    const mdRicheText = isExport ? (t('exportFormatMarkdownRiche') || 'Markdown Riche') : (t('mergeFormatMarkdownRiche') || 'Markdown Riche');
-    const mdSimpleText = isExport ? (t('exportFormatMarkdownSimple') || 'Markdown Simple') : (t('mergeFormatMarkdownSimple') || 'Markdown Simple');
-    const pdfRicheText = isExport ? (t('exportFormatPdfRiche') || 'PDF Riche') : (t('mergeFormatPdfRiche') || 'PDF Riche');
-    const pdfSimpleText = isExport ? (t('exportFormatPdfSimple') || 'PDF Simple') : (t('mergeFormatPdfSimple') || 'PDF Simple');
-
-    const mdRicheBtn = createElement('button', {
-      className: 'mm-btn mm-btn-secondary',
-      textContent: mdRicheText,
-      onClick: () => { closeDialog(); callback('md-riche'); }
-    });
-
-    const mdSimpleBtn = createElement('button', {
-      className: 'mm-btn mm-btn-secondary',
-      textContent: mdSimpleText,
-      onClick: () => { closeDialog(); callback('md-simple'); }
-    });
-
-    const pdfRicheBtn = createElement('button', {
-      className: 'mm-btn mm-btn-primary',
-      textContent: pdfRicheText,
-      onClick: () => { closeDialog(); callback('pdf-riche'); }
-    });
-
-    const pdfSimpleBtn = createElement('button', {
-      className: 'mm-btn mm-btn-secondary',
-      textContent: pdfSimpleText,
-      onClick: () => { closeDialog(); callback('pdf-simple'); }
-    });
-
-    const cancelBtn = createElement('button', {
-      className: 'mm-btn mm-btn-secondary',
-      textContent: t('dialogCancelButton'),
-      onClick: () => closeDialog()
-    });
-
-    const dialogTitleId = 'mm-dialog-title-' + Date.now();
-    // Contenu sous forme de dialog natif
-    const dialog = createElement('dialog', {
-      className: 'mm-dialog',
-      role: 'dialog',
-      'aria-modal': 'true',
-      'aria-labelledby': dialogTitleId
-    }, [
-      createElement('h2', { id: dialogTitleId, className: 'mm-dialog-title', textContent: t(titleKey) }),
-      createElement('p', { className: 'mm-dialog-message', textContent: t('mergeFormatLabel') || 'Sélectionne le format d\'export :' }),
-      createElement('div', { className: 'mm-dialog-warning', textContent: t('truncationWarning') }),
-      createElement('div', { className: 'mm-dialog-actions' }, [cancelBtn, mdRicheBtn, mdSimpleBtn, pdfSimpleBtn, pdfRicheBtn])
-    ]);
-
-    activeDialog = dialog;
-
-    dialog.addEventListener('cancel', (e) => {
-      e.preventDefault();
-      closeDialog();
-    });
-
-    dialog.addEventListener('click', (e) => {
-      if (e.target === dialog) closeDialog();
-    });
-
-    document.body.appendChild(dialog);
-    dialog.showModal();
-
-    cancelBtn.focus();
+  function showExportDialog(titleOrCallback, onChoice) {
+    let callback = typeof titleOrCallback === 'function' ? titleOrCallback : onChoice;
+    showExportFormatDialog(callback);
   }
 
   /**

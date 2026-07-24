@@ -415,17 +415,38 @@
           console.log(`[MM] StudioDelete : ${dbItems.length} éléments récupérés du serveur.`);
 
 
-          // Préparer les requêtes de suppression RPC via matching titre → ID serveur avec déduplication d'IDs uniques
+          // Associer chaque carte DOM à son ID unique serveur selon son titre et son occurrence positionnelle dans le DOM
+          const titleOccurrenceMap = new Map();
+          const cardToItemMap = new Map();
+
+          cards.forEach((card, cardIdx) => {
+            const title = getStudioCardTitle(card).trim().toLowerCase();
+            if (!title) return;
+            const count = titleOccurrenceMap.get(title) || 0;
+            titleOccurrenceMap.set(title, count + 1);
+
+            // Chercher la N-ième occurrence (count) correspondant à ce titre dans dbItems
+            let matchCount = 0;
+            const matchedItem = dbItems.find(item => {
+              if (item.title.trim().toLowerCase() === title) {
+                if (matchCount === count) return true;
+                matchCount++;
+              }
+              return false;
+            });
+
+            if (matchedItem) {
+              cardToItemMap.set(cardIdx, matchedItem);
+            }
+          });
+
+          // Préparer les requêtes de suppression RPC pour les cartes réellement cochées
           const requests = [];
           const matchedCards = [];
-          const usedIds = new Set();
 
-          selectedTitles.forEach(({ title, index }) => {
-            const matchItem = dbItems.find(
-              item => item.title.trim().toLowerCase() === title.toLowerCase() && !usedIds.has(item.id)
-            );
+          selectedTitles.forEach(({ index }) => {
+            const matchItem = cardToItemMap.get(index);
             if (matchItem) {
-              usedIds.add(matchItem.id);
               const rpcId = matchItem.type === 'note' ? 'AH0mwd' : 'V5N4be';
               const params = matchItem.type === 'note'
                 ? [notebookId, null, [matchItem.id]] // Payload DELETE_NOTE
@@ -433,12 +454,11 @@
 
               requests.push({ rpcId: rpcId, params: params, type: matchItem.type, id: matchItem.id });
 
-              // Cibler la carte DOM physique exacte grâce à l'index positionnel
               if (index < cards.length) {
                 matchedCards.push({ card: cards[index], id: matchItem.id });
               }
             } else {
-              console.warn(`[MM] StudioDelete : impossible de trouver l'item "${title}" dans le cache RPC.`);
+              console.warn(`[MM] StudioDelete : impossible d'associer la carte d'index ${index} à un ID serveur.`);
             }
           });
 
