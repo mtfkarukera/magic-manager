@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.16.8] — 2026-07-24
+
+### Ajouté — Politique de Confidentialité & Kit de Soumission AMO
+- 🔒 **Privacy Policy** : Création du fichier public `PRIVACY_POLICY.md` à la racine pour assurer la transparence requise par Mozilla AMO.
+- 📦 **Kit de Soumission** : Génération du kit de soumission AMO complet avec toutes les descriptions et whiteboard.
+- 🏷️ **Documentation** : Mise à jour des badges de version et des documentations d'architecture.
+
 ## [0.16.7] — 2026-07-24
 
 ### Corrigé — Retour à la Suppression RPC et Masquage par UUID Pur (`studio-delete.js`)
