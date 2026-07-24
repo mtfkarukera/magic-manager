@@ -146,12 +146,12 @@
    * @param {Element} preEl - L'élément `<pre>` natif.
    */
   function processPreBlock(preEl) {
-    // Garde de sécurité : ne jamais appliquer de boîte de code sur un contenu éditable (Studio / Note modifiable)
-    if (preEl.isContentEditable || preEl.closest('[contenteditable="true"], [contenteditable=""], .studio-panel, .note-editor')) {
+    // Garde de sécurité : ne jamais appliquer de boîte de code sur un contenu éditable (Note modifiable)
+    if (preEl.isContentEditable || preEl.closest('[contenteditable="true"], [contenteditable=""]')) {
       return;
     }
 
-    const codeEl = preEl.querySelector('code');
+    const codeEl = preEl.querySelector('code') || preEl;
     if (!codeEl) return;
 
     // 1. Éviter le traitement multiple en marquant avant toute manipulation
@@ -204,7 +204,7 @@
   }
 
   /**
-   * Parcourt la zone de chat pour traiter tous les blocs de code non encore gérés.
+   * Parcourt la zone de chat et les notes en lecture seule du Studio pour traiter tous les blocs de code non encore gérés.
    * Optimisé : utilise querySelectorAll natif (pas de traversée Shadow DOM).
    */
   const scanAndHighlight = debounce(function () {
@@ -212,18 +212,18 @@
       return;
     }
     let chatContainer = document.querySelector(
-      'chat-viewer, [class*="chat-viewer"], [class*="conversation-container"], section.chat-panel, .chat-panel'
+      'chat-viewer, [class*="chat-viewer"], [class*="conversation-container"], section.chat-panel, .chat-panel, .studio-panel'
     );
     
-    // Repli sur document.body en mode mobile si le conteneur de chat spécifique est introuvable
+    // Repli sur document.body si le conteneur spécifique est introuvable
     if (!chatContainer) {
       chatContainer = document.body;
     }
 
-    // Recherche récursive Shadow DOM limitée au seul conteneur de chat pour de hautes performances
+    // Recherche récursive Shadow DOM
     const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])', chatContainer);
     preBlocks.forEach(function (pre) {
-      if (!pre.isContentEditable && !pre.closest('[contenteditable="true"], [contenteditable=""], .studio-panel, .note-editor') && !pre.closest('.mm-code-block')) {
+      if (!pre.isContentEditable && !pre.closest('[contenteditable="true"], [contenteditable=""]') && !pre.closest('.mm-code-block')) {
         processPreBlock(pre);
       }
     });

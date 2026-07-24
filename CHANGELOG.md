@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.18.1] — 2026-07-25
+
+### Corrigé — Boîtes de Code Sublimées sur les Notes en Lecture Seule (`syntax.js`)
+- ✨ **Restitution sur les Notes Figées** : Suppression du blocage global `.studio-panel` pour réautoriser l'application des superbes boîtes de code `mm-code-block` (avec coloration syntaxique et bouton "Copier") sur toutes les notes du Studio en **lecture seule**.
+- 🛡️ **Périmètre d'Éditabilité Strict** : Maintien de l'interdiction ciblée exclusivement sur les conteneurs modifiables (`[contenteditable="true"]`), garantissant zéro bégaiement sur l'éditeur rich-text.
+
 ## [0.18.0] — 2026-07-25
 
 ### Corrigé — Sprint 6 : Protection isContentEditable & Résolution du Bégaiement de Note (`syntax.js` & `chatexport.js`)
