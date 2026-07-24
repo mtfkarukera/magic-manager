@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.16.5] — 2026-07-24
+
+### Corrigé — Extraction d'UUID par `aria-labelledby` & Clés d'Isolation Homonymes (`studio-delete.js`)
+- 🎯 **Capture `aria-labelledby`** : Extraction directe de l'UUID natif Google inscrit sur le bouton principal des cartes Angular (`aria-labelledby="note-labels-[UUID]"`).
+- 🛡️ **Clés d'Isolation d'Index** : Génération d'une clé d'isolation par carte (`title:...__idx:pos`) en fallback ultime pour garantir que 2 cartes homonymes du DOM possèdent toujours des identifiants distincts.
+
 ## [0.16.4] — 2026-07-24
 
 ### Corrigé — Protection de Rendu & Ré-hydratation Angular (`studio-delete.js`)

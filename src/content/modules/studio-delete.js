@@ -82,21 +82,29 @@
 
   /**
    * Extrait l'UUID natif Google attribué à une carte du Studio.
-   * Analyse l'ID de l'élément (ex: note-labels-[UUID]) ou les attributs jslog/aria.
+   * Analyse aria-labelledby="note-labels-[UUID]", id="note-labels-[UUID]" ou jslog.
    * @param {Element} card - Élément DOM de la carte.
    * @returns {string|null} - L'UUID extrait ou null si non trouvé.
    */
   function getStudioCardUuid(card) {
     if (!card) return null;
 
-    // 1. Recherche directe dans l'ID de note (ex: id="note-labels-394eab26-...")
+    // 1. Recherche par attribut aria-labelledby="note-labels-[UUID]" (bouton principal des notes Angular)
+    const btnWithLabel = card.querySelector('[aria-labelledby*="note-labels-"]');
+    if (btnWithLabel) {
+      const attr = btnWithLabel.getAttribute('aria-labelledby') || '';
+      const match = attr.match(/note-labels-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+      if (match) return match[1];
+    }
+
+    // 2. Recherche directe dans l'ID de note (ex: id="note-labels-394eab26-...")
     const labelEl = card.querySelector('[id^="note-labels-"]');
     if (labelEl) {
       const match = labelEl.id.match(/^note-labels-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
       if (match) return match[1];
     }
 
-    // 2. Extraction d'UUID via les attributs HTML (jslog, aria, id...)
+    // 3. Extraction d'UUID via les attributs HTML (jslog, aria, id...)
     const html = card.outerHTML || '';
     const uuids = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi);
     if (uuids && uuids.length > 0) {
@@ -179,13 +187,13 @@
 
     const isMobile = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
 
-    cards.forEach((card) => {
+    cards.forEach((card, index) => {
       const cardUuid = getStudioCardUuid(card);
       const title = getStudioCardTitle(card);
       if (!title && !cardUuid) return;
 
-      // Utiliser l'UUID natif comme clé unique, ou le titre en fallback
-      const itemKey = cardUuid || `title:${title.trim().toLowerCase()}`;
+      // Utiliser l'UUID natif comme clé unique, ou une clé isolée par index de carte
+      const itemKey = cardUuid || `title:${title.trim().toLowerCase()}__idx:${index}`;
 
       const existingCheckbox = card.querySelector('.mm-studio-checkbox');
 
