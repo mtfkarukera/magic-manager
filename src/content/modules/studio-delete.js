@@ -11,8 +11,7 @@
   // État interne
   // ═══════════════════════════════════════════════════════════════════════
   let studioObserver = null;
-  let selectedItems = new Set(); // Contient les indices positionnels (entiers) des éléments sélectionnés
-  let selectionFingerprint = null; // Empreinte titre+ordre au moment de la première sélection
+  let selectedUuids = new Set(); // Contient les UUIDs natifs (ou clés uniques) des éléments sélectionnés
   let batchDeleteWrapper = null;
   let batchDeleteBtn = null;
   let isProcessing = false;
@@ -178,27 +177,16 @@
     const cards = findStudioCards(studioPanel);
     if (cards.length === 0) return;
 
-    // 1. Vérifier la cohérence de la sélection par empreinte de liste (réinitialiser uniquement si la structure de la liste a changé)
-    if (selectedItems.size > 0 && selectionFingerprint !== null) {
-      const currentFingerprint = computeFingerprint(cards);
-      if (currentFingerprint !== selectionFingerprint) {
-        const oldLength = selectionFingerprint.split('||').length;
-        if (cards.length !== oldLength) {
-          console.log('[MM] StudioDelete : nombre de cartes modifié, réinitialisation de la sélection.');
-          selectedItems.clear();
-          selectionFingerprint = null;
-          updateBatchDeleteButtonState();
-          studioPanel.querySelectorAll('.mm-studio-checkbox').forEach(cb => { cb.checked = false; });
-        } else {
-          // Si le nombre d'éléments est identique, mettre à jour l'empreinte sans détruire la sélection
-          selectionFingerprint = currentFingerprint;
-        }
-      }
-    }
-
     const isMobile = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
 
-    cards.forEach((card, index) => {
+    cards.forEach((card) => {
+      const cardUuid = getStudioCardUuid(card);
+      const title = getStudioCardTitle(card);
+      if (!title && !cardUuid) return;
+
+      // Utiliser l'UUID natif comme clé unique, ou le titre en fallback
+      const itemKey = cardUuid || `title:${title.trim().toLowerCase()}`;
+
       const existingCheckbox = card.querySelector('.mm-studio-checkbox');
 
       if (existingCheckbox) {
@@ -206,7 +194,6 @@
 
         // Si le layout actuel ne correspond pas à la checkbox existante, on la démonte pour la reconstruire
         if ((isMobile && !hasMobileClass) || (!isMobile && hasMobileClass)) {
-          // 1. Restaurer l'icône native si elle était enveloppée
           const wrapper = card.querySelector('.mm-studio-icon-wrapper');
           if (wrapper) {
             const nativeIcon = wrapper.querySelector('.mm-studio-native-icon');
@@ -216,38 +203,34 @@
             }
             wrapper.remove();
           }
-          // 2. Supprimer la checkbox obsolète
           existingCheckbox.remove();
           card.classList.remove('mm-studio-item', 'mm-studio-mobile-item');
         } else {
-          // Checkbox existante compatible, synchroniser son état avec le Set d'indices
-          existingCheckbox.checked = selectedItems.has(index);
-          existingCheckbox.dataset.mmIndex = index;
+          // Checkbox existante compatible, synchroniser son état avec selectedUuids
+          existingCheckbox.checked = selectedUuids.has(itemKey);
+          existingCheckbox.dataset.mmUuid = itemKey;
           return;
         }
       }
-
-      const title = getStudioCardTitle(card);
-      if (!title) return;
 
       // Créer la checkbox
       const checkbox = createElement('input', {
         type: 'checkbox',
         className: isMobile ? 'mm-studio-checkbox mm-studio-checkbox-mobile' : 'mm-studio-checkbox',
-        'aria-label': `${t('selectButton') || 'Sélectionner'} ${title}`
+        'aria-label': `${t('selectButton') || 'Sélectionner'} ${title || 'élément'}`
       });
-      checkbox.dataset.mmIndex = index;
+      checkbox.dataset.mmUuid = itemKey;
 
       checkbox.addEventListener('click', function (e) {
         e.stopPropagation();
       });
 
       checkbox.addEventListener('change', function () {
-        handleCheckboxChange(cards, checkbox);
+        handleCheckboxChange(checkbox);
       });
 
-      // Restaurer l'état coché si cet index était sélectionné
-      if (selectedItems.has(index)) {
+      // Restaurer l'état coché si cet UUID était sélectionné
+      if (selectedUuids.has(itemKey)) {
         checkbox.checked = true;
       }
 
@@ -280,22 +263,14 @@
   /**
    * Gère le changement d'état d'une checkbox du Studio.
    */
-  function handleCheckboxChange(cards, checkbox) {
-    const index = parseInt(checkbox.dataset.mmIndex, 10);
-    if (isNaN(index)) return;
+  function handleCheckboxChange(checkbox) {
+    const key = checkbox.dataset.mmUuid;
+    if (!key) return;
 
     if (checkbox.checked) {
-      // Capturer l'empreinte au premier cochage
-      if (selectedItems.size === 0) {
-        selectionFingerprint = computeFingerprint(cards);
-      }
-      selectedItems.add(index);
+      selectedUuids.add(key);
     } else {
-      selectedItems.delete(index);
-      // Si plus rien de sélectionné, libérer l'empreinte
-      if (selectedItems.size === 0) {
-        selectionFingerprint = null;
-      }
+      selectedUuids.delete(key);
     }
 
     updateBatchDeleteButtonState();
@@ -308,7 +283,7 @@
     const studioPanel = findStudioPanel();
     if (!studioPanel) return;
 
-    const count = selectedItems.size;
+    const count = selectedUuids.size;
 
     if (count > 0) {
       if (!batchDeleteWrapper) {
@@ -341,10 +316,8 @@
         batchDeleteWrapper.appendChild(resetBtn);
 
         if (header) {
-          // Insérer juste après le header
           header.parentNode.insertBefore(batchDeleteWrapper, header.nextSibling);
         } else {
-          // Insérer au tout début
           studioPanel.insertBefore(batchDeleteWrapper, studioPanel.firstChild);
         }
       } else {
@@ -366,14 +339,12 @@
   function handleClearSelection(e) {
     if (e) e.stopPropagation();
 
-    // Décocher toutes les checkboxes visibles dans le DOM du Studio
     const studioPanel = findStudioPanel();
     if (studioPanel) {
       studioPanel.querySelectorAll('.mm-studio-checkbox').forEach(cb => { cb.checked = false; });
     }
 
-    selectedItems.clear();
-    selectionFingerprint = null;
+    selectedUuids.clear();
     updateBatchDeleteButtonState();
   }
 
@@ -382,7 +353,7 @@
    */
   async function handleBatchDeleteClick(e) {
     e.stopPropagation();
-    if (isProcessing || selectedItems.size === 0) return;
+    if (isProcessing || selectedUuids.size === 0) return;
 
     const match = window.location.pathname.match(/\/notebook\/([a-zA-Z0-9_-]+)/);
     const notebookId = match ? match[1] : null;
@@ -392,47 +363,22 @@
       return;
     }
 
-    // Récupérer les titres DOM des éléments sélectionnés par index positionnel
-    const studioPanel = findStudioPanel();
-    if (!studioPanel) {
-      window.MM.showAlertDialog('deleteError', 'deleteError');
-      return;
-    }
-    const cards = findStudioCards(studioPanel);
-    const selectedTitles = [];
-    const selectedIndices = Array.from(selectedItems).sort((a, b) => a - b);
-
-    selectedIndices.forEach(idx => {
-      if (idx < cards.length) {
-        const title = getStudioCardTitle(cards[idx]).trim();
-        if (title) {
-          selectedTitles.push({ title, index: idx });
-        }
-      }
-    });
-
-    if (selectedTitles.length === 0) {
-      window.MM.showAlertDialog('deleteError', 'deleteError');
-      return;
-    }
+    const count = selectedUuids.size;
 
     // Demander confirmation
     window.MM.showConfirmDialog(
       'studioDeleteConfirmTitle',
       'studioDeleteConfirmMessage',
-      [String(selectedTitles.length)],
+      [String(count)],
       async function () {
         isProcessing = true;
         if (batchDeleteBtn) batchDeleteBtn.disabled = true;
 
-        // Libérer immédiatement la sélection et l'empreinte pour éviter une fausse
-        // alerte de reset déclenchée par le MutationObserver pendant la suppression
-        selectedItems.clear();
-        selectionFingerprint = null;
+        const targetKeys = Array.from(selectedUuids);
+        selectedUuids.clear();
         updateBatchDeleteButtonState();
 
         try {
-          // Fetch RPC pour obtenir les vrais IDs serveur (uniquement au moment de la suppression)
           console.log('[MM] StudioDelete : chargement de la liste des notes/artéfacts via RPC...');
           const [notesRaw, artifactsRaw] = await Promise.all([
             window.MM.rpc.getNotesAndMindMaps(notebookId),
@@ -445,41 +391,43 @@
 
           console.log(`[MM] StudioDelete : ${dbItems.length} éléments récupérés du serveur.`);
 
-
-          // Résolution chirurgicale : extraire l'UUID natif directement depuis chaque carte DOM
+          const studioPanel = findStudioPanel();
+          const cards = studioPanel ? findStudioCards(studioPanel) : [];
           const requests = [];
           const matchedCards = [];
 
-          selectedTitles.forEach(({ index }) => {
-            const card = cards[index];
-            if (!card) return;
-
-            const cardUuid = getStudioCardUuid(card);
+          targetKeys.forEach(key => {
             let matchItem = null;
-
-            if (cardUuid) {
-              matchItem = dbItems.find(item => item.id.toLowerCase() === cardUuid.toLowerCase());
-              if (!matchItem) {
-                // Fallback si l'UUID est extrait du DOM mais absent de dbItems (ex: type d'artéfact spécifique)
-                const isNote = !!card.querySelector('[id^="note-labels-"]');
-                matchItem = { id: cardUuid, title: getStudioCardTitle(card), type: isNote ? 'note' : 'artifact', typeCode: 1 };
-              }
+            if (key.startsWith('title:')) {
+              const rawTitle = key.replace('title:', '');
+              matchItem = dbItems.find(item => item.title.trim().toLowerCase() === rawTitle);
             } else {
-              // Fallback par titre si aucun UUID n'a pu être extrait du DOM
-              const title = getStudioCardTitle(card).trim().toLowerCase();
-              matchItem = dbItems.find(item => item.title.trim().toLowerCase() === title);
+              matchItem = dbItems.find(item => item.id.toLowerCase() === key.toLowerCase());
+              if (!matchItem) {
+                // Fallback si l'UUID est extrait du DOM mais non trouvé dans la réponse RPC (ex: type spécifique)
+                matchItem = { id: key, title: 'Studio Element', type: 'note' };
+              }
             }
 
             if (matchItem) {
+              console.log(`[MM] StudioDelete : suppression de l'UUID natif [${matchItem.id}] (${matchItem.title})`);
               const rpcId = matchItem.type === 'note' ? 'AH0mwd' : 'V5N4be';
               const params = matchItem.type === 'note'
-                ? [notebookId, null, [matchItem.id]] // Payload DELETE_NOTE
-                : [[matchItem.typeCode || 1], matchItem.id]; // Payload DELETE_ARTIFACT
+                ? [notebookId, null, [matchItem.id]]
+                : [[matchItem.typeCode || 1], matchItem.id];
 
-              requests.push({ rpcId: rpcId, params: params, type: matchItem.type, id: matchItem.id });
-              matchedCards.push({ card: card, id: matchItem.id });
+              requests.push({ rpcId, params, type: matchItem.type, id: matchItem.id });
+
+              // Trouver la carte DOM correspondante pour l'animation
+              const matchedCard = cards.find(c => {
+                const cUuid = getStudioCardUuid(c);
+                return cUuid && cUuid.toLowerCase() === matchItem.id.toLowerCase();
+              });
+              if (matchedCard) {
+                matchedCards.push(matchedCard);
+              }
             } else {
-              console.warn(`[MM] StudioDelete : impossible de trouver un ID pour la carte d'index ${index}`);
+              console.warn(`[MM] StudioDelete : aucun élément serveur trouvé pour la clé ${key}`);
             }
           });
 
@@ -490,7 +438,6 @@
             return;
           }
 
-          // Envoyer la suppression séquentiellement (pour contourner les limitations Google batchexecute multi-identique)
           console.log(`[MM] StudioDelete : suppression séquentielle de ${requests.length} éléments Studio...`);
           let succeeded = 0;
           let failed = 0;
@@ -505,7 +452,6 @@
               console.error(`[MM] Échec de suppression RPC pour ${req.rpcId} (${req.id}) :`, err);
             }
 
-            // Attendre un peu avant la suppression suivante pour éviter d'être bloqué par rate-limiting
             if (i < requests.length - 1) {
               await new Promise(resolve => setTimeout(resolve, 400));
             }
@@ -514,13 +460,11 @@
           console.log(`[MM] StudioDelete terminé : ${succeeded} réussies, ${failed} échouées`);
 
           // Retirer les cartes du DOM avec animation
-          matchedCards.forEach(info => {
-            info.card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-            info.card.style.opacity = '0';
-            info.card.style.transform = 'scale(0.9)';
-            setTimeout(() => {
-              info.card.remove();
-            }, 400);
+          matchedCards.forEach(card => {
+            card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.9)';
+            setTimeout(() => { card.remove(); }, 400);
           });
 
           // Gérer le cas d'échecs partiels
@@ -649,8 +593,7 @@
       });
     }
 
-    selectedItems.clear();
-    selectionFingerprint = null;
+    selectedUuids.clear();
     isProcessing = false;
     console.log('[MM] Module studio-delete nettoyé');
   }

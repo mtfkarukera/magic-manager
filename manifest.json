@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
   "short_name": "Magic Manager",
-  "version": "0.16.2",
+  "version": "0.16.3",
   "default_locale": "en",
 
   "description": "__MSG_extensionDescription__",

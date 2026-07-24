@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.16.3] — 2026-07-24
+
+### Corrigé & Refondu — Câblage Direct des Checkboxes par `data-mm-uuid` (`studio-delete.js`)
+- 🎯 **Câblage Direct par UUID (`data-mm-uuid`)** : Les checkboxes du Studio stockent désormais l'UUID natif Google (`checkbox.dataset.mmUuid`) dès leur injection.
+- ⚡ **Gestionnaire d'État Immuable (`selectedUuids`)** : Remplacement du Set d'indices positionnels par un Set d'UUIDs réels. La suppression s'exécute directement sur l'UUID coché sans passer par le DOM ou l'ordre des éléments.
+- 📜 **Traçabilité DevTools** : Ajout de logs explicites `[MM] StudioDelete : suppression de l'UUID natif [UUID]`.
+
 ## [0.16.2] — 2026-07-24
 
 ### Corrigé — Résolution par UUID natif Google depuis le DOM (`studio-delete.js`)
