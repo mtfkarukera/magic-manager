@@ -459,13 +459,20 @@
 
           console.log(`[MM] StudioDelete terminé : ${succeeded} réussies, ${failed} échouées`);
 
-          // Retirer les cartes du DOM avec animation
+          // Masquer la carte de manière transparente sans détruire le nœud DOM d'Angular (anti-corruption *ngFor)
           matchedCards.forEach(card => {
-            card.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
-            card.style.opacity = '0';
-            card.style.transform = 'scale(0.9)';
-            setTimeout(() => { card.remove(); }, 400);
+            const host = card.closest('artifact-library-note, artifact-library-item') || card;
+            host.style.transition = 'opacity 0.3s ease';
+            host.style.opacity = '0';
+            setTimeout(() => {
+              host.style.display = 'none';
+            }, 300);
           });
+
+          // Déclencher la ré-injection et ré-hydratation douce des composants Studio
+          setTimeout(() => {
+            dispatchStudioInjections();
+          }, 350);
 
           // Gérer le cas d'échecs partiels
           if (failed > 0) {

@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.16.4] — 2026-07-24
+
+### Corrigé — Protection de Rendu & Ré-hydratation Angular (`studio-delete.js`)
+- 🛡️ **Protection `*ngFor` Angular** : Suppression du retrait brut `card.remove()` qui altérait le `ViewContainerRef` d'Angular et masquait les cartes homonymes voisines.
+- 🎨 **Masquage Doux CSS** : Transition d'opacité et masquage `display: none` de la carte hôte sans destruction du nœud DOM.
+- ⚡ **Ré-hydratation Automatique** : Déclenchement automatique de `dispatchStudioInjections()` post-RPC pour synchroniser l'affichage Angular de manière transparente.
+
 ## [0.16.3] — 2026-07-24
 
 ### Corrigé & Refondu — Câblage Direct des Checkboxes par `data-mm-uuid` (`studio-delete.js`)
