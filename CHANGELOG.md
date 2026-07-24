@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.17.4] — 2026-07-25
+
+### Corrigé — Pilule Compacte et Respirante (`magic-manager.css`)
+- 🍃 **Respiration Verticale Spacieuse** : Réduction ajustée de la hauteur de la pilule d'export du chat mobile de **38px à 30px**, avec icône à **16px** et typographie affinée à **12px**.
+- ✨ **Élimination de l'effet d'étau** : La pilule flotte à présent avec un padding naturel de 5px au-dessus et en-dessous au centre de la barre d'action.
+
 ## [0.17.3] — 2026-07-25
 
 ### Ajouté — Pilule d'Action Tactile Complète avec Texte sur le Chat Mobile (`chatexport.js` & `magic-manager.css`)
