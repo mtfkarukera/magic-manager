@@ -129,6 +129,10 @@
     "message": "Sauvegarder en note",
     "description": "Libellé du bouton d'export de conversation"
   },
+  "chatExportButtonShort": {
+    "message": "Sauvegarder",
+    "description": "Libellé court du bouton d'export de conversation"
+  },
   "chatExportSuccess": {
     "message": "Conversation sauvegardée en note",
     "description": "Message de succès après export du chat"

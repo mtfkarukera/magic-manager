@@ -458,6 +458,8 @@
     if (!exportChatBtn) return;
     exportChatBtn.replaceChildren();
     exportChatBtn.appendChild(createExportIcon());
+    const exportLabel = createElement('span', { className: 'mm-btn-label' }, [t('chatExportButtonShort') || 'Sauvegarder']);
+    exportChatBtn.appendChild(exportLabel);
     exportChatBtn.title = t('chatExportButton') || 'Exporter toute la conversation en note';
   }
 
@@ -634,6 +636,8 @@
       console.log('[MM] [ChatExport] Bouton injecté dans :', header.tagName + '.' + header.className);
       ensureSpinnerCss();
 
+      const exportLabel = createElement('span', { className: 'mm-btn-label' }, [t('chatExportButtonShort') || 'Sauvegarder']);
+
       exportChatBtn = createElement('button', {
         className: 'mm-chat-export-btn mm-btn-icon',
         title: t('chatExportButton') || 'Exporter toute la conversation en note',
@@ -642,7 +646,7 @@
           e.stopPropagation();
           handleExportChat();
         }
-      }, [createExportIcon()]);
+      }, [createExportIcon(), exportLabel]);
 
       // Insérer au début de l'en-tête (avant les icônes natives de Google)
       header.insertBefore(exportChatBtn, header.firstChild);

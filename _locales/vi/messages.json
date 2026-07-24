@@ -126,8 +126,12 @@
     "description": "Message affiché après copie réussie du code"
   },
   "chatExportButton": {
-    "message": "Lưu dưới dạng ghi chú",
+    "message": "Lưu thành ghi chú",
     "description": "Libellé du bouton d'export de conversation"
+  },
+  "chatExportButtonShort": {
+    "message": "Lưu",
+    "description": "Short label for chat export button"
   },
   "chatExportSuccess": {
     "message": "Cuộc trò chuyện đã được lưu dưới dạng ghi chú",

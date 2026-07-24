@@ -129,6 +129,10 @@
     "message": "Guardar como nota",
     "description": "Libellé du bouton d'export de conversation"
   },
+  "chatExportButtonShort": {
+    "message": "Guardar",
+    "description": "Short label for chat export button"
+  },
   "chatExportSuccess": {
     "message": "Conversación guardada como nota",
     "description": "Message de succès après export du chat"

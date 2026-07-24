@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.17.3] — 2026-07-25
+
+### Ajouté — Pilule d'Action Tactile Complète avec Texte sur le Chat Mobile (`chatexport.js` & `magic-manager.css`)
+- 📱 **Pilule Tactile Ergonomique** : Transformation de l'icône d'export du chat en mode mobile en une **pilule d'action complète** (`[ 📥 Sauvegarder ]`), assortie en tout point aux boutons de lot du panneau des sources.
+- 🎯 **Surface de frappe élargie (150px × 38px)** : Zone tactile spacieuse, facile à attraper au pouce sur mobile, avec texte explicitif localisé et icône intégrée.
+
 ## [0.17.2] — 2026-07-25
 
 ### Corrigé — Transparence Native & Effet Hover du Bouton Chat (`magic-manager.css`)
