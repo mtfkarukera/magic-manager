@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.17.2] — 2026-07-25
+
+### Corrigé — Transparence Native & Effet Hover du Bouton Chat (`magic-manager.css`)
+- ✨ **Suppression du Fond Fixe au Repos** : Le bouton `.mm-chat-export-btn` est désormais 100% transparent au repos (`background: transparent !important`), éliminant tout pavé ou surbrillance permanente.
+- 🎨 **Alignement 1:1 Material Google** : Dimensions rondes exactes de **40px × 40px** avec un survol translucide élégant (`:hover`), parfaitement identiques aux boutons voisins `tune` et `more_vert`.
+
 ## [0.17.1] — 2026-07-25
 
 ### Corrigé — Bouton d'Export du Chat Ergonomique sur Mobile (`magic-manager.css`)

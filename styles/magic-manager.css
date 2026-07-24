@@ -1024,32 +1024,42 @@
   color: var(--mm-indigo, #6366f1) !important;
 }
 
-/* Bouton d'export de chat */
+/* Bouton d'export de chat - Style natif Material Google */
 .mm-chat-export-btn {
   margin: 0 4px;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .mm-chat-export-btn:hover {
-  background-color: rgba(197, 202, 233, 0.08) !important;
+  background-color: rgba(197, 202, 233, 0.12) !important;
   color: var(--mm-primary, #c5cae9) !important;
 }
 
-/* Agrandissement tactile ergonomique en mode mobile (match avec les boutons des sources) */
+/* Bouton d'export dans la barre d'onglets mobile (alignement parfait avec tune et more_vert) */
 .configure-settings-button-tab-view-container .mm-chat-export-btn,
 .mm-chat-export-btn.mm-mobile-chat-btn {
-  height: 38px !important;
-  width: 38px !important;
-  min-height: 38px !important;
-  min-width: 38px !important;
+  height: 40px !important;
+  width: 40px !important;
+  min-height: 40px !important;
+  min-width: 40px !important;
   padding: 0 !important;
   border-radius: 50% !important;
-  background: var(--mm-surface-variant, rgba(255, 255, 255, 0.08)) !important;
-  border: 1px solid var(--mm-outline-variant, rgba(255, 255, 255, 0.12)) !important;
-  color: var(--mm-primary, #c5cae9) !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+  transition: background-color var(--mm-transition-fast, 0.2s), color var(--mm-transition-fast, 0.2s);
+}
+
+.configure-settings-button-tab-view-container .mm-chat-export-btn:hover,
+.mm-chat-export-btn.mm-mobile-chat-btn:hover {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+  color: var(--mm-primary, #c5cae9) !important;
 }
 
 .configure-settings-button-tab-view-container .mm-chat-export-btn svg,
