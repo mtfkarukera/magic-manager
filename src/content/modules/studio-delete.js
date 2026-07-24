@@ -81,6 +81,37 @@
     return card.querySelector('mat-icon, svg, [class*="icon"], [class*="avatar"]');
   }
 
+  /**
+   * Extrait l'UUID natif Google attribué à une carte du Studio.
+   * Analyse l'ID de l'élément (ex: note-labels-[UUID]) ou les attributs jslog/aria.
+   * @param {Element} card - Élément DOM de la carte.
+   * @returns {string|null} - L'UUID extrait ou null si non trouvé.
+   */
+  function getStudioCardUuid(card) {
+    if (!card) return null;
+
+    // 1. Recherche directe dans l'ID de note (ex: id="note-labels-394eab26-...")
+    const labelEl = card.querySelector('[id^="note-labels-"]');
+    if (labelEl) {
+      const match = labelEl.id.match(/^note-labels-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+      if (match) return match[1];
+    }
+
+    // 2. Extraction d'UUID via les attributs HTML (jslog, aria, id...)
+    const html = card.outerHTML || '';
+    const uuids = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi);
+    if (uuids && uuids.length > 0) {
+      const currentNotebookId = window.MM?.notebookId || '';
+      // Écarter l'ID du carnet (notebookId) pour isoler l'ID de l'élément
+      const validUuids = uuids.filter(u => u.toLowerCase() !== currentNotebookId.toLowerCase());
+      if (validUuids.length > 0) {
+        return validUuids[0];
+      }
+    }
+
+    return null;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // Parseurs RPC Résilients (utilisés uniquement lors de la suppression)
   // ═══════════════════════════════════════════════════════════════════════
@@ -415,37 +446,30 @@
           console.log(`[MM] StudioDelete : ${dbItems.length} éléments récupérés du serveur.`);
 
 
-          // Associer chaque carte DOM à son ID unique serveur selon son titre et son occurrence positionnelle dans le DOM
-          const titleOccurrenceMap = new Map();
-          const cardToItemMap = new Map();
-
-          cards.forEach((card, cardIdx) => {
-            const title = getStudioCardTitle(card).trim().toLowerCase();
-            if (!title) return;
-            const count = titleOccurrenceMap.get(title) || 0;
-            titleOccurrenceMap.set(title, count + 1);
-
-            // Chercher la N-ième occurrence (count) correspondant à ce titre dans dbItems
-            let matchCount = 0;
-            const matchedItem = dbItems.find(item => {
-              if (item.title.trim().toLowerCase() === title) {
-                if (matchCount === count) return true;
-                matchCount++;
-              }
-              return false;
-            });
-
-            if (matchedItem) {
-              cardToItemMap.set(cardIdx, matchedItem);
-            }
-          });
-
-          // Préparer les requêtes de suppression RPC pour les cartes réellement cochées
+          // Résolution chirurgicale : extraire l'UUID natif directement depuis chaque carte DOM
           const requests = [];
           const matchedCards = [];
 
           selectedTitles.forEach(({ index }) => {
-            const matchItem = cardToItemMap.get(index);
+            const card = cards[index];
+            if (!card) return;
+
+            const cardUuid = getStudioCardUuid(card);
+            let matchItem = null;
+
+            if (cardUuid) {
+              matchItem = dbItems.find(item => item.id.toLowerCase() === cardUuid.toLowerCase());
+              if (!matchItem) {
+                // Fallback si l'UUID est extrait du DOM mais absent de dbItems (ex: type d'artéfact spécifique)
+                const isNote = !!card.querySelector('[id^="note-labels-"]');
+                matchItem = { id: cardUuid, title: getStudioCardTitle(card), type: isNote ? 'note' : 'artifact', typeCode: 1 };
+              }
+            } else {
+              // Fallback par titre si aucun UUID n'a pu être extrait du DOM
+              const title = getStudioCardTitle(card).trim().toLowerCase();
+              matchItem = dbItems.find(item => item.title.trim().toLowerCase() === title);
+            }
+
             if (matchItem) {
               const rpcId = matchItem.type === 'note' ? 'AH0mwd' : 'V5N4be';
               const params = matchItem.type === 'note'
@@ -453,12 +477,9 @@
                 : [[matchItem.typeCode || 1], matchItem.id]; // Payload DELETE_ARTIFACT
 
               requests.push({ rpcId: rpcId, params: params, type: matchItem.type, id: matchItem.id });
-
-              if (index < cards.length) {
-                matchedCards.push({ card: cards[index], id: matchItem.id });
-              }
+              matchedCards.push({ card: card, id: matchItem.id });
             } else {
-              console.warn(`[MM] StudioDelete : impossible d'associer la carte d'index ${index} à un ID serveur.`);
+              console.warn(`[MM] StudioDelete : impossible de trouver un ID pour la carte d'index ${index}`);
             }
           });
 

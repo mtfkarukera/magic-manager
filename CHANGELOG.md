@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.16.2] — 2026-07-24
+
+### Corrigé — Résolution par UUID natif Google depuis le DOM (`studio-delete.js`)
+- 🎯 **Extraction directe d'UUID DOM (`getStudioCardUuid`)** : Extraction chirurgicale des UUIDs natifs inscrits par Google dans les attributs HTML (`id="note-labels-[UUID]"` et `jslog="..."`).
+- ⚡ **Suppression Sans Ambigüité** : Suppression exacte de la carte cochée sur le serveur RPC `AH0mwd` sans dépendre du titre ni de l'ordre d'affichage.
+
 ## [0.16.0] — 2026-07-24
 
 ### Corrigé & Optimisé — Sprint d'Optimisation v0.16.0 (Audit & Analyse d'Impact Systémique)
