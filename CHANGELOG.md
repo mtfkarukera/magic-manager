@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.17.1] — 2026-07-25
+
+### Corrigé — Bouton d'Export du Chat Ergonomique sur Mobile (`magic-manager.css`)
+- 🎯 **Ciblage DOM Précis (`.configure-settings-button-tab-view-container`)** : Stylisation du bouton d'export de chat `.mm-chat-export-btn` en une pilule tactile ronde de **38px × 38px** avec fond translucide (`rgba(255, 255, 255, 0.08)`), bordure sub-subtile et icône SVG de **20px**.
+- 📱 **Confort Tactile** : Résolution du bouton étriqué sur mobile pour offrir une zone de frappe immédiate et confortable.
+
 ## [0.17.0] — 2026-07-25
 
 ### Ajouté & Amélioré — Sprint 5 : Finitions CSS & Ergonomie Mobile
