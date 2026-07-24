@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.16.6] — 2026-07-24
+
+### Corrigé — Alignement sur la Suppression Native d'Angular (`studio-delete.js`)
+- 🔄 **Alignement Natif** : Remplacement de l'exécution RPC manuelle par la simulation de clic sur les actions de menu de suppression d'Angular (comme dans `delete.js`).
+- 🛡️ **Zéro Conflit d'Hydratation** : C'est Angular lui-même qui exécute la suppression et nettoie son `ViewContainerRef` sans aucune réutilisation fantôme ni masquage CSS destructeur.
+- ⚡ **Gestionnaire d'Observer** : Pause temporaire du `studioObserver` pendant la séquence de suppression pour éviter les faux déclenchements et resets.
+
 ## [0.16.5] — 2026-07-24
 
 ### Corrigé — Extraction d'UUID par `aria-labelledby` & Clés d'Isolation Homonymes (`studio-delete.js`)
