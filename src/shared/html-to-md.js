@@ -30,7 +30,19 @@
     console.warn('[MM] turndownPluginGfm n\'est pas disponible. Les tableaux ne seront pas convertis en Markdown GFM.');
   }
 
-  // --- Règles personnalisées (Custom Rules) pour le HTML Google NotebookLM ---
+  // 3. Règle pour les boîtes de code décorées par Magic Manager (.mm-code-block)
+  service.addRule('mmCodeBlock', {
+    filter: function(node) {
+      return node.nodeName === 'DIV' && node.classList.contains('mm-code-block');
+    },
+    replacement: function(content, node) {
+      const langSpan = node.querySelector('.mm-code-lang');
+      const lang = langSpan ? langSpan.textContent.trim() : '';
+      const codeEl = node.querySelector('code') || node.querySelector('pre');
+      const codeText = codeEl ? codeEl.textContent : content;
+      return '\n\n```' + lang + '\n' + codeText.trim() + '\n```\n\n';
+    }
+  });
 
   // 1. Règle pour ignorer les spans vides (omniprésents dans le HTML de Google)
   service.addRule('ignoreEmptySpans', {

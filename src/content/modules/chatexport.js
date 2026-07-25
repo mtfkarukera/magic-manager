@@ -37,14 +37,21 @@
       'button, svg, [class*="action"], [class*="feedback"], ' +
       '[class*="copy-btn"], [class*="thumb"], ' +
       '.mm-code-block-header, .mm-code-block-copy-btn, .mm-chat-export-btn, ' +
-      '.mm-code-header, .mm-code-lang, .mm-code-copy-btn'
+      '.mm-code-header, .mm-code-lang, .mm-code-copy-btn, ' +
+      '[aria-label*="épingl" i], [aria-label*="copi" i], [aria-label*="thumb" i], [aria-label*="Note" i]'
     );
     toRemove.forEach(function (node) { node.remove(); });
 
-    // Récupérer le texte en préservant les sauts de ligne naturels
-    const text = clone.innerText || clone.textContent || '';
+    // Utiliser le convertisseur HTML->Markdown riche s'il est disponible
+    let markdown = '';
+    if (typeof window.MM.htmlToMarkdown === 'function') {
+      markdown = window.MM.htmlToMarkdown(clone);
+    } else {
+      markdown = clone.innerText || clone.textContent || '';
+    }
+
     // Nettoyer les lignes vides excessives (max 2 sauts consécutifs)
-    return text.replace(/\n{3,}/g, '\n\n').trim();
+    return markdown.replace(/\n{3,}/g, '\n\n').trim();
   }
 
   /**

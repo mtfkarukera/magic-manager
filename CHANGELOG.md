@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.21.0] — 2026-07-25
+
+### Ajouté & Amélioré — Sprint 8 : Nettoyage & Conversion Markdown de l'Export Chat
+- 📝 **Conversion HTML→Markdown Enrichie (`chatexport.js`)** : Intégration du moteur Turndown (`window.MM.htmlToMarkdown`) lors de la création de notes depuis le chat pour préserver l'intégralité du Markdown (titres, gras, listes puces, tableaux et blocs de code).
+- 🧹 **Purification des Scories UI (`chatexport.js` & `html-to-md.js`)** : Dépouillement strict des wrappers de coloration syntaxique (`.mm-code-block`, `.mm-code-header`, `.mm-code-copy-btn`) et ajout d'une règle Turndown `mmCodeBlock` garantissant des blocs de code Markdown ` ```lang ... ``` ` d'une pureté absolue sans résidus textuels ("Copier", etc.).
+
 ## [0.20.2] — 2026-07-25
 
 ### Corrigé — Sprint 7 Final : Raccordement Couleur Sombre #23262b & Nettoyage Popover
