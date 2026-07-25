@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.19.0] — 2026-07-25
+
+### Amélioré — Sprint 8 : Redimensionnement Dynamique des Boîtes de Code (`syntax.js` & `magic-manager.css`)
+- 📏 **Déverrouillage de Hauteur Verticale** : Suppression complète des contraintes de hauteur fixe (`max-height: none !important; height: auto !important;`) sur les boîtes de code `.mm-code-block` et `<pre>`.
+- 🔍 **Zéro Tronquage & Zéro Scrollbar Verticale** : Les blocs de code s'étendent naturellement selon leur longueur dans le chat et les notes en lecture seule du Studio, éliminant le besoin de rafraîchir avec `F5`.
+- ↔️ **Conservation du Scroll Horizontal** : Le défilement horizontal (`overflow-x: auto`) est préservé pour les lignes de code très larges sans déformer l'interface.
+
 ## [0.18.1] — 2026-07-25
 
 ### Corrigé — Boîtes de Code Sublimées sur les Notes en Lecture Seule (`syntax.js`)

@@ -185,17 +185,21 @@
       copyBtn
     ]);
 
-    // 5. Nouveau bloc code et pre
+    // 5. Nouveau bloc code et pre avec suppression des contraintes inline de hauteur
     const newCode = createElement('code', {}, []);
     const highlightedFragment = highlightCode(rawCode, lang);
     newCode.appendChild(highlightedFragment);
 
     const newPre = createElement('pre', {}, [newCode]);
+    newPre.style.maxHeight = 'none';
+    newPre.style.height = 'auto';
 
     // 6. Enveloppe complète mm-code-block
     const codeBlockContainer = createElement('div', {
       className: 'mm-code-block'
     }, [header, newPre]);
+    codeBlockContainer.style.maxHeight = 'none';
+    codeBlockContainer.style.height = 'auto';
 
     // 7. Remplacement dans le DOM
     if (preEl.parentNode) {

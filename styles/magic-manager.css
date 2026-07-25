@@ -772,6 +772,8 @@
   border-radius: var(--mm-radius-md);
   margin: var(--mm-spacing-sm) 0;
   overflow: hidden;
+  max-height: none !important;
+  height: auto !important;
   animation: mm-fadeIn var(--mm-transition-normal);
 }
 
@@ -818,13 +820,19 @@
 .mm-code-block pre {
   margin: 0;
   padding: var(--mm-spacing-md);
-  overflow-x: auto;
+  max-height: none !important;
+  height: auto !important;
+  overflow-y: visible !important;
+  overflow-x: auto !important;
   font-size: var(--mm-font-size-sm);
   line-height: 1.6;
+  white-space: pre !important;
 }
 
 .mm-code-block code {
   font-family: 'Roboto Mono', 'Consolas', 'Monaco', monospace;
+  display: block !important;
+  white-space: pre !important;
 }
 
 /* Tokens de coloration syntaxique */
