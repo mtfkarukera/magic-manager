@@ -78,13 +78,29 @@
       };
     }
 
-    // 2. Détection hybride des images locales (non hébergées sur Drive ni URL)
+    // URL cible de la source (source.url ou fallback source.youtubeUrl)
+    const targetUrl = source.url || source.youtubeUrl || '';
+
+    // 2. Détection YouTube (Kind 9 OU URL contenant youtube.com / youtu.be)
+    const isYouTubeUrl = /(?:youtube\.com|youtu\.be)/i.test(targetUrl);
+    if (effectiveKind === 9 || isYouTubeUrl) {
+      if (targetUrl) {
+        return { method: 'youtube', url: targetUrl, title: source.title };
+      }
+    }
+
+    // 3. Règle Web Universelle : Si une URL HTTP/HTTPS est présente (pages web, PDF web, etc.)
+    if (targetUrl && /^https?:\/\//i.test(targetUrl)) {
+      return { method: 'url', url: targetUrl, title: source.title };
+    }
+
+    // 4. Détection hybride des images locales (non hébergées sur Drive ni URL)
     const titleLower = (source.title || '').toLowerCase();
     const isImageExtension = /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(titleLower);
     const isImageMime = (source.topLevelMime || source.driveMimeType || '').startsWith('image/');
     const isImageKind = effectiveKind === 13;
 
-    if ((isImageKind || isImageMime || isImageExtension) && !source.url) {
+    if ((isImageKind || isImageMime || isImageExtension) && !targetUrl) {
       return {
         method: 'unsupported',
         title: source.title,
@@ -92,17 +108,7 @@
       };
     }
 
-    // 3. Pages Web
-    if (effectiveKind === 5 && source.url) {
-      return { method: 'url', url: source.url, title: source.title };
-    }
-
-    // 4. Vidéos YouTube
-    if (effectiveKind === 9 && source.youtubeUrl) {
-      return { method: 'youtube', url: source.youtubeUrl, title: source.title };
-    }
-
-    // 5. Fallback universel : extraction du contenu HTML → Markdown → source texte
+    // 5. Fallback universel : extraction du contenu HTML → Markdown → source texte (sources locales)
     return {
       method: 'text',
       sourceId: source.id,

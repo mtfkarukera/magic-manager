@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.22.1] — 2026-07-26
+
+### Corrigé — Sprint 9.1 Correctif : Transfert Natif des PDF Web & Vidéos YouTube
+- 🌐 **Transfert Natif des PDF Web (`transfer.js`)** : Détection unifiée des URL HTTP/HTTPS (dont les fichiers PDF distants) pour effectuer le transfert via `addUrlSource` au lieu de créer une note texte.
+- 🎬 **Transfert Natif YouTube (`transfer.js`)** : Prise en compte unifiée des URL YouTube (`source.url`) et du type `kind = 9` pour réimporter la vidéo YouTube dans le carnet cible via `addYoutubeSource`.
+
 ## [0.22.0] — 2026-07-25
 
 ### Ajouté & Amélioré — Sprint 9 : Moteur de Provenance des Sources (Local vs Drive vs Web)
