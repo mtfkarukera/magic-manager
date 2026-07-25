@@ -44,8 +44,8 @@
 
     // Utiliser le convertisseur HTML->Markdown riche s'il est disponible
     let markdown = '';
-    if (typeof window.MM.htmlToMarkdown === 'function') {
-      markdown = window.MM.htmlToMarkdown(clone);
+    if (typeof window.MM.convertHtmlToMarkdown === 'function') {
+      markdown = window.MM.convertHtmlToMarkdown(clone.innerHTML);
     } else {
       markdown = clone.innerText || clone.textContent || '';
     }

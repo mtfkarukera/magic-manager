@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.21.1] — 2026-07-25
+
+### Corrigé — Sprint 8 Correctif : Résolution du blocage d'Export Chat
+- 🐛 **Correction d'Argument HTML→Markdown (`chatexport.js`)** : Transmission de `clone.innerHTML` à `window.MM.convertHtmlToMarkdown()` pour résoudre l'erreur d'argument DOM et rétablir instantanément l'export des tours de chat dans les notes du Studio.
+- 🛡️ **Tolérance Universelle des Types (`html-to-md.js`)** : Extension de `convertHtmlToMarkdown` pour accepter indifféremment les chaînes HTML `string` et les nœuds DOM (`Element` / `Node`).
+
 ## [0.21.0] — 2026-07-25
 
 ### Ajouté & Amélioré — Sprint 8 : Nettoyage & Conversion Markdown de l'Export Chat

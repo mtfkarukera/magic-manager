@@ -104,8 +104,17 @@
    * @param {string} htmlString - Chaîne HTML à convertir.
    * @returns {string} Le Markdown converti et nettoyé.
    */
-  window.MM.convertHtmlToMarkdown = function(htmlString) {
-    if (!htmlString || typeof htmlString !== 'string') {
+  window.MM.convertHtmlToMarkdown = function(htmlInput) {
+    if (!htmlInput) return '';
+
+    let htmlString = '';
+    if (typeof htmlInput === 'string') {
+      htmlString = htmlInput;
+    } else if (typeof Node !== 'undefined' && htmlInput instanceof Node) {
+      htmlString = htmlInput.innerHTML || htmlInput.outerHTML || htmlInput.textContent || '';
+    } else if (htmlInput.innerHTML !== undefined) {
+      htmlString = htmlInput.innerHTML;
+    } else {
       return '';
     }
 
