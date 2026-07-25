@@ -192,11 +192,13 @@
 
     document.body.appendChild(popoverElement);
 
-    // Positionner dynamiquement après insertion dans le DOM (Desktop uniquement)
-    if (settingsButton && window.innerWidth > 768) {
+    // Positionner dynamiquement après insertion dans le DOM
+    if (settingsButton) {
       const rect = settingsButton.getBoundingClientRect();
       popoverElement.style.bottom = (window.innerHeight - rect.top + 8) + 'px';
-      popoverElement.style.left = rect.left + 'px';
+      // Garde anti-débordement sur les bords d'écran (max 256px de largeur popover)
+      const safeLeft = Math.max(8, Math.min(rect.left, window.innerWidth - 256));
+      popoverElement.style.left = safeLeft + 'px';
     }
 
     // Focaliser le premier commutateur pour l'accessibilité

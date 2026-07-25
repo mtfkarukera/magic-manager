@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.20.1] — 2026-07-25
+
+### Corrigé — Sprint 7 Rectificatif : Repositionnement Engrenage & Pilule Studio Opaque
+- ⚙️ **Positionnement Mobile au Cercle Rouge (`magic-manager.css`)** : Déplacement de l'engrenage fixe à `bottom: 76px; left: 16px;` sur mobile (< 768px), libérant 100% du champ de frappe du chat ("Posez une question...").
+- 📦 **Popover Classique Restauré (`settings.js` & `magic-manager.css`)** : Suppression de la Bottom Sheet géante. Restauration du popover compact d'origine (240px) s'élevant au-dessus du cercle rouge, avec garde anti-débordement à droite (`safeLeft`).
+- 🎨 **Pilule du Studio Opaque (`magic-manager.css`)** : Remplacement de la transparence par un fond opaque natif (`background: var(--mm-surface)`) pour que les cartes défilent proprement sous la pilule lors du scroll.
+
 ## [0.20.0] — 2026-07-25
 
 ### Ajouté & Amélioré — Sprint 7 : Ergonomie Visuelle & Adaptations Mobile
