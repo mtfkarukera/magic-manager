@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.22.0] — 2026-07-25
+
+### Ajouté & Amélioré — Sprint 9 : Moteur de Provenance des Sources (Local vs Drive vs Web)
+- 🔍 **Moteur de Résolution de Provenance (`source-helpers.js`)** : Implémentation de `getSourceProvenance(srcInfo)` pour croiser avec précision les 14 codes RPC avec la présence d'un `driveFileId` et d'une URL Web (`http/https`).
+- 🏷️ **Badges Bicanaux Enrichis (`source-badges.js`)** : Stockage des métadonnées RPC complètes dans `sourceTypesCache` et affichage d'icônes et d'infobulles d'origine dédiées pour distinguer les documents Locaux (`▢`), Google Drive (`🔄`) et Web (`🌐`) pour tout type de fichier (PDF, MD, Audio, CSV).
+
 ## [0.21.1] — 2026-07-25
 
 ### Corrigé — Sprint 8 Correctif : Résolution du blocage d'Export Chat

@@ -467,8 +467,43 @@
   window.MM.findSourceCards = findSourceCards;
   window.MM.getNativeCollapseBtn = getNativeCollapseBtn;
 
+  /**
+   * Détermine le canal de provenance et les attributs d'une source NotebookLM.
+   * @param {Object|number} srcInfo - Métadonnées RPC de la source ({ kind, url, driveFileId }) ou code numérique kind.
+   * @returns {{ channel: 'local'|'drive'|'web', label: string, icon: string }}
+   */
+  function getSourceProvenance(srcInfo) {
+    if (!srcInfo) {
+      return { channel: 'local', label: 'Local', icon: '▢' };
+    }
+
+    const info = (typeof srcInfo === 'number') ? { kind: srcInfo } : srcInfo;
+    const kind = info.kind;
+    const url = info.url;
+    const driveFileId = info.driveFileId;
+
+    // 1. Origine Web (présence d'une URL HTTP/HTTPS sans Drive OU types YouTube / Web URL)
+    const isWebUrl = typeof url === 'string' && /^https?:\/\//i.test(url) && !driveFileId;
+    const isYouTube = kind === 9;
+    const isWebType = kind === 5;
+
+    if (isWebUrl || isYouTube || isWebType) {
+      return { channel: 'web', label: 'Web', icon: '🌐' };
+    }
+
+    // 2. Origine Google Drive (présence d'un driveFileId OU types Google Docs/Slides/Drive)
+    const isDriveType = kind === 1 || kind === 2 || kind === 14;
+    if (driveFileId || isDriveType) {
+      return { channel: 'drive', label: 'Drive', icon: '🔄' };
+    }
+
+    // 3. Origine Locale (par défaut pour les téléversements directs PDF, MD, Audio, CSV, EPUB)
+    return { channel: 'local', label: 'Local', icon: '▢' };
+  }
+
   // Registre de source auto-cochée par Angular (viewer-open)
   window.MM.setAutoCheckedSource = setAutoCheckedSource;
   window.MM.getAutoCheckedSource = getAutoCheckedSource;
   window.MM.clearAutoCheckedSource = clearAutoCheckedSource;
+  window.MM.getSourceProvenance = getSourceProvenance;
 })();

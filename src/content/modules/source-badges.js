@@ -89,7 +89,12 @@
         rpcSources.forEach(function (src) {
           if (src && src.title && src.kind !== undefined) {
             const normalizedTitle = src.title.trim().toLowerCase();
-            sourceTypesCache.set(normalizedTitle, src.kind);
+            sourceTypesCache.set(normalizedTitle, {
+              kind: src.kind,
+              url: src.url,
+              driveFileId: src.driveFileId,
+              topLevelMime: src.topLevelMime
+            });
           }
         });
         retryCount = 0;
@@ -181,37 +186,40 @@
           return;
         }
 
-        // Essayer de faire un match flexible si has() exact échoue (gestion des troncatures ou points de suspension ASCII/Unicode)
-        let foundKind = null;
+        // Essayer de faire un match flexible si has() exact échoue
+        let foundSrcInfo = null;
         if (sourceTypesCache.has(normalizedTitle)) {
-          foundKind = sourceTypesCache.get(normalizedTitle);
+          foundSrcInfo = sourceTypesCache.get(normalizedTitle);
         } else {
           // Nettoyer les points de suspension ASCII ("..."), Unicode ("…"), tirets et espaces finaux
           const cleanDomTitle = normalizedTitle.replace(/(?:\.\.\.|\u2026|-|\s)+$/g, '').trim();
 
           if (cleanDomTitle.length > 3) {
-            for (const [cacheTitle, kind] of sourceTypesCache.entries()) {
+            for (const [cacheTitle, srcInfo] of sourceTypesCache.entries()) {
               const cleanCacheTitle = cacheTitle.replace(/(?:\.\.\.|\u2026|-|\s)+$/g, '').trim();
               if (cleanCacheTitle.startsWith(cleanDomTitle) || cleanDomTitle.startsWith(cleanCacheTitle)) {
-                foundKind = kind;
+                foundSrcInfo = srcInfo;
                 break;
               }
-              // Recherche par sous-chaîne pour les titres longs tronqués (Deep Research, etc.)
+              // Recherche par sous-chaîne pour les titres longs tronqués
               if (cleanDomTitle.length >= 12 && (cleanCacheTitle.includes(cleanDomTitle) || cleanDomTitle.includes(cleanCacheTitle))) {
-                foundKind = kind;
+                foundSrcInfo = srcInfo;
                 break;
               }
             }
           }
         }
 
-        // Si aucun kind RPC spécifique n'est déterminé (ex. titre non trouvé ou Deep Research),
-        // appliquer par défaut la catégorie 'local' (badge ▢) pour garantir un badge sur 100% des cartes.
-        const category = foundKind !== null ? getCategoryByKind(foundKind) : 'local';
+        // Utiliser le moteur de déduction de provenance centralisé getSourceProvenance
+        const prov = (typeof window.MM.getSourceProvenance === 'function')
+          ? window.MM.getSourceProvenance(foundSrcInfo)
+          : { channel: 'local', label: 'Local', icon: '▢' };
+
+        const category = prov.channel; // 'local', 'drive', 'web'
         let svgElement;
         if (category === 'drive') {
           svgElement = createDriveSvg();
-        } else if (category === 'url') {
+        } else if (category === 'web') {
           svgElement = createUrlSvg();
         } else {
           svgElement = createLocalSvg();
