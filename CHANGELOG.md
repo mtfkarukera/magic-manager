@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.20.2] — 2026-07-25
+
+### Corrigé — Sprint 7 Final : Raccordement Couleur Sombre #23262b & Nettoyage Popover
+- 🎨 **Raccordement Teinte Sombre (#23262b) (`magic-manager.css`)** : Recalibrage de la variable `--mm-surface` et du fond de `.mm-studio-search` à `#23262b` en mode sombre pour une intégration 100% invisible sans aucune différence de ton avec Gemini Notebook.
+- 🧹 **Nettoyage Popover (`settings.js`)** : Supprimé le bouton "×" superflu dans le titre du popover (qui se ferme naturellement au clic extérieur ou Échap), éliminant au passage l'avertissement de console `Clé i18n manquante: close`.
+
 ## [0.20.1] — 2026-07-25
 
 ### Corrigé — Sprint 7 Rectificatif : Repositionnement Engrenage & Pilule Studio Opaque

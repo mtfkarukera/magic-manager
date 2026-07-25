@@ -145,25 +145,11 @@
     const keys = FEATURE_TOGGLES.map(function (f) { return STORAGE_PREFIX + f.key; });
     const data = await browser.storage.local.get(keys);
 
-    // Bouton de fermeture pour le popover / Bottom Sheet mobile
-    const closeBtn = createElement('button', {
-      className: 'mm-btn-icon mm-settings-popover-close',
-      type: 'button',
-      'aria-label': t('close') || 'Fermer',
-      style: 'position: absolute; right: 8px; top: 50%; transform: translateY(-50%); width: 28px; height: 28px;',
-      onClick: closeSettingsPopover
-    }, [
-      createElement('span', { textContent: '×', style: 'font-size: 20px; font-weight: bold; line-height: 1;' })
-    ]);
-
-    // Titre du popover avec bouton de fermeture tactile
+    // Titre du popover épuré
     const title = createElement('div', {
       className: 'mm-settings-popover-title',
-      style: 'position: relative; display: flex; align-items: center; justify-content: space-between; padding-right: 36px;'
-    }, [
-      createElement('span', { textContent: t('settingsTitle') }),
-      closeBtn
-    ]);
+      textContent: t('settingsTitle')
+    });
 
     // Créer les toggles
     const toggleRows = FEATURE_TOGGLES.map(function (feature) {

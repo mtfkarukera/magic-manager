@@ -99,7 +99,7 @@
     --mm-primary-light: #1A2733;
     --mm-on-primary: #202124;
 
-    --mm-surface: #292A2D;
+    --mm-surface: #23262b;
     --mm-surface-variant: #35363A;
     --mm-on-surface: #E8EAED;
     --mm-on-surface-variant: #9AA0A6;
@@ -1426,7 +1426,7 @@
 
 @media (prefers-color-scheme: dark) {
   .mm-studio-search {
-    background: var(--mm-surface, #1e1f20);
+    background: var(--mm-surface, #23262b);
   }
 }
 
