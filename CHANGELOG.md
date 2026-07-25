@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.20.0] — 2026-07-25
+
+### Ajouté & Amélioré — Sprint 7 : Ergonomie Visuelle & Adaptations Mobile
+- 🎨 **Épuration de la Pilule du Studio (`magic-manager.css`)** : Suppression du fond flou translucide (`backdrop-filter`) autour de `.mm-studio-search` pour un fond uni 100% propre qui épouse la surface du Studio (`background: inherit`).
+- 📱 **Popover Mobile Bottom Sheet (`settings.js` & `magic-manager.css`)** : Transformation du popover de configuration en une fiche ancrée au bas de l'écran (Bottom Sheet) sur mobile (`@media (max-width: 768px)`), libérant intégralement la zone de saisie du chat ("Posez une question...").
+- ✖️ **Bouton de fermeture tactile (`settings.js`)** : Ajout d'un bouton de fermeture en en-tête du panneau des paramètres pour une fermeture fluide et intuitive sur smartphone.
+
 ## [0.19.1] — 2026-07-25
 
 ### Corrigé — Sprint Audit : Robustesse, Sécurité, Accessibilité & Design Material Design 3

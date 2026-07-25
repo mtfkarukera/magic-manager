@@ -283,6 +283,40 @@
   }
 }
 
+/* Animation d'ouverture Bottom Sheet Mobile */
+@keyframes mm-slideUpMobile {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Transformation responsive en Bottom Sheet sur Mobile */
+@media (max-width: 768px) {
+  .mm-settings-popover {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 100% !important;
+    border-radius: var(--mm-radius-lg) var(--mm-radius-lg) 0 0 !important;
+    border-bottom: none !important;
+    border-left: none !important;
+    border-right: none !important;
+    margin: 0 !important;
+    padding: var(--mm-spacing-lg) var(--mm-spacing-md) var(--mm-spacing-xl) var(--mm-spacing-md) !important;
+    box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4) !important;
+    animation: mm-slideUpMobile 0.3s cubic-bezier(0.05, 0.7, 0.1, 1) forwards !important;
+  }
+}
+
 
 .mm-settings-popover-title {
   font-family: var(--mm-font-family);
@@ -1409,8 +1443,6 @@
   top: 0;
   z-index: 99;
   background: inherit;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   padding: var(--mm-spacing-sm) 0;
   margin: 0 0 var(--mm-spacing-sm) 0;
   border-bottom: none;
