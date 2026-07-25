@@ -980,11 +980,14 @@
           }
         }
 
+        const finalUrl = url || youtubeUrl || null;
+
         return {
           id: id,
           title: src[1],
           kind: kind,
-          url: url,
+          url: finalUrl,
+          youtubeUrl: youtubeUrl || finalUrl,
           driveFileId: driveFileId,
           driveMimeType: resolveDriveMimeType(kind, (src[2] && src[2][9] && src[2][9][2]) || (src[2] && src[2][19])),
           topLevelMime: (src[2] && src[2][19]) || null

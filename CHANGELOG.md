@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.22.2] — 2026-07-26
+
+### Corrigé — Sprint 9.2 Correctif : Exposition RPC YouTube & Transfert Natif YouTube
+- 🎬 **Exposition RPC YouTube (`rpcclient.js`)** : Définition de `url: url || youtubeUrl` et `youtubeUrl` dans l'objet de retour de `getNotebookSources` pour transmettre l'URL réelle des vidéos YouTube au moteur de transfert.
+- 🚀 **Transfert Natif YouTube (`transfer.js`)** : Réimportation certifiée des vidéos YouTube sous leur format natif via `addYoutubeSource` lors du transfert inter-carnets.
+
 ## [0.22.1] — 2026-07-26
 
 ### Corrigé — Sprint 9.1 Correctif : Transfert Natif des PDF Web & Vidéos YouTube
