@@ -818,7 +818,9 @@
 .mm-code-block pre {
   margin: 0;
   padding: var(--mm-spacing-md);
-  overflow-x: auto;
+  /* Retour à la ligne automatique pour éviter le scrollbar horizontal */
+  white-space: pre-wrap;
+  word-break: break-word;
   font-size: var(--mm-font-size-sm);
   line-height: 1.6;
 }

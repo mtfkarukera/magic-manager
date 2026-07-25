@@ -6,8 +6,10 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [0.18.1] — 2026-07-25
 
-### Corrigé — Boîtes de Code Sublimées sur les Notes en Lecture Seule (`syntax.js`)
-- ✨ **Restitution sur les Notes Figées** : Suppression du blocage global `.studio-panel` pour réautoriser l'application des superbes boîtes de code `mm-code-block` (avec coloration syntaxique et bouton "Copier") sur toutes les notes du Studio en **lecture seule**.
+### Corrigé — Stabilisation du Streaming IA, Coloration Studio & Confinement CSS (`syntax.js` & `magic-manager.css`)
+- 🛑 **Garde Anti-Streaming IA (`syntax.js`)** : Détection de la sentinelle `isStreamingActive()` (bouton stop/spinner). Interdiction stricte de toute manipulation DOM pendant l'écriture active de l'IA, éliminant le gel des boîtes de code à 10 lignes sans nécessiter de rafraîchissement (`F5`).
+- 🍃 **Retour à la ligne automatique (`magic-manager.css`)** : Application de `white-space: pre-wrap` et `word-break: break-word` sur `.mm-code-block pre`, éliminant définitivement l'ascenseur horizontal (scrollbar) au pied des boîtes de code longues.
+- ✨ **Restitution sur les Notes Figées (`syntax.js`)** : Élargissement du scan à `document.body` pour réautoriser les superbes boîtes de code `mm-code-block` (avec coloration et bouton "Copier") sur toutes les notes du Studio en **lecture seule**.
 - 🛡️ **Périmètre d'Éditabilité Strict** : Maintien de l'interdiction ciblée exclusivement sur les conteneurs modifiables (`[contenteditable="true"]`), garantissant zéro bégaiement sur l'éditeur rich-text.
 
 ## [0.18.0] — 2026-07-25

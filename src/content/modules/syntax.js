@@ -205,23 +205,30 @@
 
   /**
    * Parcourt la zone de chat et les notes en lecture seule du Studio pour traiter tous les blocs de code non encore gérés.
-   * Optimisé : utilise querySelectorAll natif (pas de traversée Shadow DOM).
+   * IMPORTANT : Ne traite RIEN si l'IA est en cours de streaming (le DOM n'est pas stabilisé).
    */
   const scanAndHighlight = debounce(function () {
     if (typeof window.MM.isFeatureEnabled === 'function' && !window.MM.isFeatureEnabled('syntax')) {
       return;
     }
-    let chatContainer = document.querySelector(
-      'chat-viewer, [class*="chat-viewer"], [class*="conversation-container"], section.chat-panel, .chat-panel, .studio-panel'
+
+    // Garde anti-streaming : ne JAMAIS toucher au DOM tant que l'IA écrit.
+    // Pendant le streaming, Angular met à jour le <pre> en continu.
+    // Toute manipulation du DOM à ce stade couperait le flux de rendu d'Angular.
+    const isStreaming = !!document.querySelector(
+      'button[aria-label*="stop" i], button[aria-label*="arrê" i], button[aria-label*="cancel" i], mat-spinner, [class*="generating"], [class*="streaming"]'
     );
-    
-    // Repli sur document.body si le conteneur spécifique est introuvable
-    if (!chatContainer) {
-      chatContainer = document.body;
+    if (isStreaming) {
+      return;
     }
 
+    // Scope global : couvre le chat ET le Studio (notes en lecture seule).
+    // Les gardes de processPreBlock (contentEditable, data-mm-syntax-processed)
+    // protègent contre les notes éditables et le double traitement.
+    const scanRoot = document.body;
+
     // Recherche récursive Shadow DOM
-    const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])', chatContainer);
+    const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])', scanRoot);
     preBlocks.forEach(function (pre) {
       if (!pre.isContentEditable && !pre.closest('[contenteditable="true"], [contenteditable=""]') && !pre.closest('.mm-code-block')) {
         processPreBlock(pre);

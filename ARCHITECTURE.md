@@ -178,6 +178,21 @@ Pour garantir une expérience utilisateur fluide sur la SPA Gemini Notebook sans
     - *Tableaux* : Rendu tabulaire à l'aide d'un calcul de largeur de colonnes adaptatif.
   - **Pipeline d'Images Intégré** : Les images distantes (notamment hébergées sur les serveurs Google avec authentification requise comme `lh3.googleusercontent.com`) sont pré-chargées de façon asynchrone par lot. L'extension utilise un fetch avec credentials (`credentials: 'include'`) pour contourner les erreurs 403, dessine l'image sur un `OffscreenCanvas` temporaire en optimisant la mémoire (appel systématique à `imageBitmap.close()` et réduction des dimensions du canvas à zéro après usage), puis les injecte en base64 via `doc.addImage()`.
 
+## Moteur de Coloration Syntaxique & Cycle de Streaming IA
+
+Le module `syntax.js` applique la coloration syntaxique et l'enveloppement visuel (`.mm-code-block`) des blocs de code `<pre>` dans le Chat et le Studio en lecture seule.
+
+### Interaction avec l'Architecture SPA Angular & Le Streaming IA
+- **Contrainte DOM critique** : Pendant la génération d'une réponse par Gemini Notebook, le moteur de rendu d'Angular met à jour en continu les nœuds DOM `<pre>` à chaque token reçu. Toute mutation directe du DOM (telle que `replaceChild`, `insertBefore` ou l'injection de wrappers) sur un nœud `<pre>` en cours d'écriture coupe immédiatement le lien de référence d'Angular, ce qui fige la boîte de code à seulement quelques lignes (~10 lignes).
+- **Garde Anti-Streaming (`isStreamingActive`)** : Pour garantir un streaming 100% fluide sans risquer de régression :
+  - **Pendant la génération IA** : Le scanner `scanAndHighlight` détecte la présence du bouton d'arrêt (`stop` / `cancel` / `mat-spinner`) via la sentinelle `isStreamingActive()`. Tant que cette sentinelle est active, le module s'interdit **strictement** toute manipulation du DOM et retourne sans rien modifier.
+  - **Post-Streaming (Stabilisation)** : Dès que l'IA termine de répondre (disparition du bouton stop), la sentinelle se désactive. Le déclenchement suivant de l'observateur global applique `scanAndHighlight` sur un DOM complètement stabilisé et complet, habillant la boîte de code de manière instantanée et non-destructive.
+- **Portée Globalisée (`document.body`) & Gardes d'Idempotence** : Le scan de coloration s'exécute sur `document.body` afin de couvrir à la fois le panneau de Discussion et les notes du Studio affichées en mode lecture seule. Trois gardes évitent les effets secondaires :
+  1. `pre.isContentEditable` / `closest('[contenteditable]')` : Exclut strictement les notes en cours d'édition dans le Studio pour préserver la saisie utilisateur.
+  2. `data-mm-syntax-processed="true"` : Marque les blocs déjà traités pour empêcher tout double traitement.
+  3. `pre.closest('.mm-code-block')` : Évite l'enveloppement en cascade de blocs déjà stylés.
+- **Lisibilité et Retour à la ligne (`white-space: pre-wrap`)** : Pour éliminer les ascenseurs horizontaux (`scrollbars`) agaçants au pied des boîtes de code dans l'interface du chat, les blocs `.mm-code-block pre` exploitent `white-space: pre-wrap` et `word-break: break-word`, garantissant que les lignes de code longues s'adaptent naturellement à la largeur du conteneur sans déborder.
+
 ## Conventions
 
 - **Préfixe de log** : `[MM]` pour tous les messages console
