@@ -200,6 +200,7 @@
       type: 'text',
       className: 'mm-notebook-search',
       placeholder: t('transferSearchNotebook') || 'Rechercher un carnet...',
+      'aria-label': t('transferSearchNotebook') || 'Rechercher un carnet...',
       onInput: (e) => {
         const query = e.target.value.trim().toLowerCase();
         const items = listContainer.querySelectorAll('.mm-notebook-item');

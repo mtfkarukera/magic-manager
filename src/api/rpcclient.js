@@ -197,8 +197,9 @@
     const result = extractRpcResult(chunks, rpcId);
 
     if (result === null || result === undefined) {
-      const preview = rawResponse.slice(0, 500);
-      console.error(`[MM] Structure inattendue pour le RPC ${rpcId}. Aperçu de la réponse :`, preview);
+      // Aperçu tronqué et nettoyé pour éviter toute fuite de données privées (correction audit S-1)
+      const preview = rawResponse.slice(0, 80).replace(/[\n\r]/g, ' ');
+      console.error(`[MM] Structure inattendue pour le RPC ${rpcId}. Longueur: ${rawResponse.length}, début: "${preview}…"`);
       throw new RpcApiChangedError(rpcId);
     }
 

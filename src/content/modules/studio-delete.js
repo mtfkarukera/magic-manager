@@ -322,6 +322,7 @@
           style: 'width: 36px; height: 36px; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; border: 1px solid var(--mm-outline);',
           type: 'button',
           title: t('studioClearSelection') || 'Tout désélectionner',
+          'aria-label': t('studioClearSelection') || 'Tout désélectionner',
           onClick: handleClearSelection
         }, [
           createElement('span', { textContent: '×', style: 'font-size: 20px; font-weight: bold; line-height: 1;' })

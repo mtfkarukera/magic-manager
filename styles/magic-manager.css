@@ -156,14 +156,15 @@
   }
 }
 
+/* Animation d'entrée conforme Material Design 3 — Emphasized Decelerate (correction audit D-3) */
 @keyframes mm-scaleInElastic {
   0% {
     opacity: 0;
-    transform: scale(0.92);
+    transform: scale(0.95) translateY(10px);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -195,20 +196,21 @@
   background: transparent;
   color: var(--mm-on-surface-variant);
   cursor: pointer;
-  transition: background var(--mm-transition-fast), color var(--mm-transition-fast), transform var(--mm-transition-fast);
+  transition: background var(--mm-transition-fast), color var(--mm-transition-fast), filter var(--mm-transition-fast);
   padding: 0;
   margin: var(--mm-spacing-xs);
 }
 
+/* Micro-interactions MD3 : state layers sans déplacement physique (correction audit D-1) */
 .mm-settings-btn:hover {
   background: var(--mm-surface-variant);
   color: var(--mm-on-surface);
-  transform: translateY(-1px);
+  filter: brightness(1.15);
 }
 
 .mm-settings-btn:active {
   background: var(--mm-outline-variant);
-  transform: scale(0.97);
+  filter: brightness(0.9);
 }
 
 .mm-settings-btn svg {
@@ -231,27 +233,27 @@
   border: 1px solid rgba(255, 255, 255, 0.4) !important;
   box-shadow: var(--mm-shadow-2);
   opacity: 0.9;
-  transition: opacity var(--mm-transition-fast), background var(--mm-transition-fast), box-shadow var(--mm-transition-fast), transform var(--mm-transition-fast);
+  transition: opacity var(--mm-transition-fast), background var(--mm-transition-fast), box-shadow var(--mm-transition-fast), filter var(--mm-transition-fast);
 }
 
 .mm-settings-btn-fixed:hover {
   opacity: 1;
   background: rgba(255, 255, 255, 0.85);
   box-shadow: var(--mm-shadow-3);
-  transform: translateY(-1px) scale(1.02);
+  filter: brightness(1.1);
 }
 
 .mm-settings-btn-fixed:active {
-  transform: translateY(0) scale(0.98);
+  filter: brightness(0.9);
 }
 
 @media (prefers-color-scheme: dark) {
   .mm-settings-btn-fixed {
-    background: rgba(30, 41, 59, 0.7);
+    background: rgba(41, 42, 45, 0.7); /* Gris neutre Google (correction audit D-2) */
     border: 1px solid rgba(255, 255, 255, 0.08) !important;
   }
   .mm-settings-btn-fixed:hover {
-    background: rgba(30, 41, 59, 0.85);
+    background: rgba(41, 42, 45, 0.85); /* Gris neutre Google */
   }
 }
 
@@ -275,9 +277,9 @@
 
 @media (prefers-color-scheme: dark) {
   .mm-settings-popover {
-    background: rgba(30, 41, 59, 0.75);
+    background: rgba(41, 42, 45, 0.75); /* Gris neutre Google (correction audit D-2) */
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: var(--mm-shadow-3);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), var(--mm-shadow-3); /* Glassmorphism sublimé (correction audit D-5) */
   }
 }
 
@@ -399,19 +401,19 @@
   max-width: 480px;
   color: var(--mm-on-surface);
   margin: auto;
-  animation: mm-scaleInElastic 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.1) forwards;
+  animation: mm-scaleInElastic 0.3s cubic-bezier(0.05, 0.7, 0.1, 1) forwards; /* Courbe MD3 Emphasized Decelerate (correction audit D-3) */
 }
 
 @media (prefers-color-scheme: dark) {
   .mm-dialog {
-    background: rgba(30, 41, 59, 0.75);
+    background: rgba(41, 42, 45, 0.75); /* Gris neutre Google (correction audit D-2) */
     border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: var(--mm-shadow-3);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1), var(--mm-shadow-3); /* Glassmorphism sublimé (correction audit D-5) */
   }
 }
 
 .mm-dialog::backdrop {
-  background: rgba(15, 23, 42, 0.3); /* Base ardoise foncée translucide */
+  background: rgba(32, 33, 36, 0.3); /* Gris neutre Google (correction audit D-2) */
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   animation: mm-fadeIn var(--mm-transition-fast);
@@ -497,8 +499,9 @@
 .mm-batch-export-btn:focus-visible,
 .mm-batch-merge-btn:focus-visible,
 .mm-chat-export-btn:focus-visible {
-  outline: 2px solid var(--mm-primary) !important;
-  outline-offset: 2px !important;
+  /* Focus ring double-anneau doux conforme MD3 (correction audit D-4) */
+  outline: none !important;
+  box-shadow: 0 0 0 2px var(--mm-surface), 0 0 0 4px var(--mm-primary) !important;
 }
 
 .mm-btn {
@@ -513,17 +516,18 @@
   border: none;
   border-radius: var(--mm-radius-full);
   cursor: pointer;
-  transition: background var(--mm-transition-fast), box-shadow var(--mm-transition-fast), transform var(--mm-transition-fast);
+  transition: background var(--mm-transition-fast), box-shadow var(--mm-transition-fast), filter var(--mm-transition-fast);
   white-space: nowrap;
   user-select: none;
 }
 
+/* Micro-interactions MD3 : state layers sans déplacement physique (correction audit D-1) */
 .mm-btn:hover {
-  transform: translateY(-1px);
+  filter: brightness(1.15);
 }
 
 .mm-btn:active {
-  transform: scale(0.97);
+  filter: brightness(0.9);
 }
 
 .mm-btn-primary {
@@ -566,19 +570,20 @@
   background: transparent;
   color: var(--mm-on-surface-variant);
   cursor: pointer;
-  transition: background var(--mm-transition-fast), color var(--mm-transition-fast), transform var(--mm-transition-fast);
+  transition: background var(--mm-transition-fast), color var(--mm-transition-fast), filter var(--mm-transition-fast);
   padding: 0;
   flex-shrink: 0;
 }
 
+/* Micro-interactions MD3 : state layers sans déplacement physique (correction audit D-1) */
 .mm-btn-icon:hover {
   background: var(--mm-surface-variant);
   color: var(--mm-primary);
-  transform: translateY(-1px);
+  filter: brightness(1.15);
 }
 
 .mm-btn-icon:active {
-  transform: scale(0.97);
+  filter: brightness(0.9);
 }
 
 
@@ -1110,13 +1115,13 @@
 
 .mm-batch-export-btn.mm-btn-row:hover,
 .mm-batch-merge-btn.mm-btn-row:hover {
-  transform: translateY(-1px);
+  filter: brightness(1.15); /* MD3 state layer (correction audit D-1) */
   background-color: var(--mm-surface-variant);
 }
 
 .mm-batch-export-btn.mm-btn-row:active,
 .mm-batch-merge-btn.mm-btn-row:active {
-  transform: scale(0.97);
+  filter: brightness(0.9); /* MD3 state layer (correction audit D-1) */
 }
 
 /* Spinner de chargement de l'export de chat */
@@ -1657,17 +1662,17 @@
 @media (prefers-color-scheme: dark) {
   .mm-export-format-option {
     border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(15, 23, 42, 0.3);
+    background: rgba(32, 33, 36, 0.3); /* Gris neutre Google (correction audit D-2) */
   }
 
   .mm-export-format-option:hover {
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(32, 33, 36, 0.5); /* Gris neutre Google */
     border-color: var(--mm-primary-hover);
   }
 
   .mm-export-format-option.selected {
     border-color: var(--mm-primary);
-    background: color-mix(in srgb, var(--mm-primary) 12%, rgba(15, 23, 42, 0.5));
+    background: color-mix(in srgb, var(--mm-primary) 12%, rgba(32, 33, 36, 0.5)); /* Gris neutre Google */
   }
 }
 
@@ -1972,17 +1977,17 @@
 @media (prefers-color-scheme: dark) {
   .mm-notebook-item {
     border-color: rgba(255, 255, 255, 0.08);
-    background: rgba(15, 23, 42, 0.3);
+    background: rgba(32, 33, 36, 0.3); /* Gris neutre Google (correction audit D-2) */
   }
 
   .mm-notebook-item:hover:not(.disabled) {
-    background: rgba(15, 23, 42, 0.5);
+    background: rgba(32, 33, 36, 0.5); /* Gris neutre Google */
     border-color: var(--mm-primary-hover);
   }
 
   .mm-notebook-item.selected {
     border-color: var(--mm-primary);
-    background: color-mix(in srgb, var(--mm-primary) 12%, rgba(15, 23, 42, 0.5));
+    background: color-mix(in srgb, var(--mm-primary) 12%, rgba(32, 33, 36, 0.5)); /* Gris neutre Google */
   }
 
   .mm-notebook-count.warning {

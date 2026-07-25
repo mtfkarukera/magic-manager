@@ -121,6 +121,11 @@
       let anyTruncated = false;
 
     for (let i = 0; i < checkboxes.length; i++) {
+      // Vérification de l'annulation par l'utilisateur (correction audit R-1)
+      if (isCancelled) {
+        console.log('[MM] Export par lot interrompu : annulation par l\'utilisateur.');
+        break;
+      }
       if (window.MM.getActiveNotebookId() !== notebookId) {
         console.log('[MM] Export par lot interrompu : changement de notebook détecté.');
         break;

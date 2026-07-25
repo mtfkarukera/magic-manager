@@ -232,7 +232,7 @@
     document.body.removeChild(a);
     setTimeout(function() {
       URL.revokeObjectURL(url);
-    }, 10000); // 10 secondes pour garantir le début du téléchargement
+    }, 60000); // 60 secondes pour laisser le temps aux gros fichiers ZIP (correction audit R-2)
   }
 
   // ═══════════════════════════════════════════════════════════════════════

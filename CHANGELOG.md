@@ -4,6 +4,26 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.19.1] — 2026-07-25
+
+### Corrigé — Sprint Audit : Robustesse, Sécurité, Accessibilité & Design Material Design 3
+
+**Robustesse & Sécurité**
+- 🛑 **Annulation d'export batch effective (`export.js`)** : Le flag `isCancelled` est désormais vérifié dans la boucle `for` d'export par lot. L'annulation interrompt réellement les requêtes RPC et le téléchargement du ZIP.
+- 🔒 **Troncation des logs RPC (`rpcclient.js`)** : L'aperçu de la réponse brute en cas d'erreur `RpcApiChangedError` est réduit de 500 à 80 caractères et nettoyé des retours à la ligne pour éviter toute fuite de données privées.
+- ⏱️ **Timeout Blob URL étendu (`export-utils.js`)** : Le délai de révocation `URL.revokeObjectURL` passe de 10 à 60 secondes pour sécuriser le téléchargement des gros fichiers ZIP.
+
+**Accessibilité (WCAG 2.1 AA)**
+- ♿ **`aria-label` sur le champ de recherche (`transfer.js`)** : L'input de recherche de la modale de transfert inter-carnets a désormais une étiquette accessible explicite, conforme aux critères WCAG 3.3.2 et 4.1.2.
+- ♿ **`aria-label` sur le bouton "×" (`studio-delete.js`)** : Le bouton de réinitialisation de la sélection du Studio a un nom accessible explicite pour les lecteurs d'écran.
+
+**Design & CSS — Migration Material Design 3**
+- 🎨 **Micro-interactions MD3 (`magic-manager.css`)** : Suppression de tous les `translateY(-1px)` au hover et `scale(0.97)` au active (9 occurrences). Remplacement par `filter: brightness()` conforme aux State Layers MD3 — l'extension ne trahit plus son injection.
+- 🌑 **Palette Google Grays (`magic-manager.css`)** : Migration de tous les gris bleutés Tailwind Slate (`rgba(30,41,59,*)` / `rgba(15,23,42,*)`) vers les gris neutres Google (`rgba(41,42,45,*)` / `rgba(32,33,36,*)`) sur 11 occurrences dark mode.
+- ✨ **Animation modale MD3 (`magic-manager.css`)** : Remplacement de la courbe élastique (bounce) par la courbe "Emphasized Decelerate" `cubic-bezier(0.05, 0.7, 0.1, 1)` de Material Design 3.
+- 💍 **Focus ring doux (`magic-manager.css`)** : Remplacement de l'outline agressif par un double-anneau `box-shadow` (surface + primary) conforme MD3.
+- 🪟 **Glassmorphism sublimé (`magic-manager.css`)** : Ajout d'une fine ombre interne blanche (`inset 0 1px 1px rgba(255,255,255,0.1)`) sur les surfaces vitrées dark mode (popover et dialog) pour simuler l'éclairage du verre poli.
+
 ## [0.19.0] — 2026-07-25
 
 ### Corrigé — Stabilisation du Streaming IA, Coloration Studio & Confinement CSS (`syntax.js` & `magic-manager.css`)
