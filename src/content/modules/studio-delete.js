@@ -305,10 +305,13 @@
         batchDeleteWrapper.appendChild(batchDeleteBtn);
         batchDeleteWrapper.appendChild(resetBtn);
 
-        if (header) {
+        const searchBar = studioPanel.querySelector('.mm-studio-search-bar');
+        if (searchBar && searchBar.parentNode) {
+          searchBar.parentNode.insertBefore(batchDeleteWrapper, searchBar.nextSibling);
+        } else if (header) {
           header.parentNode.insertBefore(batchDeleteWrapper, header.nextSibling);
         } else {
-          studioPanel.insertBefore(batchDeleteWrapper, studioPanel.firstChild);
+          studioPanel.appendChild(batchDeleteWrapper);
         }
       } else {
         batchDeleteBtn.textContent = `${t('studioDeleteButton') || 'Supprimer la sélection'} (${count})`;

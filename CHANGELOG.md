@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.24.0] — 2026-07-26
+
+### Ajouté & Amélioré — Sprint 11 : Ancrage Fixe de la Barre de Recherche Studio & Bouton de Suppression
+- 📌 **Ancrage Fixe de la Barre de Recherche Studio (`studio-delete.js`)** : Réorganisation de l'insertion du wrapper de suppression pour l'insérer systématiquement sous la barre de recherche `.mm-studio-search-bar`.
+- 📐 **Stabilité Visuelle** : La barre de recherche *"Rechercher dans le Studio..."* reste parfaitement immobile tout en haut du panneau du Studio lors de la sélection ou de la désélection d'éléments.
+
 ## [0.23.0] — 2026-07-26
 
 ### Ajouté & Amélioré — Sprint 10 : Correction du Filtre Studio par ID & Sélecteurs Structuraux
