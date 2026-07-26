@@ -109,6 +109,15 @@
     }
 
     // 5. Fallback universel : extraction du contenu HTML → Markdown → source texte (sources locales)
+    // Protection : si l'ID de la source n'a pas été résolu (match titre échoué),
+    // on ne peut pas extraire le contenu → on marque la source comme non supportée.
+    if (!source.id) {
+      return {
+        method: 'unsupported',
+        title: source.title,
+        reason: 'Identifiant de source introuvable (correspondance titre échouée)'
+      };
+    }
     return {
       method: 'text',
       sourceId: source.id,
@@ -518,9 +527,26 @@
     }
 
     // Mapper les titres cochés vers les objets sources enrichis
+    // Match strict d'abord, puis fallback par sous-chaîne (espaces insécables, ponctuation)
     const sourcesToTransfer = sourceTitles.map((title) => {
       const normTitle = title.trim().toLowerCase();
-      const match = currentSources.find((s) => s.title && s.title.trim().toLowerCase() === normTitle);
+      // 1. Match strict
+      let match = currentSources.find((s) => s.title && s.title.trim().toLowerCase() === normTitle);
+      // 2. Fallback : match par sous-chaîne (includes) si le match strict échoue
+      if (!match) {
+        match = currentSources.find((s) =>
+          s.title && (
+            s.title.trim().toLowerCase().includes(normTitle) ||
+            normTitle.includes(s.title.trim().toLowerCase())
+          )
+        );
+        if (match) {
+          console.log(`[MM] Transfert : match fuzzy pour "${title}" → "${match.title}"`);
+        }
+      }
+      if (!match) {
+        console.warn(`[MM] Transfert : aucune correspondance RPC trouvée pour "${title}" — la source sera ignorée.`);
+      }
       return match || { id: null, title: title, kind: undefined };
     });
 

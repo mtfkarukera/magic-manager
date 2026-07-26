@@ -585,15 +585,17 @@
   flex-shrink: 0;
 }
 
-/* Micro-interactions MD3 : state layers sans déplacement physique (correction audit D-1) */
+/* Micro-interactions MD3 : state layers + feedback d'échelle tactile (correction audit D-1 & D-4) */
 .mm-btn-icon:hover {
   background: var(--mm-surface-variant);
   color: var(--mm-primary);
   filter: brightness(1.15);
+  transform: scale(1.05);
 }
 
 .mm-btn-icon:active {
   filter: brightness(0.9);
+  transform: scale(0.96);
 }
 
 
@@ -930,7 +932,9 @@
 
 @media (prefers-color-scheme: dark) {
   .mm-sticky-header {
-    background-color: inherit;
+    background-color: rgba(35, 38, 43, 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   }
 }
@@ -1314,7 +1318,7 @@
   color: #4285f4; /* Bleu Google */
 }
 .mm-source-badge--local {
-  color: #9aa0a6; /* Gris neutre */
+  color: #757575; /* Gris neutre — contraste WCAG AA 4.6:1 sur blanc (corrigé depuis #9aa0a6 = 2.8:1) */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -1406,6 +1410,28 @@
 
 .mm-studio-batch-actions.mm-visible {
   display: inline-flex;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Studio Header Container — Conteneur unifié d'en-tête Studio (Sprint 11)
+   Regroupe la barre de recherche (order: 1) et le bouton suppression (order: 2).
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.mm-studio-header-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  box-sizing: border-box;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--mm-outline-variant, #dadce0);
+  padding-bottom: var(--mm-spacing-xs, 4px);
+  margin-bottom: var(--mm-spacing-sm, 8px);
+}
+
+@media (prefers-color-scheme: dark) {
+  .mm-studio-header-container {
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════

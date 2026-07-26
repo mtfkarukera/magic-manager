@@ -200,7 +200,8 @@
    * Lance l'extension.
    */
   async function init() {
-    console.log('[MM] Magic Manager v0.13.0 — Initialisation globale');
+    const manifestVersion = browser.runtime.getManifest().version;
+    console.log(`[MM] Magic Manager v${manifestVersion} — Initialisation globale`);
 
     // Mettre à disposition la vérification d'état des features pour les autres modules
     window.MM.isFeatureEnabled = isFeatureEnabled;

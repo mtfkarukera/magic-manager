@@ -4,6 +4,19 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.26.0] — 2026-07-26
+
+### Corrigé & Amélioré — Sprint 12 : Correctifs Post-Audit & Finitions Anti-Régression
+- 🔴 **Correctif Bloquant Studio (`source-helpers.js`)** : Qualification de `createElement` par `window.MM.createElement` dans `getOrCreateStudioHeaderContainer()` pour éliminer le `ReferenceError` empêchant l'injection du conteneur d'en-tête Studio.
+- 🔴 **Correctif Majeur Batch RPC (`rpcclient.js`)** : Refonte du dépouillement des réponses dans `sendBatchMultiple` par index positionnel, garantissant une association 1:1 fidèle entre les requêtes et leurs résultats serveur (élimine les faux succès lors des suppressions en lot).
+- 🟠 **Sécurisation Transfert Inter-Carnets (`transfer.js`)** : Ajout d'un fuzzy matching par sous-chaîne pour la résolution des titres de sources RPC, et protection du cas `sourceId === null` dans `resolveTransferStrategy` (marqué `unsupported` au lieu de lever une exception).
+- 🎨 **Glassmorphism Dark Mode Mobile (`magic-manager.css`)** : Rétablissement de `backdrop-filter: blur(12px)` sur `.mm-sticky-header` en mode sombre (remplace `background: inherit` qui annulait l'effet frost).
+- 🎨 **Conteneur Unifié Studio CSS (`magic-manager.css`)** : Classe `.mm-studio-header-container` dédiée avec séparateur visuel `border-bottom`, remplaçant les styles inline JS.
+- ♿ **Contraste Badge Local WCAG AA (`magic-manager.css`)** : Couleur `.mm-source-badge--local` portée de `#9aa0a6` (2.8:1) à `#757575` (4.6:1) en mode clair.
+- ♿ **Accessibilité Switches (`settings.js`)** : Ajout de `role="switch"` sur les toggles de paramétrage pour une annonce correcte par les lecteurs d'écran.
+- 🧹 **Version Dynamique (`orchestrator.js`)** : Remplacement du log hardcodé `v0.13.0` par `browser.runtime.getManifest().version`.
+- ⚡ **Micro-Interactions Boutons (`magic-manager.css`)** : Ajout de `transform: scale(1.05/0.96)` sur les `.mm-btn-icon` pour un feedback tactile premium au survol et au clic.
+
 ## [0.25.0] — 2026-07-26
 
 ### Ajouté & Amélioré — Sprint 11 : Conteneur Unifié d'En-tête Studio & Ordre CSS Garanti

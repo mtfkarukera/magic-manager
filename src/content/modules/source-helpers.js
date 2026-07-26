@@ -550,9 +550,8 @@
     const scrollableContent = document.querySelector('studio-panel .panel-content-scrollable, studio-panel');
     if (!scrollableContent) return null;
 
-    container = createElement('div', {
-      className: 'mm-studio-header-container',
-      style: 'display: flex; flex-direction: column; width: 100%; box-sizing: border-box; flex-shrink: 0;'
+    container = window.MM.createElement('div', {
+      className: 'mm-studio-header-container'
     });
 
     scrollableContent.insertBefore(container, scrollableContent.firstChild);

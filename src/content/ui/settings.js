@@ -97,10 +97,11 @@
   function createToggleRow(storageKey, i18nKey, checked) {
     const fullKey = STORAGE_PREFIX + storageKey;
 
-    // Checkbox invisible
+    // Checkbox invisible (role="switch" pour l'annonce accessible en tant que commutateur)
     const input = createElement('input', {
       type: 'checkbox',
       id: 'mm-toggle-' + storageKey,
+      role: 'switch',
     });
     input.checked = checked;
 

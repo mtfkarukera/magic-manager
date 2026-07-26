@@ -389,18 +389,48 @@
     const responseText = await response.text();
     const chunks = parseChunkedResponse(stripAntiXssi(responseText));
 
-    // Analyser les résultats individuels
-    let succeeded = 0;
-    let failed = 0;
-    const errors = [];
+    // Collecter TOUS les résultats wrb.fr par rpcId dans l'ordre d'apparition
+    // pour éviter de ré-évaluer N fois le même premier chunk quand toutes les
+    // requêtes partagent le même rpcId (ex: tGMBJ pour suppression en lot).
+    const resultsByRpcId = {};
+    for (const chunk of chunks) {
+      if (!Array.isArray(chunk)) continue;
+      const items = (chunk.length > 0 && Array.isArray(chunk[0])) ? chunk : [chunk];
+      for (const item of items) {
+        if (!Array.isArray(item) || item.length < 3) continue;
+        if (item[0] === 'wrb.fr' || item[0] === 'er') {
+          const id = item[1];
+          if (!resultsByRpcId[id]) resultsByRpcId[id] = [];
+          resultsByRpcId[id].push(item);
+        }
+      }
+    }
 
+    // Associer chaque requête au chunk de résultat correspondant par index positionnel
+    const consumedIndex = {}; // Compteur par rpcId pour consommer dans l'ordre
     for (const req of requests) {
+      const id = req.rpcId;
+      if (!consumedIndex[id]) consumedIndex[id] = 0;
+      const items = resultsByRpcId[id] || [];
+      const item = items[consumedIndex[id]++];
+
       try {
-        extractRpcResult(chunks, req.rpcId);
+        if (!item) {
+          // Aucun résultat correspondant trouvé pour cette requête
+          throw new Error(`Aucune réponse serveur pour la requête ${id} (index ${consumedIndex[id] - 1})`);
+        }
+        if (item[0] === 'er') {
+          throw new Error(`Erreur renvoyée par le serveur Google pour ${id} (code: ${item[2]})`);
+        }
+        // Cas wrb.fr
+        const resultData = item[2];
+        if (resultData === null && Array.isArray(item[5]) && item[5].length > 0) {
+          throw new RpcError(id, `ERR_CODE_${item[5][0]}`, `Le serveur Google a rejeté la requête pour ${id} (code d'erreur applicatif: ${item[5][0]}).`);
+        }
         succeeded++;
       } catch (err) {
         failed++;
-        errors.push({ rpcId: req.rpcId, error: err.message });
+        errors.push({ rpcId: id, error: err.message });
       }
     }
 
