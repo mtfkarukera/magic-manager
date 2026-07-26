@@ -113,7 +113,7 @@ L'extension s'affranchit des simulations d'interactions DOM (fragiles et sources
 - **DELETE_SOURCE (`tGMBJ`) / ADD_SOURCE (`izAoDd`)** : Appels directs utilisant des structures de tableaux doublement et triplement enveloppées pour des mutations réseau résilientes.
 - **DELETE_NOTE (`AH0mwd`) / DELETE_ARTIFACT (`V5N4be`)** : Appels directs pour la suppression d'éléments du Studio.
 - **GET_NOTES_AND_MIND_MAPS (`cFji9`) / LIST_ARTIFACTS (`gArtLc`)** : Requêtes permettant de récupérer les éléments du Studio en tâche de fond afin d'effectuer le mapping titre ↔ ID requis pour la suppression batch.
-- **Infrastructure batch multi-RPC (`sendBatchMultiple`)** : Encapsule plusieurs requêtes RPC différentes dans un seul POST réseau `batchexecute` en empilant les tuples de requêtes dans le tableau externe de l'enveloppe `f.req`. En cas d'échec global du batch, un fallback séquentiel avec rate limiting (300ms entre les requêtes) est automatiquement exécuté.
+- **Infrastructure batch multi-RPC (`sendBatchMultiple`)** : Encapsule plusieurs requêtes RPC différentes dans un seul POST réseau `batchexecute` en empilant les tuples de requêtes dans le tableau externe de l'enveloppe `f.req`. Depuis la version 0.26.0, le dépouillement des réponses `wrb.fr` est réalisé par indexation positionnelle par `rpcId` (`resultsByRpcId` + `consumedIndex`), garantissant une association 1:1 exacte entre chaque sous-requête et sa réponse serveur, même lorsque toutes les sous-requêtes partagent le même `rpcId` (ex: suppression de $N$ sources via `tGMBJ`). En cas d'échec global du batch, un fallback séquentiel avec rate limiting (300ms entre les requêtes) est automatiquement exécuté.
 
 ## Composants d'interface (Modales & Dialogues)
 
