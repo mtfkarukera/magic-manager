@@ -501,9 +501,48 @@
     return { channel: 'local', label: 'Local', icon: '▢' };
   }
 
+  /**
+   * Extrait l'UUID natif Google attribué à une carte du Studio.
+   * Analyse aria-labelledby="note-labels-[UUID]", id="note-labels-[UUID]" ou jslog/regex.
+   * @param {Element} card - Élément DOM de la carte.
+   * @returns {string|null} - L'UUID extrait ou null.
+   */
+  function getStudioCardUuid(card) {
+    if (!card) return null;
+
+    // 1. Recherche par attribut aria-labelledby="note-labels-[UUID]"
+    const btnWithLabel = card.querySelector('[aria-labelledby*="note-labels-"]');
+    if (btnWithLabel) {
+      const attr = btnWithLabel.getAttribute('aria-labelledby') || '';
+      const match = attr.match(/note-labels-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i);
+      if (match) return match[1];
+    }
+
+    // 2. Recherche directe dans l'ID de note (ex: id="note-labels-394eab26-...")
+    const labelEl = card.querySelector('[id^="note-labels-"]');
+    if (labelEl) {
+      const match = labelEl.id.match(/^note-labels-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/i);
+      if (match) return match[1];
+    }
+
+    // 3. Extraction d'UUID via les attributs HTML (jslog, aria, id...)
+    const html = card.outerHTML || '';
+    const uuids = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi);
+    if (uuids && uuids.length > 0) {
+      const currentNotebookId = window.MM?.notebookId || '';
+      const validUuids = uuids.filter(u => u.toLowerCase() !== currentNotebookId.toLowerCase());
+      if (validUuids.length > 0) {
+        return validUuids[0];
+      }
+    }
+
+    return null;
+  }
+
   // Registre de source auto-cochée par Angular (viewer-open)
   window.MM.setAutoCheckedSource = setAutoCheckedSource;
   window.MM.getAutoCheckedSource = getAutoCheckedSource;
   window.MM.clearAutoCheckedSource = clearAutoCheckedSource;
   window.MM.getSourceProvenance = getSourceProvenance;
+  window.MM.getStudioCardUuid = getStudioCardUuid;
 })();

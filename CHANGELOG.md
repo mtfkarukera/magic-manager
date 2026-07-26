@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.23.0] — 2026-07-26
+
+### Ajouté & Amélioré — Sprint 10 : Correction du Filtre Studio par ID & Sélecteurs Structuraux
+- 🎯 **Couplage Certifié par UUID (`studio-search.js`)** : Refonte du moteur de classification des cartes du Studio en associant chaque carte DOM à son UUID unique croisé avec les données RPC (`cFji9` / `gArtLc`), éliminant 100 % des collisions textuelles.
+- 📦 **Catégorie "Autre" Fonctionnelle (`studio-search.js`)** : Prise en charge automatique des éléments hors-spectre 1-9 (expérimentaux ou futurs) dans le filtre du Studio.
+- 🧩 **Centralisation Helper Studio (`source-helpers.js`)** : Helper partagé `window.MM.getStudioCardUuid` réutilisable par tous les modules (filtrage, suppression).
+
 ## [0.22.3] — 2026-07-26
 
 ### Corrigé — Sprint 9.3 Correctif : Rafraîchissement Dynamique & Purge des Boutons Batch

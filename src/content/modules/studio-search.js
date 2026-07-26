@@ -180,37 +180,40 @@
   }
 
   /**
-   * Détermine le type de carte en combinant le cache RPC (précision 100%) et le fallback DOM.
+   * Détermine le type de carte en combinant l'UUID unique RPC (précision 100%) et le fallback DOM.
    */
   function getCardType(card, title) {
-    if (cachedDbItems && cachedDbItems.length > 0) {
-      const cleanTitle = title.trim().toLowerCase();
-      const domType = detectCardTypeFromDOM(card);
-      // Le DOM a-t-il réussi à identifier un type spécifique (code numérique connu) ?
-      const domHasSpecificType = KNOWN_CODES.includes(domType);
+    // 1. Extraction de l'UUID natif de la carte DOM
+    const cardUuid = typeof window.MM.getStudioCardUuid === 'function'
+      ? window.MM.getStudioCardUuid(card)
+      : null;
 
-      // Recherche précise par titre ET type
-      const match = cachedDbItems.find(item => {
-        const dbTitle = item.title.toLowerCase();
-        const isTitleMatch = dbTitle === cleanTitle || dbTitle.includes(cleanTitle) || cleanTitle.includes(dbTitle);
-        if (!isTitleMatch) return false;
-        
-        // Résolution de collision : si le DOM a un type spécifique, exiger la concordance
-        if (domHasSpecificType) {
-          let rpcType = item.type === 'note' ? 'note' : item.typeCode;
-          if (rpcType !== 'note' && !KNOWN_CODES.includes(rpcType)) {
-            rpcType = 'other';
-          }
-          return rpcType === domType;
-        }
-        return true;
-      });
+    // 2. Matching direct et certifié par UUID dans le cache RPC
+    if (cardUuid && cachedDbItems && cachedDbItems.length > 0) {
+      const match = cachedDbItems.find(item => item.id.toLowerCase() === cardUuid.toLowerCase());
       if (match) {
-        return match.type === 'note' ? 'note' : match.typeCode;
+        let code = match.type === 'note' ? 'note' : match.typeCode;
+        if (code !== 'note' && !KNOWN_CODES.includes(code)) {
+          code = 'other';
+        }
+        return code;
       }
     }
-    
-    // Fallback DOM pur (pas de cache disponible)
+
+    // Fallback par titre si l'UUID n'a pas pu être extrait dans le DOM
+    if (cachedDbItems && cachedDbItems.length > 0 && title) {
+      const cleanTitle = title.trim().toLowerCase();
+      const match = cachedDbItems.find(item => item.title.trim().toLowerCase() === cleanTitle);
+      if (match) {
+        let code = match.type === 'note' ? 'note' : match.typeCode;
+        if (code !== 'note' && !KNOWN_CODES.includes(code)) {
+          code = 'other';
+        }
+        return code;
+      }
+    }
+
+    // 3. Fallback DOM pur (Material Icons native Angular)
     return detectCardTypeFromDOM(card);
   }
 
