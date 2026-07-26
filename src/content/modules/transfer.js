@@ -638,11 +638,18 @@
 
     if (!anchor) return;
 
+    if (count === 0) {
+      if (batchTransferButton) {
+        batchTransferButton.remove();
+        batchTransferButton = null;
+      }
+      lastBatchTransferCount = 0;
+      return;
+    }
+
     // Verrou d'idempotence
     if (count === lastBatchTransferCount) {
-      const buttonIsCorrect = count === 0
-        ? !batchTransferButton
-        : (batchTransferButton && anchor.contains(batchTransferButton));
+      const buttonIsCorrect = (batchTransferButton && anchor.contains(batchTransferButton));
       if (buttonIsCorrect) return;
     }
     lastBatchTransferCount = count;
@@ -684,11 +691,6 @@
         if (span) span.textContent = `(${count})`;
         batchTransferButton.title = `${t('transferBatchButton') || 'Copier vers un carnet'} (${count})`;
         batchTransferButton.setAttribute('aria-label', `${t('transferBatchButton') || 'Copier vers un carnet'} (${count})`);
-      }
-    } else {
-      if (batchTransferButton) {
-        batchTransferButton.remove();
-        batchTransferButton = null;
       }
     }
   }

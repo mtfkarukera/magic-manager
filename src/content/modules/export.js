@@ -409,13 +409,18 @@
       return;
     }
 
-    // Verrou d'idempotence : si le compte n'a pas changé ET le bouton est déjà
-    // dans la bonne ancre (ou absent si count=0), ne rien faire du tout.
-    // Évite toute mutation DOM redondante et interrompt proprement la boucle réactive.
+    if (count === 0) {
+      if (batchExportButton) {
+        console.debug('[MM] updateBatchExportButtonState : retrait du bouton d\'export par lot (0 source cochée).');
+        batchExportButton.remove();
+        batchExportButton = null;
+      }
+      lastBatchExportCount = 0;
+      return;
+    }
+
     if (count === lastBatchExportCount) {
-      const buttonIsCorrect = count === 0
-        ? !batchExportButton
-        : (batchExportButton && anchor.contains(batchExportButton));
+      const buttonIsCorrect = (batchExportButton && anchor.contains(batchExportButton));
       if (buttonIsCorrect) return;
     }
     lastBatchExportCount = count;
@@ -458,12 +463,6 @@
         if (span) span.textContent = `(${count})`;
         batchExportButton.title = `${t('exportButton')} (${count})`;
         batchExportButton.setAttribute('aria-label', `${t('exportButton')} (${count})`);
-      }
-    } else {
-      if (batchExportButton) {
-        console.debug('[MM] updateBatchExportButtonState : retrait du bouton d\'export par lot (0 source cochée).');
-        batchExportButton.remove();
-        batchExportButton = null;
       }
     }
   }

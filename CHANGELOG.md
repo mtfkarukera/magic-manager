@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.22.3] — 2026-07-26
+
+### Corrigé — Sprint 9.3 Correctif : Rafraîchissement Dynamique & Purge des Boutons Batch
+- 🔄 **Rafraîchissement UI après Suppression (`batch-delete.js`)** : Déclenchement automatique de `dispatchCentralInjections()` à la fin du traitement par lot pour recompter les éléments réels du DOM.
+- 🧹 **Purge Immédiate à 0 Source (`export.js`, `transfer.js`, `merge.js`, `batch-delete.js`)** : Retrait garanti du DOM et réinitialisation du verrou d'idempotence dès que le nombre de sources sélectionnées tombe à 0.
+
 ## [0.22.2] — 2026-07-26
 
 ### Corrigé — Sprint 9.2 Correctif : Exposition RPC YouTube & Transfert Natif YouTube

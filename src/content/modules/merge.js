@@ -462,12 +462,20 @@
       return;
     }
 
+    if (count < 2) {
+      if (batchMergeButton) {
+        console.debug('[MM] updateBatchMergeButtonState : retrait du bouton de fusion (< 2 sources cochées).');
+        batchMergeButton.remove();
+        batchMergeButton = null;
+      }
+      lastBatchMergeCount = 0;
+      return;
+    }
+
     // Verrou d'idempotence : si le compte n'a pas changé ET le bouton est déjà
     // dans la bonne ancre (ou absent si count < 2), ne rien faire du tout.
     if (count === lastBatchMergeCount) {
-      const buttonIsCorrect = count < 2
-        ? !batchMergeButton
-        : (batchMergeButton && anchor.contains(batchMergeButton));
+      const buttonIsCorrect = (batchMergeButton && anchor.contains(batchMergeButton));
       if (buttonIsCorrect) return;
     }
     lastBatchMergeCount = count;
@@ -475,54 +483,46 @@
     // Log uniquement après le verrou — ne loguer que les changements réels
     console.debug(`[MM] updateBatchMergeButtonState : ${count} source(s) cochée(s) détectée(s).`);
 
-    if (count >= 2) {
-      if (!batchMergeButton || !anchor.contains(batchMergeButton)) {
-        if (batchMergeButton) batchMergeButton.remove();
+    if (!batchMergeButton || !anchor.contains(batchMergeButton)) {
+      if (batchMergeButton) batchMergeButton.remove();
 
-        console.debug('[MM] updateBatchMergeButtonState : création du bouton de fusion.');
-        batchMergeButton = createElement('button', {
-          className: isHeader ? 'mm-batch-merge-btn mm-btn-icon' : 'mm-batch-merge-btn mm-btn-row',
-          title: `${t('mergeButton') || 'Fusionner'} (${count})`,
-          'aria-label': `${t('mergeButton') || 'Fusionner'} (${count})`,
-          onClick: () => {
-            const currentChecked = typeof window.MM.getCheckedSourceCheckboxes === 'function'
-              ? window.MM.getCheckedSourceCheckboxes()
-              : checked;
-            showMergeDialog(currentChecked);
-          }
-        }, [
-          createMergeIcon(),
-          createElement('span', {
-            className: 'mm-badge-count',
-            textContent: `(${count})`
-          })
-        ]);
+      console.debug('[MM] updateBatchMergeButtonState : création du bouton de fusion.');
+      batchMergeButton = createElement('button', {
+        className: isHeader ? 'mm-batch-merge-btn mm-btn-icon' : 'mm-batch-merge-btn mm-btn-row',
+        title: `${t('mergeButton') || 'Fusionner'} (${count})`,
+        'aria-label': `${t('mergeButton') || 'Fusionner'} (${count})`,
+        onClick: () => {
+          const currentChecked = typeof window.MM.getCheckedSourceCheckboxes === 'function'
+            ? window.MM.getCheckedSourceCheckboxes()
+            : checked;
+          showMergeDialog(currentChecked);
+        }
+      }, [
+        createMergeIcon(),
+        createElement('span', {
+          className: 'mm-badge-count',
+          textContent: `(${count})`
+        })
+      ]);
 
 
-        if (isHeader && !isMobileSticky) {
-          const exportBtn = anchor.querySelector('.mm-batch-export-btn');
-          const collapseBtn = window.MM.getNativeCollapseBtn(anchor);
-          const targetBefore = exportBtn || collapseBtn;
-          if (targetBefore) {
-            targetBefore.parentNode.insertBefore(batchMergeButton, targetBefore);
-          } else {
-            anchor.appendChild(batchMergeButton);
-          }
+      if (isHeader && !isMobileSticky) {
+        const exportBtn = anchor.querySelector('.mm-batch-export-btn');
+        const collapseBtn = window.MM.getNativeCollapseBtn(anchor);
+        const targetBefore = exportBtn || collapseBtn;
+        if (targetBefore) {
+          targetBefore.parentNode.insertBefore(batchMergeButton, targetBefore);
         } else {
           anchor.appendChild(batchMergeButton);
         }
       } else {
-        const span = batchMergeButton.querySelector('span');
-        if (span) span.textContent = `(${count})`;
-        batchMergeButton.title = `${t('mergeButton') || 'Fusionner'} (${count})`;
-        batchMergeButton.setAttribute('aria-label', `${t('mergeButton') || 'Fusionner'} (${count})`);
+        anchor.appendChild(batchMergeButton);
       }
     } else {
-      if (batchMergeButton) {
-        console.debug('[MM] updateBatchMergeButtonState : retrait du bouton de fusion (moins de 2 sources cochées).');
-        batchMergeButton.remove();
-        batchMergeButton = null;
-      }
+      const span = batchMergeButton.querySelector('span');
+      if (span) span.textContent = `(${count})`;
+      batchMergeButton.title = `${t('mergeButton') || 'Fusionner'} (${count})`;
+      batchMergeButton.setAttribute('aria-label', `${t('mergeButton') || 'Fusionner'} (${count})`);
     }
   }
 

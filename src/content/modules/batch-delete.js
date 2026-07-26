@@ -85,11 +85,18 @@
       return;
     }
 
+    if (count === 0) {
+      if (batchDeleteBtn) {
+        batchDeleteBtn.remove();
+        batchDeleteBtn = null;
+      }
+      lastBatchDeleteCount = 0;
+      return;
+    }
+
     // Verrou d'idempotence : interrompt si l'état ou la position n'a pas changé
     if (count === lastBatchDeleteCount) {
-      const buttonIsCorrect = count === 0
-        ? !batchDeleteBtn
-        : (batchDeleteBtn && anchor.contains(batchDeleteBtn));
+      const buttonIsCorrect = (batchDeleteBtn && anchor.contains(batchDeleteBtn));
       if (buttonIsCorrect) return;
     }
     lastBatchDeleteCount = count;
@@ -131,11 +138,6 @@
         if (badge) badge.textContent = `(${count})`;
         batchDeleteBtn.title = `${t('batchDeleteButton')} (${count})`;
         batchDeleteBtn.setAttribute('aria-label', `${t('batchDeleteButton')} (${count})`);
-      }
-    } else {
-      if (batchDeleteBtn) {
-        batchDeleteBtn.remove();
-        batchDeleteBtn = null;
       }
     }
   }
@@ -258,6 +260,12 @@
           if (typeof window.MM.resetSelection === 'function') {
             window.MM.resetSelection();
           }
+          // Forcer le recalcul immédiat des boutons batch UI pour vider le header si 0 carte
+          setTimeout(function () {
+            if (typeof window.MM.dispatchCentralInjections === 'function') {
+              window.MM.dispatchCentralInjections();
+            }
+          }, 300);
         }
       }
     );
