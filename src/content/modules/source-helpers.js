@@ -539,10 +539,31 @@
     return null;
   }
 
+  /**
+   * Obtient ou crée le conteneur unifié d'en-tête du Studio (.mm-studio-header-container).
+   * @returns {Element|null}
+   */
+  function getOrCreateStudioHeaderContainer() {
+    let container = document.querySelector('.mm-studio-header-container');
+    if (container && document.body.contains(container)) return container;
+
+    const scrollableContent = document.querySelector('studio-panel .panel-content-scrollable, studio-panel');
+    if (!scrollableContent) return null;
+
+    container = createElement('div', {
+      className: 'mm-studio-header-container',
+      style: 'display: flex; flex-direction: column; width: 100%; box-sizing: border-box; flex-shrink: 0;'
+    });
+
+    scrollableContent.insertBefore(container, scrollableContent.firstChild);
+    return container;
+  }
+
   // Registre de source auto-cochée par Angular (viewer-open)
   window.MM.setAutoCheckedSource = setAutoCheckedSource;
   window.MM.getAutoCheckedSource = getAutoCheckedSource;
   window.MM.clearAutoCheckedSource = clearAutoCheckedSource;
   window.MM.getSourceProvenance = getSourceProvenance;
   window.MM.getStudioCardUuid = getStudioCardUuid;
+  window.MM.getOrCreateStudioHeaderContainer = getOrCreateStudioHeaderContainer;
 })();

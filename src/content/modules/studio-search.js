@@ -685,16 +685,27 @@
     }, [input, clearBtn, filterBtn]);
 
     searchBarContainer = createElement('div', {
-      className: 'mm-studio-search'
+      className: 'mm-studio-search',
+      style: 'order: 1;'
     }, [searchWrapper]);
 
-    if (isMobile) {
-      // En mode mobile, insérer tout au début du studioPanel pour qu'il soit sticky en haut du panneau
+    const headerContainer = typeof window.MM?.getOrCreateStudioHeaderContainer === 'function'
+      ? window.MM.getOrCreateStudioHeaderContainer()
+      : null;
+
+    if (headerContainer) {
+      headerContainer.appendChild(searchBarContainer);
+      if (isMobile) {
+        searchBarContainer.classList.add('mm-mobile-layout');
+      } else {
+        searchBarContainer.classList.add('mm-desktop-layout');
+      }
+      console.log('[MM] Barre de recherche Studio injectée dans le conteneur d\'en-tête (order: 1)');
+    } else if (isMobile) {
       studioPanel.insertBefore(searchBarContainer, studioPanel.firstChild);
       searchBarContainer.classList.add('mm-mobile-layout');
       console.log('[MM] Barre de recherche Studio injectée au sommet (mode mobile)');
     } else {
-      // En mode desktop, insérer après le header s'il existe, ou au début
       const header = studioPanel.querySelector('.studio-header, [class*="header"], h2, h3');
       const tile = studioPanel.querySelector('.create-artifact-button-container, [class*="create-artifact"]');
 

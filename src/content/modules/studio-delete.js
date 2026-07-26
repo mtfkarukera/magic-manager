@@ -281,7 +281,7 @@
 
         batchDeleteWrapper = createElement('div', {
           className: 'mm-studio-batch-actions mm-visible',
-          style: 'display: inline-flex; width: calc(100% - 32px); gap: 8px; margin: var(--mm-spacing-sm) var(--mm-spacing-md); align-items: center;'
+          style: 'display: inline-flex; width: calc(100% - 32px); gap: 8px; margin: var(--mm-spacing-sm) var(--mm-spacing-md); align-items: center; order: 2;'
         });
 
         batchDeleteBtn = createElement('button', {
@@ -305,13 +305,16 @@
         batchDeleteWrapper.appendChild(batchDeleteBtn);
         batchDeleteWrapper.appendChild(resetBtn);
 
-        const searchBar = document.querySelector('.mm-studio-search');
-        if (searchBar && searchBar.parentNode) {
-          searchBar.parentNode.insertBefore(batchDeleteWrapper, searchBar.nextSibling);
+        const headerContainer = typeof window.MM?.getOrCreateStudioHeaderContainer === 'function'
+          ? window.MM.getOrCreateStudioHeaderContainer()
+          : null;
+
+        if (headerContainer) {
+          headerContainer.appendChild(batchDeleteWrapper);
         } else if (header) {
           header.parentNode.insertBefore(batchDeleteWrapper, header.nextSibling);
         } else {
-          studioPanel.appendChild(batchDeleteWrapper);
+          studioPanel.insertBefore(batchDeleteWrapper, studioPanel.firstChild);
         }
       } else {
         batchDeleteBtn.textContent = `${t('studioDeleteButton') || 'Supprimer la sélection'} (${count})`;
