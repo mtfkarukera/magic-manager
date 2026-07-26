@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.24.2] — 2026-07-26
+
+### Corrigé — Sprint 11.2 : Correctif Ancrage Global sous la Barre de Recherche Studio
+- 📌 **Point d'Ancrage Global (`studio-delete.js`)** : Sélection globale `document.querySelector('.mm-studio-search')` franchissant le découpage de conteneur d'Angular pour insérer le bouton de suppression par lot à `searchBar.nextSibling`.
+- 📐 **Stabilité Visuelle Garantie** : La barre de recherche *"Rechercher dans le Studio..."* reste parfaitement immobile tout en haut du contenu du Studio lors de la sélection ou désélection de cartes.
+
 ## [0.24.0] — 2026-07-26
 
 ### Ajouté & Amélioré — Sprint 11 : Ancrage Fixe de la Barre de Recherche Studio & Bouton de Suppression

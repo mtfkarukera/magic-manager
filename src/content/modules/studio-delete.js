@@ -305,7 +305,7 @@
         batchDeleteWrapper.appendChild(batchDeleteBtn);
         batchDeleteWrapper.appendChild(resetBtn);
 
-        const searchBar = studioPanel.querySelector('.mm-studio-search-bar');
+        const searchBar = document.querySelector('.mm-studio-search');
         if (searchBar && searchBar.parentNode) {
           searchBar.parentNode.insertBefore(batchDeleteWrapper, searchBar.nextSibling);
         } else if (header) {
