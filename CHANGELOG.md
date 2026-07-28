@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.26.1] — 2026-07-28
+
+### Corrigé — Hotfix : Boîtes de Code & Coloration Syntaxique en Mode Desktop
+- 🔴 **Correctif Bloquant Coloration Syntaxique (`syntax.js`)** : Précision du sélecteur anti-streaming (ciblage strict du bouton d'arrêt actif dans la discussion) et découplage de la garde `contenteditable` (scopée uniquement sur l'éditeur de notes du Studio via `isInsideStudioEditor`).
+- ⚡ **Optimisation Observer Desktop (`panel-observer.js`)** : Ajout de retries d'hydratation post-chargement (500ms, 1500ms, 3000ms) pour garantir la capture du fil de discussion dès qu'Angular termine son rendu RPC en mode Desktop.
+
 ## [0.26.0] — 2026-07-26
 
 ### Corrigé & Amélioré — Sprint 12 : Correctifs Post-Audit & Finitions Anti-Régression

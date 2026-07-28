@@ -146,8 +146,10 @@
    * @param {Element} preEl - L'élément `<pre>` natif.
    */
   function processPreBlock(preEl) {
-    // Garde de sécurité : ne jamais appliquer de boîte de code sur un contenu éditable (Note modifiable)
-    if (preEl.isContentEditable || preEl.closest('[contenteditable="true"], [contenteditable=""]')) {
+    // Garde de sécurité : ne jamais appliquer de boîte de code sur une note éditable du Studio.
+    // Les messages du Chat ne sont jamais des notes éditables du Studio et sont toujours traités.
+    const isInsideStudioEditor = !!preEl.closest('[class*="studio"], [class*="note"]') && !!preEl.closest('[contenteditable="true"], [contenteditable=""]');
+    if (preEl.isContentEditable || isInsideStudioEditor) {
       return;
     }
 
@@ -212,25 +214,22 @@
       return;
     }
 
-    // Garde anti-streaming : ne JAMAIS toucher au DOM tant que l'IA écrit.
-    // Pendant le streaming, Angular met à jour le <pre> en continu.
-    // Toute manipulation du DOM à ce stade couperait le flux de rendu d'Angular.
-    const isStreaming = !!document.querySelector(
-      'button[aria-label*="stop" i], button[aria-label*="arrê" i], button[aria-label*="cancel" i], mat-spinner, [class*="generating"], [class*="streaming"]'
-    );
+    // Garde anti-streaming : ciblée uniquement sur le bouton d'arrêt actif dans la discussion
+    const chatPanel = document.querySelector('section.chat-panel, [class*="chat-panel"]');
+    const stopBtn = chatPanel && chatPanel.querySelector('button[aria-label*="stop" i], button[aria-label*="arrê" i], button[aria-label*="cancel" i]');
+    const isStreaming = !!(stopBtn && stopBtn.offsetWidth > 0);
     if (isStreaming) {
       return;
     }
 
     // Scope global : couvre le chat ET le Studio (notes en lecture seule).
-    // Les gardes de processPreBlock (contentEditable, data-mm-syntax-processed)
-    // protègent contre les notes éditables et le double traitement.
     const scanRoot = document.body;
 
     // Recherche récursive Shadow DOM
     const preBlocks = findElementsInShadows('pre:not([data-mm-syntax-processed="true"])', scanRoot);
     preBlocks.forEach(function (pre) {
-      if (!pre.isContentEditable && !pre.closest('[contenteditable="true"], [contenteditable=""]') && !pre.closest('.mm-code-block')) {
+      const isInsideStudioEditor = !!pre.closest('[class*="studio"], [class*="note"]') && !!pre.closest('[contenteditable="true"], [contenteditable=""]');
+      if (!pre.isContentEditable && !isInsideStudioEditor && !pre.closest('.mm-code-block')) {
         processPreBlock(pre);
       }
     });

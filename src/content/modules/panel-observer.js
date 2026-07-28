@@ -478,7 +478,16 @@
 
     // Lancer une première détection immédiate
     dispatchCentralInjections();
-    console.log('[MM] Observer global de page centralisé initialisé');
+
+    // Filet de sécurité d'hydratation post-chargement en Desktop :
+    // Re-scanner à 500ms, 1500ms et 3000ms pour capturer l'hydratation tardive d'Angular
+    [500, 1500, 3000].forEach(function (delay) {
+      setTimeout(function () {
+        dispatchCentralInjections();
+      }, delay);
+    });
+
+    console.log('[MM] Observer global de page centralisé initialisé (avec retries d\'hydratation)');
   }
 
   function cleanupPanelObserver() {
