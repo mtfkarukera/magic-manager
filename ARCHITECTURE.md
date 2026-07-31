@@ -2,7 +2,10 @@
 
 ## Vue d'ensemble
 
-Magic Manager est une extension Firefox (Manifest V3) de type **content-script-only**. Elle ne possède ni background script, ni service worker permanent. Toute la logique s'exécute dans le contexte de la page Gemini Notebook (anciennement NotebookLM) via des content scripts injectés.
+Magic Manager est une extension Firefox (Manifest V3) de type **content-script-only**. Elle ne possède ni background script, ni service worker permanent. Toute la logique s'exexe dans le contexte de la page Gemini Notebook (anciennement NotebookLM) via des content scripts injectés sur `notebook.google.com` et `notebooklm.google.com`. 
+
+> [!IMPORTANT]
+> **Conformité Permissions Firefox MV3 (`host_permissions`)** : Les deux domaines sont obligatoirement déclarés à la fois dans `content_scripts.matches` et dans la clé racine `host_permissions` du `manifest.json`. Sous Firefox MV3, l'absence de `host_permissions` bascule les nouveaux domaines d'injection sous forme d'autorisation optionnelle ("Permissions Facultatives" dans `about:addons`), ce qui bloquerait l'injection automatique à l'installation.
 
 ## Arborescence du projet
 

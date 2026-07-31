@@ -296,9 +296,8 @@
     }, [createGearIcon()]);
 
 
-    document.body.appendChild(settingsButton);
-
-    console.log('[MM] Module settings initialisé — bouton engrenage injecté');
+    // Le paramétrage de Magic Manager a été migré vers la Popup d'extension officielle (icône de la barre d'outils)
+    console.log('[MM] Module settings initialisé — réglages gérés via la Popup officielle');
   }
 
   /**

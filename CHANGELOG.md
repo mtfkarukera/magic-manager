@@ -4,6 +4,12 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.26.4] — 2026-07-31
+
+### 🚀 Améliorations UX & Permissions Dynamiques
+- **Popup de Réglages Officielle** : Le panneau de paramétrage (les 12 toggles de fonctionnalités) a été migré de l'engrenage in-page ⚙️ vers une Popup native propre accessible directement depuis l'icône Magic Manager dans la barre d'outils de Firefox.
+- **Détection Dynamique 1-Clic de Permission** : La Popup intègre un vérificateur dynamique (`browser.permissions.contains`). Si l'accès à `notebook.google.com` est désactivé par Firefox suite à la migration de domaine de Google, un bandeau 1-clic apparaît et permet d'accorder la permission instantanément sans passer par `about:addons`.
+
 ## [0.26.3] — 2026-07-31
 
 ### Correctif Critique — Permissions d'Hôte Firefox MV3 (`host_permissions`)
