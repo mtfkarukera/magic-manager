@@ -4,6 +4,11 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.26.3] — 2026-07-31
+
+### Correctif Critique — Permissions d'Hôte Firefox MV3 (`host_permissions`)
+- 🔴 **Correctif Injection Automatique Firefox MV3 (`manifest.json`)** : Ajout explicite de la section `host_permissions` (`*://notebooklm.google.com/*`, `*://notebook.google.com/*`). Sous Firefox MV3, l'absence de déclaration explicite dans `host_permissions` classait le nouveau domaine `notebook.google.com` en permission facultative désactivée par défaut dans `about:addons`, empêchant l'injection automatique sans basculement manuel de l'utilisateur.
+
 ## [0.26.2] — 2026-07-31
 
 ### Correctif Critique — Migration vers notebook.google.com
