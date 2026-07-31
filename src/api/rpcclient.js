@@ -2,7 +2,8 @@
 // Auteur : MTF Karukera | Licence : MPL-2.0
 //
 // Gère la communication RPC en arrière-plan avec l'API Google batchexecute.
-// Ce module s'exécute dans le content script sous l'origine notebooklm.google.com.
+// Ce module s'exécute dans le content script sous l'origine de l'application Google Notebook
+// (notebook.google.com ou notebooklm.google.com selon le déploiement).
 // Il utilise les cookies de session implicites du navigateur et extrait le token CSRF.
 
 'use strict';
@@ -318,7 +319,8 @@
     const rpcRequest = encodeRpcRequest(rpcId, jsonArgs);
     const body = buildRequestBody(rpcRequest, csrfToken);
     const queryString = buildQueryParams(rpcId, notebookId);
-    const endpoint = `https://notebooklm.google.com/_/LabsTailwindUi/data/batchexecute?${queryString}&authuser=${authuser}`;
+    // Utilisation de window.location.origin pour supporter tous les domaines Google (notebook.google.com, notebooklm.google.com)
+    const endpoint = `${window.location.origin}/_/LabsTailwindUi/data/batchexecute?${queryString}&authuser=${authuser}`;
 
     console.log(`[MM] Envoi de la requête RPC ${rpcId} (authuser: ${authuser})`);
 
@@ -371,7 +373,8 @@
       rt: 'c'
     }).toString();
 
-    const endpoint = `https://notebooklm.google.com/_/LabsTailwindUi/data/batchexecute?${queryParams}&authuser=${authuser}`;
+    // Utilisation de window.location.origin pour supporter tous les domaines Google (notebook.google.com, notebooklm.google.com)
+    const endpoint = `${window.location.origin}/_/LabsTailwindUi/data/batchexecute?${queryParams}&authuser=${authuser}`;
 
     console.log(`[MM] Envoi batch de ${requests.length} requêtes RPC (${uniqueRpcIds.join(', ')})`);
 
@@ -713,7 +716,8 @@
     console.log(`[MM] Source enregistrée avec ID : ${sourceId}`);
 
     // Étape 2 : Démarrer la session d'upload (POST resumable)
-    const uploadStartUrl = `https://notebooklm.google.com/upload/_/?authuser=${authuser}`;
+    // Utilisation de window.location.origin pour supporter tous les domaines Google (notebook.google.com, notebooklm.google.com)
+    const uploadStartUrl = `${window.location.origin}/upload/_/?authuser=${authuser}`;
     const startBody = JSON.stringify({
       PROJECT_ID: notebookId,
       SOURCE_NAME: filename,

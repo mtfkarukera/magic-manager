@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "__MSG_extensionName__",
   "short_name": "Magic Manager",
-  "version": "0.26.1",
+  "version": "0.26.2",
   "default_locale": "en",
 
   "description": "__MSG_extensionDescription__",
@@ -19,7 +19,10 @@
   ],
   "content_scripts": [
     {
-      "matches": ["*://notebooklm.google.com/*"],
+      "matches": [
+        "*://notebooklm.google.com/*",
+        "*://notebook.google.com/*"
+      ],
       "js": [
         "lib/jspdf.umd.min.js",
         "lib/turndown.js",

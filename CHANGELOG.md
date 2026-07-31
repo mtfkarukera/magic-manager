@@ -4,6 +4,15 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.26.2] — 2026-07-31
+
+### Correctif Critique — Migration vers notebook.google.com
+- 🔴 **Migration URL Google (Breaking Change côté serveur)** : Google a migré l'application Gemini Notebook du domaine `notebooklm.google.com` vers `notebook.google.com` dans la nuit du 30 au 31 juillet 2026, rendant Magic Manager inopérant sur tous les appareils.
+- 🔧 **`manifest.json`** : Ajout de `*://notebook.google.com/*` dans la liste `matches` des content scripts (les deux domaines sont désormais supportés simultanément pour assurer la rétro-compatibilité).
+- 🔧 **`src/api/rpcclient.js`** : Remplacement des 3 URLs d'endpoint hardcodées (`https://notebooklm.google.com/_/LabsTailwindUi/data/batchexecute` et `https://notebooklm.google.com/upload/_/`) par `window.location.origin` dynamique — l'extension s'adapte désormais automatiquement à tout domaine Google hébergeant l'application.
+- 📄 **`PRIVACY_POLICY.md`** : Mise à jour pour mentionner les deux domaines officiels supportés.
+- 📄 **`README.md`** : Mise à jour des liens vers le nouveau domaine principal `notebook.google.com`.
+
 ## [0.26.1] — 2026-07-28
 
 ### Corrigé — Hotfix : Boîtes de Code & Coloration Syntaxique en Mode Desktop
