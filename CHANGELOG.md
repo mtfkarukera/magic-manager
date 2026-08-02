@@ -11,6 +11,11 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 - **Échantillonnage Optimisé (5 000 caractères)** : Analyse sémantique basée sur l'extraction des 5 000 premiers caractères de chaque source (~3 pages A4), permettant de dépasser le boilerplate d'en-tête et de capturer l'empreinte sémantique exacte des documents.
 - **Micro-Animations de Progression** : Feedback visuel dynamique immédiat (`.mm-scanning`) sur le bouton de détection pendant la phase de scan RPC asynchrone.
 
+### 🎨 Adaptation Bi-Thème (Clair/Sombre) & Logo Officiel Popup
+- **Popup Native Bi-Thème (`popup.css`)** : Support automatique du mode clair (Material 3 fond blanc/surface `#f8f9fa` et contrastes WCAG AA) et bascule instantanée sans latence vers le thème sombre glassmorphic via `@media (prefers-color-scheme: dark)`.
+- **Logo Officiel Brand (`popup.html`)** : Remplacement de l'emoji puzzle 🧩 par l'image officielle de la marque Magic Manager (`/icons/icon-32.png`).
+- **Version Dynamique (`popup.js`)** : Hydratation automatique de la version de release depuis `browser.runtime.getManifest().version`.
+
 ## [0.26.4] — 2026-07-31
 
 ### 🚀 Améliorations UX & Permissions Dynamiques

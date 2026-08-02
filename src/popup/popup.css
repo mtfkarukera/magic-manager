@@ -1,18 +1,40 @@
-/* Styles modernes pour la Popup Magic Manager (Design Glassmorphism épuré) */
+/* Styles modernes pour la Popup Magic Manager (Design Glassmorphism & Material 3 bi-thème) */
 
 :root {
-  --bg-primary: #121316;
-  --bg-surface: #1e1f24;
-  --bg-card: #282a30;
-  --text-main: #e3e3e8;
-  --text-muted: #9aa0a6;
-  --accent-color: #4285f4;
-  --accent-hover: #3367d6;
-  --warning-bg: #3c2612;
+  /* Thème clair par défaut (Material 3) */
+  --bg-primary: #ffffff;
+  --bg-surface: #f8f9fa;
+  --bg-card: #f1f3f4;
+  --text-main: #1f1f1f;
+  --text-muted: #5f6368;
+  --accent-color: #1a73e8;
+  --accent-hover: #1557b0;
+  --warning-bg: #fef7e0;
   --warning-border: #f9ab00;
-  --warning-text: #fde293;
-  --border-subtle: rgba(255, 255, 255, 0.1);
+  --warning-text: #b06000;
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --badge-local-bg: rgba(52, 168, 83, 0.12);
+  --badge-local-text: #137333;
   --font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Thème sombre (Glassmorphism dark mode) */
+    --bg-primary: #121316;
+    --bg-surface: #1e1f24;
+    --bg-card: #282a30;
+    --text-main: #e3e3e8;
+    --text-muted: #9aa0a6;
+    --accent-color: #4285f4;
+    --accent-hover: #3367d6;
+    --warning-bg: #3c2612;
+    --warning-border: #f9ab00;
+    --warning-text: #fde293;
+    --border-subtle: rgba(255, 255, 255, 0.1);
+    --badge-local-bg: rgba(52, 168, 83, 0.15);
+    --badge-local-text: #81c995;
+  }
 }
 
 body {
@@ -47,15 +69,18 @@ body {
   gap: 8px;
 }
 
-.brand .icon {
-  font-size: 18px;
+.brand-logo {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .brand h1 {
   margin: 0;
   font-size: 15px;
   font-weight: 600;
-  color: #fff;
+  color: var(--text-main);
 }
 
 .version {
@@ -202,8 +227,8 @@ body {
 }
 
 .badge-local {
-  background: rgba(52, 168, 83, 0.15);
-  color: #81c995;
+  background: var(--badge-local-bg);
+  color: var(--badge-local-text);
   padding: 1px 5px;
   border-radius: 4px;
   font-size: 10px;

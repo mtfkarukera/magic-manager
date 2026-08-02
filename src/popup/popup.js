@@ -23,6 +23,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   const warningBanner = document.getElementById('permission-warning-banner');
   const btnGrantPermission = document.getElementById('btn-grant-permission');
 
+  // Afficher la version dynamique de l'extension
+  const versionEl = document.getElementById('ext-version');
+  if (versionEl && typeof browser !== 'undefined' && browser.runtime?.getManifest) {
+    versionEl.textContent = 'v' + browser.runtime.getManifest().version;
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // 1. Détection dynamique de la permission notebook.google.com
   // ═══════════════════════════════════════════════════════════════════════
