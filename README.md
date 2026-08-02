@@ -1,6 +1,6 @@
 # 🧩 Magic Manager for Gemini Notebook
 
-![GitHub release](https://img.shields.io/badge/release-v0.26.4-green)
+![GitHub release](https://img.shields.io/badge/release-v0.27.0-green)
 ![GitHub license](https://img.shields.io/github/license/mtfkarukera/magic-manager?color=blue)
 
 **Magic Manager** est une extension Firefox qui enrichit l'interface de **Google Gemini Notebook** (anciennement NotebookLM) sur [notebook.google.com](https://notebook.google.com/) avec des fonctionnalités avancées de productivité.
@@ -8,7 +8,7 @@
 ## ✨ Fonctionnalités
 
 - 🔄 **Copie Inter-Carnets** — Copiez une ou plusieurs sources sélectionnées vers n'importe quel autre carnet sans quitter le carnet actuel (ré-import natif pour Drive, Web et YouTube, conversion Markdown enrichie pour les fichiers locaux).
-- 🔍 **Recherche globale & Doublons** — Recherchez parmi toutes vos sources (avec bouton de réinitialisation croix ×) et filtrez les doublons potentiels (similarité de titre + checksum du contenu).
+- 🔍 **Recherche globale & Doublons** — Recherchez parmi toutes vos sources (avec bouton de réinitialisation croix ×) et filtrez les doublons potentiels (analyse sémantique par similarité de contenu sur 5 000 caractères).
 - 🏷️ **Badges visuels de sources** — Identifiez instantanément la nature de vos sources (🔄 Google Drive, 🌐 Lien Web/YouTube, ▢ Upload Local) directement dans la liste des sources.
 - 🔗 **Fusion intelligente** — Fusionnez plusieurs sources en un seul document.
 - 📤 **Exports & Fusions Riche vs Simple** — Choisissez entre les modes "Riche" (mise en forme structurée complète, tableaux et images incluses) ou "Simple" (texte brut 100% garanti non-tronqué par les limites réseau de Google pour les documents très lourds). Disponible en Markdown et PDF pour les exports individuels, par lot et les fusions.

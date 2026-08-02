@@ -162,6 +162,12 @@
     return (2 * intersection) / (bigramsA.size + bigramsB.size);
   }
 
+  /** Limite du nombre de caractères échantillonnés pour la détection de doublons */
+  var CONTENT_SAMPLE_LIMIT = 5000;
+
+  /** Seuil Jaccard pour considérer deux sources comme doublons de contenu */
+  var JACCARD_THRESHOLD = 0.6;
+
   /**
    * Extrait le titre propre d'une carte source.
    * Réutilise le helper centralisé si disponible.
@@ -188,39 +194,6 @@
       text = text.replace(new RegExp(icon, 'gi'), '');
     });
     return text.trim().split('\n')[0].trim();
-  }
-
-  /**
-   * Passe 1 : Regroupe les sources dont les titres sont similaires (Dice ≥ 0.8).
-   * @returns {Map<Element, {group: number, score: number}>}
-   */
-  function findTitleDuplicates() {
-    const cards = findSourceCards();
-    const titles = cards.map(getCardTitle);
-    const groups = new Map(); // card → { group, score }
-    let groupId = 0;
-
-    for (let i = 0; i < cards.length; i++) {
-      if (groups.has(cards[i])) continue;
-      let hasMatch = false;
-
-      for (let j = i + 1; j < cards.length; j++) {
-        if (groups.has(cards[j]) && groups.get(cards[j]).group !== groupId) continue;
-
-        const score = diceCoefficient(titles[i], titles[j]);
-        if (score >= 0.8) {
-          if (!hasMatch) {
-            groups.set(cards[i], { group: groupId, score: 1.0 });
-            hasMatch = true;
-          }
-          groups.set(cards[j], { group: groupId, score: score });
-        }
-      }
-
-      if (hasMatch) groupId++;
-    }
-
-    return groups;
   }
 
   /**
@@ -253,9 +226,6 @@
     var union = setA.size + setB.size - intersection;
     return union === 0 ? 0 : intersection / union;
   }
-
-  /** Seuil Jaccard pour considérer deux sources comme doublons de contenu */
-  var JACCARD_THRESHOLD = 0.6;
 
   /**
    * Tente d'associer une source RPC à une carte DOM.
@@ -291,7 +261,7 @@
   }
 
   /**
-   * Passe 2 autonome : scanne TOUTES les sources du carnet par leur contenu.
+   * Scan contenu autonome : scanne TOUTES les sources du carnet par leur contenu (échantillon 5000 chars).
    * Compare les ensembles de mots par paires avec le coefficient de Jaccard.
    * Regroupe les sources ayant un Jaccard ≥ JACCARD_THRESHOLD.
    * @param {function(number, number): void} [onProgress] - Callback (current, total).
@@ -306,9 +276,9 @@
     var rpcSources = await window.MM.rpc.getNotebookSources(notebookId);
     if (!rpcSources || rpcSources.length < 2) return new Map();
 
-    console.log('[MM] Passe 2 contenu : ' + rpcSources.length + ' sources à scanner');
+    console.log('[MM] Scan contenu doublons : ' + rpcSources.length + ' sources à scanner (échantillon ' + CONTENT_SAMPLE_LIMIT + ' chars)');
 
-    // 2. Extraire les ensembles de mots de chaque source séquentiellement
+    // 2. Extraire les ensembles de mots de chaque source (sur les 5000 premiers caractères)
     var wordSets = []; // [{rpcSource, words: Set}]
     for (var i = 0; i < rpcSources.length; i++) {
       if (onProgress) onProgress(i + 1, rpcSources.length);
@@ -316,10 +286,11 @@
         var content = await window.MM.rpc.getSourceContent(
           rpcSources[i].id, notebookId
         );
-        var words = extractWordSet(content);
+        var sampleText = content ? content.slice(0, CONTENT_SAMPLE_LIMIT) : '';
+        var words = extractWordSet(sampleText);
         wordSets.push({ rpcSource: rpcSources[i], words: words });
       } catch (err) {
-        console.warn('[MM] Passe 2 : erreur pour', rpcSources[i].id, err);
+        console.warn('[MM] Scan doublons : erreur pour', rpcSources[i].id, err);
         wordSets.push({ rpcSource: rpcSources[i], words: new Set() });
       }
     }
@@ -378,21 +349,24 @@
       // Trouver le meilleur score Jaccard de cet index avec un autre membre du groupe
       var bestScore = 0;
       for (var p = 0; p < wordSets.length; p++) {
-        if (p === idx || find(p) !== root) continue;
-        var key = Math.min(idx, p) + ',' + Math.max(idx, p);
-        var s = pairScores.get(key) || 0;
-        if (s > bestScore) bestScore = s;
+        if (p === idx) continue;
+        if (find(p) === root) {
+          var pairKey = idx < p ? idx + ',' + p : p + ',' + idx;
+          var s = pairScores.get(pairKey) || 0;
+          if (s > bestScore) bestScore = s;
+        }
       }
 
-      var card = matchRpcSourceToCard(wordSets[idx].rpcSource, cards, usedCards);
-      if (card) {
-        contentGroups.set(card, { group: gId, score: bestScore });
+      // Associer la source RPC à sa carte DOM
+      var matchedCard = matchRpcSourceToCard(wordSets[idx].rpcSource, cards, usedCards);
+      if (matchedCard) {
+        contentGroups.set(matchedCard, { group: gId, score: bestScore });
       } else {
-        console.warn('[MM] Passe 2 : aucune carte DOM pour "' + wordSets[idx].rpcSource.title + '"');
+        console.warn('[MM] Scan doublons : aucune carte DOM pour "' + wordSets[idx].rpcSource.title + '"');
       }
     }
 
-    console.log('[MM] Passe 2 terminée : ' + contentGroups.size + ' doublons de contenu détectés');
+    console.log('[MM] Scan doublons terminé : ' + contentGroups.size + ' cartes doublons identifiées par contenu');
     return contentGroups;
   }
 
@@ -543,44 +517,9 @@
    * Les groupIds de la Passe 2 sont décalés pour éviter les collisions de couleurs.
    * Si une carte apparaît dans les deux passes, on conserve le score le plus élevé.
    * @param {Map<Element, {group: number, score: number}>} titleGroups
-   * @param {Map<Element, {group: number, score: number}>} contentGroups
-   * @returns {Map<Element, {group: number, score: number}>}
-   */
-  function mergeDuplicateGroups(titleGroups, contentGroups) {
-    var merged = new Map();
-
-    // Trouver le groupId max de la Passe 1 pour décaler la Passe 2
-    var maxTitleGroup = -1;
-    titleGroups.forEach(function (info) {
-      if (info.group > maxTitleGroup) maxTitleGroup = info.group;
-    });
-    var offset = maxTitleGroup + 1;
-
-    // Copier la Passe 1
-    titleGroups.forEach(function (info, card) {
-      merged.set(card, { group: info.group, score: info.score });
-    });
-
-    // Fusionner la Passe 2 (avec décalage de groupId)
-    contentGroups.forEach(function (info, card) {
-      if (merged.has(card)) {
-        // La carte existe déjà (Passe 1) → conserver le meilleur score
-        var existing = merged.get(card);
-        if (info.score > existing.score) {
-          existing.score = info.score;
-        }
-      } else {
-        // Nouvelle carte (détectée uniquement par contenu)
-        merged.set(card, { group: info.group + offset, score: info.score });
-      }
-    });
-
-    return merged;
-  }
-
   /**
    * Handler du clic sur le bouton de détection de doublons.
-   * Flux progressif : Passe 1 (titres, instantanée) puis Passe 2 (contenu, asynchrone).
+   * Scan asynchrone basé sur l'échantillonnage du contenu (5000 chars) et le score de Jaccard.
    */
   async function handleDuplicateSearch() {
     // Verrou anti-double-clic pendant un scan en cours
@@ -600,37 +539,23 @@
 
     isDuplicateMode = true;
     var btn = searchBarContainer ? searchBarContainer.querySelector('.mm-search-dupes-btn') : null;
-    if (btn) btn.classList.add('mm-active');
-
-    // Passe 1 : Similarité de titre (instantané)
-    var titleGroups = findTitleDuplicates();
-
-    // Afficher la vue préliminaire (Passe 1 seule)
-    if (titleGroups.size > 0) {
-      applyDuplicateView(titleGroups);
+    if (btn) {
+      btn.classList.add('mm-active');
+      btn.classList.add('mm-scanning');
     }
 
-    // Passe 2 : Scan contenu autonome (toutes les sources, asynchrone)
     isScanning = true;
-    if (btn) btn.classList.add('mm-scanning');
 
     try {
       var contentGroups = await findContentDuplicates(function (current, total) {
-        // Callback de progression (exploitable pour un futur indicateur textuel)
-        console.log('[MM] Passe 2 : scan ' + current + '/' + total);
+        console.log('[MM] Scan doublons : ' + current + '/' + total);
       });
 
-      // Fusionner les résultats des deux passes
-      var merged = mergeDuplicateGroups(titleGroups, contentGroups);
-
-      // Afficher la vue finale fusionnée
-      applyDuplicateView(merged);
+      // Afficher la vue des doublons identifiés par contenu
+      applyDuplicateView(contentGroups);
     } catch (err) {
-      console.warn('[MM] Passe 2 échouée, conservation des résultats de la passe 1', err);
-      // En cas d'erreur, on garde la vue de la Passe 1 (déjà affichée)
-      if (titleGroups.size === 0) {
-        applyDuplicateView(titleGroups);
-      }
+      console.warn('[MM] Scan doublons par contenu échoué', err);
+      clearDuplicateView();
     } finally {
       isScanning = false;
       if (btn) btn.classList.remove('mm-scanning');

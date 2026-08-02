@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.27.0] — 2026-08-02
+
+### 🎯 Refonte du Moteur de Détection des Doublons (Zero False-Positives)
+- **Détection Unifiée 100% Contenu** : Suppression du rapprochement préliminaire par titres (`findTitleDuplicates`), source récurrente de faux positifs sur les séries de documents aux titres similaires (*"Rapport V1" vs "Rapport V2"*).
+- **Échantillonnage Optimisé (5 000 caractères)** : Analyse sémantique basée sur l'extraction des 5 000 premiers caractères de chaque source (~3 pages A4), permettant de dépasser le boilerplate d'en-tête et de capturer l'empreinte sémantique exacte des documents.
+- **Micro-Animations de Progression** : Feedback visuel dynamique immédiat (`.mm-scanning`) sur le bouton de détection pendant la phase de scan RPC asynchrone.
+
 ## [0.26.4] — 2026-07-31
 
 ### 🚀 Améliorations UX & Permissions Dynamiques
