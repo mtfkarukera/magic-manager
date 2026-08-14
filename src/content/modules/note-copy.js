@@ -12,7 +12,7 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
-   * Nettoie le texte brut (Markdown) en retirant toutes les citations [1], [2], [1, 2].
+   * Nettoie le texte brut (Markdown) en retirant toutes les citations [1], [2], [1, 2] et résidus UI.
    * @param {string} text
    * @returns {string}
    */
@@ -21,16 +21,20 @@
     return text
       // Retirer les motifs de citations crochets [1], [2], [1, 2], [10, 11]
       .replace(/\s*\[\d+(?:\s*,\s*\d+)*\]/g, '')
-      // Retirer les résidus de mots-clés d'icônes Google Symbols (more_horiz, lock)
-      .replace(/\b(more_horiz|lock)\b/g, '')
+      // Retirer les lignes d'en-tête de boîtes de code résiduelles
+      .replace(/^(?:CODE|code)?\s*(?:Copier|Copy|codeCopier)\s*$/gim, '')
+      .replace(/(?:^|\n)\s*(?:codeCopier|Copier|Copy)\s*(?=\n|$)/gi, '')
+      // Retirer les mots-clés d'interface résiduels
+      .replace(/\b(codeCopier|Copier|Copy|undoredo|keyboard_arrow_down|format_bold|format_italic|linkcodecode_blocks|format_list_bulletedformat_list_numberedhorizontal_ruleformat_clear|more_horiz|lock)\b/gi, '')
       // Nettoyer les espaces multiples superflus
       .replace(/[ \t]{2,}/g, ' ')
       .trim();
   }
 
   /**
-   * Nettoie un élément HTML de note en supprimant les balises de citations et puces de sources,
-   * puis normalise les composants Tailwind Angular en balises HTML5 standards (p, h1-h4, blockquote, li).
+   * Nettoie un élément HTML de note ou artefact en supprimant les balises de citations,
+   * puces de sources, barres d'outils d'édition, en-têtes de boîtes de code et boutons Google,
+   * puis normalise les composants Tailwind Angular en balises HTML5 standards (p, h1-h4, blockquote, li, pre/code).
    * @param {Element} contentNode
    * @returns {string}
    */
@@ -40,8 +44,9 @@
     // Cloner le nœud pour travailler sur une copie isolée du DOM live
     const clone = contentNode.cloneNode(true);
 
-    // 1. Supprimer les éléments de citations connus dans NotebookLM
-    const citationSelectors = [
+    // 1. Supprimer les éléments parasites d'interface Google (citations, barres d'outils, boutons de code, feedback)
+    const noiseSelectors = [
+      // Citations et puces de sources
       'sup',
       'button.citation-marker',
       '.citation-marker',
@@ -58,10 +63,45 @@
       'button[aria-label*="citation" i]',
       'button[aria-label*="Citation" i]',
       'button[dialoglabel*="citation" i]',
-      'button[dialoglabel*="Citation" i]'
+      'button[dialoglabel*="Citation" i]',
+
+      // Barre d'outils d'édition de notes (Undo, Redo, Format, Titre, Bold, Italic, Link, etc.)
+      '.note-editor-toolbar',
+      '.toolbar',
+      '[class*="toolbar"]',
+      'mat-toolbar',
+      '.editor-actions',
+      '.note-form-header',
+      '.format-bar',
+      '.format-bar-container',
+      '.note-editor-header',
+
+      // En-têtes et boutons de copie natifs des boîtes de code Google ("codeCopier")
+      '.code-header',
+      '.code-block-header',
+      '.code-actions',
+      '.copy-code-button',
+      '.code-copy-button',
+      '.mm-code-header',
+      'button.copy-button',
+      'button.mm-code-copy-btn',
+      'button[aria-label*="Copier" i]',
+      'button[aria-label*="Copy" i]',
+
+      // Boutons d'actions et d'évaluation / feedback Google
+      '.feedback-container',
+      '.actions-container',
+      'button[aria-label*="Thumb" i]',
+      'button[aria-label*="Bon contenu" i]',
+      'button[aria-label*="Mauvais contenu" i]',
+      'button[aria-label*="Good response" i]',
+      'button[aria-label*="Bad response" i]',
+      'button[aria-label*="Partager" i]',
+      'button[aria-label*="Share" i]',
+      'button[aria-label*="Convertir en source" i]'
     ];
 
-    citationSelectors.forEach(function (sel) {
+    noiseSelectors.forEach(function (sel) {
       const elements = clone.querySelectorAll(sel);
       elements.forEach(function (el) {
         // Si le parent du bouton de citation est un span conteneur isolé, le supprimer aussi
@@ -74,7 +114,29 @@
       });
     });
 
-    // 2. Normaliser les Web Components & classes Tailwind de NotebookLM en balises HTML5 sémantiques (h1-h4, p, blockquote, li)
+    // 2. Épuration ciblée des conteneurs de boîtes de code (Google et Magic Manager)
+    const codeContainers = clone.querySelectorAll(
+      'pre, .code-block, [class*="code-block"], .code-container, [class*="code-container"], labs-tailwind-code-block, .mm-code-block'
+    );
+    codeContainers.forEach(function (container) {
+      const headers = container.querySelectorAll(
+        'button, .code-header, .mm-code-header, [class*="header"], [class*="copy"], [class*="action"], mat-icon'
+      );
+      headers.forEach(function (h) { h.remove(); });
+    });
+
+    // 3. Supprimer tout élément précédant immédiatement un <pre> s'il s'agit d'un en-tête de code résiduel
+    clone.querySelectorAll('pre').forEach(function (pre) {
+      const prev = pre.previousElementSibling;
+      if (prev) {
+        const prevText = (prev.textContent || '').trim();
+        if (/^(?:code\s*copier|codeCopier|CODE|Copier|Copy)$/i.test(prevText) || prev.querySelector('button, mat-icon')) {
+          prev.remove();
+        }
+      }
+    });
+
+    // 4. Normaliser les Web Components & classes Tailwind de NotebookLM en balises HTML5 sémantiques (h1-h4, p, blockquote, li)
     const paragraphElements = Array.from(clone.querySelectorAll('.paragraph'));
     paragraphElements.forEach(function (el) {
       const cls = el.className || '';
@@ -99,9 +161,11 @@
       }
     });
 
-    // Nettoyer le texte restant dans le clone HTML pour supprimer les reliquats [1]
+    // 5. Nettoyer le texte restant dans le clone HTML pour supprimer les reliquats
     let html = clone.innerHTML || '';
-    html = html.replace(/\s*\[\d+(?:\s*,\s*\d+)*\]/g, '');
+    html = html
+      .replace(/\s*\[\d+(?:\s*,\s*\d+)*\]/g, '')
+      .replace(/<[^>]+>\s*(?:code\s*copier|codeCopier|CODE\s*Copier|Copier|Copy)\s*<\/[^>]+>/gi, '');
 
     return html;
   }
@@ -126,10 +190,10 @@
       return { el: deleteBtn.closest('note-editor, form.note-form, div.note-title-container') || deleteBtn.parentElement, type: 'note' };
     }
 
-    // 2. Détection des artefacts Markdown (.md / .markdown)
+    // 2. Détection des artefacts Markdown (.md / .markdown) dans le Studio
     const artifactViewer = document.querySelector('artifact-viewer, [class*="artifact-view"]');
     if (artifactViewer) {
-      const titleInput = artifactViewer.querySelector('input.artifact-title, .title-label-inner, input[aria-label*="titre" i]');
+      const titleInput = artifactViewer.querySelector('input.artifact-title, .title-label-inner, input[aria-label*="titre" i], input.title-input');
       if (titleInput) {
         const titleText = (titleInput.value || titleInput.textContent || '').trim().toLowerCase();
         if (titleText.endsWith('.md') || titleText.endsWith('.markdown')) {
@@ -183,10 +247,10 @@
         containerInfo = findCopyableContainer();
       }
       if (!containerInfo) return;
-      
+
       const { el: container, type } = containerInfo;
 
-      // 1. Extraire le titre (cibler uniquement les champs de saisie ou balises H1-H3)
+      // 1. Extraire le titre
       let titleText = '';
       const inputEl = container.querySelector(
         'input.note-header__editable-title, input.artifact-title, input[aria-label*="titre" i], input[formcontrolname="name"], input.title-input'
@@ -205,37 +269,41 @@
         titleText = '';
       }
 
-      // 2. Extraire le corps
-      const contentEl = container.querySelector(
-        'labs-tailwind-doc-viewer, element-list-renderer, .note-editor--readonly, .content, .note-content, [contenteditable], .ProseMirror, [class*="content"], [class*="body"]'
-      ) || container;
+      // 2. Extraire le corps en ciblant en priorité la zone de contenu sémantique
+      let contentEl = null;
+      if (type === 'note') {
+        contentEl = container.querySelector(
+          '.note-editor-content, [contenteditable="true"], .ProseMirror, labs-tailwind-doc-viewer, .note-editor--readonly, .content, .note-content'
+        );
+      } else if (type === 'markdown') {
+        contentEl = container.querySelector(
+          'labs-tailwind-doc-viewer, element-list-renderer, .artifact-content, .content, [class*="content"], [class*="body"]'
+        );
+      }
+
+      if (!contentEl) {
+        contentEl = container.querySelector(
+          'labs-tailwind-doc-viewer, element-list-renderer, [contenteditable], .ProseMirror, [class*="content"]'
+        ) || container;
+      }
 
       if (!contentEl) {
         console.warn('[MM] NoteCopy : Aucun conteneur de contenu trouvé.');
         return;
       }
 
-      // 3. Générer le HTML nettoyé et le Markdown
-      let cleanHtmlBody = '';
-      let markdownBody = '';
+      // 3. Générer le HTML nettoyé et convertir ce HTML nettoyé en Markdown structuré via Turndown
+      const cleanHtmlBody = cleanHtmlCitations(contentEl);
 
-      if (type === 'markdown') {
-        // Mode artefact Markdown : Extraction textuelle fidèle (innerText)
-        markdownBody = contentEl.innerText || contentEl.textContent || '';
-        // Épuration des reliquats UI de Google qui pourraient s'infiltrer
-        markdownBody = markdownBody.replace(/Thumb up|Thumb down|Copy|Good response|Bad response|expand_content/gi, '').trim();
-        cleanHtmlBody = `<pre>${markdownBody}</pre>`;
+      let markdownBody = '';
+      const converter = window.MM.convertHtmlToMarkdown || window.MM.htmlToMd;
+      if (typeof converter === 'function') {
+        markdownBody = converter(cleanHtmlBody);
       } else {
-        // Mode Note classique
-        cleanHtmlBody = cleanHtmlCitations(contentEl);
-        const converter = window.MM.convertHtmlToMarkdown || window.MM.htmlToMd;
-        if (typeof converter === 'function') {
-          markdownBody = converter(cleanHtmlBody);
-        } else {
-          markdownBody = cleanMarkdownCitations(contentEl.textContent || '');
-        }
-        markdownBody = cleanMarkdownCitations(markdownBody);
+        markdownBody = cleanMarkdownCitations(contentEl.textContent || '');
       }
+
+      markdownBody = cleanMarkdownCitations(markdownBody);
 
       // Combiner le titre avec le contenu
       const fullText = titleText ? `# ${titleText}\n\n${markdownBody}` : markdownBody;
@@ -252,13 +320,13 @@
         })
       ]);
 
-      console.log('[MM] Note copiée sans sources (Dual-MIME text/plain & text/html)');
+      console.log(`[MM] Note/Artéfact (${type}) copié sans sources (Dual-MIME text/plain & text/html)`);
 
       // 5. Feedback visuel sur le bouton
       if (btnElement) {
         const oldTitle = btnElement.title;
         btnElement.classList.add('mm-copy-success');
-        btnElement.title = t('noteCopySuccess') || 'Note copiée sans sources !';
+        btnElement.title = t('noteCopySuccess') || 'Copié sans sources !';
 
         setTimeout(function () {
           btnElement.classList.remove('mm-copy-success');
@@ -268,10 +336,10 @@
 
       // Afficher un dialogue/toast rapide de confirmation si disponible
       if (typeof window.MM.showToast === 'function') {
-        window.MM.showToast(t('noteCopySuccess') || 'Note copiée sans sources !');
+        window.MM.showToast(t('noteCopySuccess') || 'Copié sans sources !');
       }
     } catch (err) {
-      console.error('[MM] Erreur lors de la copie de la note sans sources :', err);
+      console.error('[MM] Erreur lors de la copie sans sources :', err);
     }
   }
 
@@ -301,7 +369,7 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
-   * Vérifie la présence d'un note-viewer ou artefact md actif et y injecte le bouton "Copier sans sources"
+   * Vérifie la présence d'un note-viewer ou artefact md actif et y injecte le bouton "Copier sans sources".
    */
   function checkAndInjectNoteCopy() {
     // Garde-fou préférence active
@@ -311,38 +379,62 @@
       return;
     }
 
-    const noteContainer = findNoteContainer();
-    if (!noteContainer) return;
+    const containerInfo = findCopyableContainer();
+    if (!containerInfo) return;
+
+    const { el: container, type } = containerInfo;
 
     // Si le bouton est déjà injecté dans ce conteneur, ne rien faire
-    if (noteContainer.querySelector('.mm-note-copy-btn')) return;
-
-    // Chercher le bouton de suppression natif (icône corbeille) pour l'utiliser comme ancre
-    const deleteBtn = findDeleteButton(noteContainer);
+    if (container.querySelector('.mm-note-copy-btn')) return;
 
     const copyBtn = createElement('button', {
       className: 'mm-note-copy-btn',
       type: 'button',
       'aria-label': t('noteCopyButton') || 'Copier sans sources',
-      title: t('noteCopyTooltip') || 'Copier la note avec sa mise en page, sans les références aux sources',
+      title: t('noteCopyTooltip') || 'Copier avec sa mise en page, sans les références aux sources',
       onClick: function (e) {
         e.stopPropagation();
-        handleCopyNoteWithoutSources(noteContainer, copyBtn);
+        handleCopyNoteWithoutSources(containerInfo, copyBtn);
       }
     });
 
     copyBtn.appendChild(createNoteCopyIcon());
 
-    if (deleteBtn && deleteBtn.parentNode) {
-      // Injecter le bouton immédiatement à gauche de l'icône corbeille
-      deleteBtn.parentNode.insertBefore(copyBtn, deleteBtn);
-      console.log('[MM] NoteCopy : Bouton "Copier sans sources" injecté à gauche de la corbeille');
-    } else {
-      // Fallback strict : injecter uniquement dans la barre de titre explicite d'une note
-      const titleHeader = noteContainer.querySelector('.note-title-container');
-      if (titleHeader) {
-        titleHeader.appendChild(copyBtn);
-        console.log('[MM] NoteCopy : Bouton "Copier sans sources" injecté dans note-title-container (fallback)');
+    if (type === 'note') {
+      // Notes classiques : injection à gauche de la corbeille native
+      const deleteBtn = findDeleteButton(container);
+      if (deleteBtn && deleteBtn.parentNode) {
+        deleteBtn.parentNode.insertBefore(copyBtn, deleteBtn);
+        console.log('[MM] NoteCopy : Bouton "Copier sans sources" injecté à gauche de la corbeille (Note classique)');
+      } else {
+        const titleHeader = container.querySelector('.note-title-container');
+        if (titleHeader) {
+          titleHeader.appendChild(copyBtn);
+          console.log('[MM] NoteCopy : Bouton "Copier sans sources" injecté dans note-title-container (fallback)');
+        }
+      }
+    } else if (type === 'markdown') {
+      // Artefact Markdown du Studio
+      // 1. Chercher le bouton expand_content (Desktop)
+      const allIcons = container.querySelectorAll('mat-icon');
+      let expandBtn = null;
+      for (const icon of allIcons) {
+        if ((icon.textContent || '').trim() === 'expand_content') {
+          expandBtn = icon.closest('button');
+          break;
+        }
+      }
+
+      if (expandBtn && expandBtn.parentNode) {
+        expandBtn.parentNode.insertBefore(copyBtn, expandBtn);
+        console.log('[MM] NoteCopy : Bouton "Copier sans sources" injecté à gauche de expand_content (Desktop Studio .md)');
+      } else {
+        // 2. Mode Mobile ou Fallback : injection dans l'en-tête de l'artéfact
+        const header = container.querySelector('.header, [class*="header"], .title-container, [class*="title"]');
+        if (header) {
+          header.appendChild(copyBtn);
+          console.log('[MM] NoteCopy : Bouton "Copier sans sources" injecté dans le header d\'artéfact (Mobile/Fallback)');
+        }
       }
     }
   }

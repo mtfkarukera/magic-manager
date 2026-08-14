@@ -535,6 +535,22 @@
   },
   "chatExportStudioPromptText": {
     "message": "Exporte l'historique complet et fidèle de notre conversation dans un document Markdown (.md) dans le Studio. Rédige sous la forme d'une transcription chronologique exhaustive tour par tour (requêtes de l'utilisateur et réponses intégrales de l'assistant, avec tous les blocs de code préservés). Inclus en tête de document un bloc de métadonnées (Carnet, Date, Session). Nomme le fichier avec l'extension .md.",
-    "description": "Prompt for fallback chat export to studio"
+    "description": "Prompt pour la génération du rapport Markdown dans le Studio"
+  },
+  "chatExportFallbackTitle": {
+    "message": "Discussion trop volumineuse",
+    "description": "Titre de la boîte de dialogue de secours pour l'export du chat"
+  },
+  "chatExportFallbackMessage": {
+    "message": "La conversation dépasse la taille maximale pour une note directe ou une erreur est survenue. Choisissez un mode de repli :",
+    "description": "Message explicatif du dialogue de repli"
+  },
+  "chatExportFallbackDownload": {
+    "message": "⬇ Télécharger le fichier .md",
+    "description": "Bouton de téléchargement direct en Markdown"
+  },
+  "chatExportFallbackStudio": {
+    "message": "✏ Générer dans le Studio (IA)",
+    "description": "Bouton pour envoyer le prompt de génération dans le chat"
   }
 }

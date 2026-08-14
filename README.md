@@ -1,6 +1,6 @@
 # 🧩 Magic Manager for Gemini Notebook
 
-![GitHub release](https://img.shields.io/badge/release-v0.27.0-green)
+![GitHub release](https://img.shields.io/badge/release-v0.28.0-green)
 ![GitHub license](https://img.shields.io/github/license/mtfkarukera/magic-manager?color=blue)
 
 **Magic Manager** est une extension Firefox qui enrichit l'interface de **Google Gemini Notebook** (anciennement NotebookLM) sur [notebook.google.com](https://notebook.google.com/) avec des fonctionnalités avancées de productivité.

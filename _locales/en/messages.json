@@ -536,5 +536,21 @@
   "chatExportStudioPromptText": {
     "message": "Export the full and accurate history of our conversation into a Markdown (.md) document in the Studio. Write it as an exhaustive chronological turn-by-turn transcript (user requests and full assistant responses, with all code blocks preserved). Include a metadata block at the top of the document (Notebook, Date, Session). Name the file with the .md extension.",
     "description": "Prompt for fallback chat export to studio"
+  },
+  "chatExportFallbackTitle": {
+    "message": "Conversation too long",
+    "description": "Title of the fallback dialog for chat export"
+  },
+  "chatExportFallbackMessage": {
+    "message": "The conversation exceeds the limit or an error occurred while saving the note. Choose an alternative:",
+    "description": "Message of the fallback dialog for chat export"
+  },
+  "chatExportFallbackDownload": {
+    "message": "⬇ Download as .md",
+    "description": "Download button in the fallback dialog"
+  },
+  "chatExportFallbackStudio": {
+    "message": "✏ Generate via Studio (AI)",
+    "description": "Studio prompt injection button in the fallback dialog"
   }
 }

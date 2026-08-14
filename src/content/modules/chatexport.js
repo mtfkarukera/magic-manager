@@ -358,73 +358,76 @@
         day: '2-digit', month: '2-digit', year: 'numeric'
       });
       const notebookName = getActiveNotebookName();
-      const safeNotebookName = notebookName.replace(/[\/\\?%*:|"<>\s]/g, '_');
       const noteTitle = `Discussion - ${notebookName} (${dateStr})`;
-      const safeTitle = `Discussion_${safeNotebookName}_${dateStr}`;
 
-      const triggerFallback = () => {
-        showButtonFeedback('error');
-        if (typeof window.MM.showChatExportFallbackDialog === 'function') {
-          window.MM.showChatExportFallbackDialog(
-            // Callback Téléchargement MD
-            () => {
-              if (window.MM.exportUtils && window.MM.exportUtils.downloadBlob) {
-                const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' });
-                window.MM.exportUtils.downloadBlob(blob, `${safeTitle}.md`);
-              }
-            },
-            // Callback Génération Studio Verbatim
-            () => {
-              const chatInput = document.querySelector(
-                'textarea[aria-label*="Ask" i], textarea[placeholder*="Ask" i], textarea[aria-label*="tapez" i], textarea[aria-label*="Start typing" i], .chat-input textarea'
-              );
-              if (chatInput) {
-                setNativeValue(chatInput, t('chatExportStudioPromptText') || "Exporte l'historique complet et fidèle de notre conversation dans un document Markdown (.md) dans le Studio.");
-              }
-            }
-          );
+      // Actions de repli (Téléchargement MD direct et Génération Studio via prompt)
+      const onDownloadMd = () => {
+        const safeTitle = noteTitle.replace(/[\/\\?%*:|"<>\s]/g, '_');
+        const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' });
+        if (window.MM.exportUtils && typeof window.MM.exportUtils.downloadBlob === 'function') {
+          window.MM.exportUtils.downloadBlob(blob, `${safeTitle}.md`);
         }
       };
 
+      const onStudioPrompt = () => {
+        const promptText = t('chatExportStudioPromptText');
+        const chatInputSelectors = [
+          'chat-input textarea',
+          'section.chat-panel textarea',
+          '.chat-input textarea',
+          'textarea[aria-label*="Ask" i]',
+          'textarea[placeholder*="Ask" i]',
+          'textarea[aria-label*="tapez" i]',
+          'textarea'
+        ];
+        let input = null;
+        for (const sel of chatInputSelectors) {
+          input = document.querySelector(sel);
+          if (input) break;
+        }
+        if (input) {
+          setNativeValue(input, promptText);
+          input.focus();
+          const sendBtn = document.querySelector(
+            'button[aria-label*="Send" i], button[aria-label*="Envoyer" i], button.chat-send-button, .chat-input-container button'
+          );
+          if (sendBtn && !sendBtn.disabled) {
+            sendBtn.click();
+          } else {
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
+          }
+        }
+      };
+
+      // Garde-fou 15 000 caractères
       if (markdownContent.length > 15000) {
-        console.warn(`[MM] ChatExport : Contenu trop long (${markdownContent.length} chars) pour une note API, repli sur le fallback.`);
-        triggerFallback();
-        return; // Le return évite de réactiver le bouton manuellement ici (géré dans finally, mais le dialogue est ouvert)
+        console.warn(`[MM] ChatExport : conversation volumineuse (${markdownContent.length} chars > 15 000), affichage du dialogue de repli.`);
+        if (typeof window.MM.showChatExportFallbackDialog === 'function') {
+          window.MM.showChatExportFallbackDialog(onDownloadMd, onStudioPrompt);
+        } else {
+          onDownloadMd();
+        }
+        showButtonFeedback('error');
+        return;
       }
 
       // Créer la note via le RPC direct en tâche de fond (sans toucher au DOM)
-      await createNoteViaRpc(notebookId, noteTitle, markdownContent);
-
-      showButtonFeedback('success');
+      try {
+        await createNoteViaRpc(notebookId, noteTitle, markdownContent);
+        showButtonFeedback('success');
+      } catch (rpcErr) {
+        console.warn('[MM] ChatExport : échec RPC direct, basculement vers le dialogue de repli :', rpcErr);
+        if (typeof window.MM.showChatExportFallbackDialog === 'function') {
+          window.MM.showChatExportFallbackDialog(onDownloadMd, onStudioPrompt);
+        } else {
+          onDownloadMd();
+        }
+        showButtonFeedback('error');
+      }
 
     } catch (err) {
-      console.error('[MM] ChatExport : erreur lors de la création de la note :', err);
-      
-      // En cas d'erreur de l'API (ex: refus serveur, 429), déclencher le fallback
-      const markdownContent = formatAsMarkdown(collectConversationTurns());
-      const dateStr = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-      const safeNotebookName = getActiveNotebookName().replace(/[\/\\?%*:|"<>\s]/g, '_');
-      const safeTitle = `Discussion_${safeNotebookName}_${dateStr}`;
-
-      const triggerFallback = () => {
-        if (typeof window.MM.showChatExportFallbackDialog === 'function') {
-          window.MM.showChatExportFallbackDialog(
-            () => {
-              if (window.MM.exportUtils && window.MM.exportUtils.downloadBlob) {
-                const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' });
-                window.MM.exportUtils.downloadBlob(blob, `${safeTitle}.md`);
-              }
-            },
-            () => {
-              const chatInput = document.querySelector('textarea[aria-label*="Ask" i], textarea[placeholder*="Ask" i], textarea[aria-label*="tapez" i], textarea[aria-label*="Start typing" i], .chat-input textarea');
-              if (chatInput) setNativeValue(chatInput, t('chatExportStudioPromptText'));
-            }
-          );
-        }
-      };
-      
+      console.error('[MM] ChatExport : erreur inattendue lors de l\'export du chat :', err);
       showButtonFeedback('error');
-      triggerFallback();
     } finally {
 
       // Réactiver le bouton après un délai

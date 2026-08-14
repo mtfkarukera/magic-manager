@@ -55,21 +55,20 @@
    * @returns {string} Le nom de fichier complet et unique
    */
   function getUniqueZipFileName(existingNames, rawTitle, extension) {
-    let candidate = `${rawTitle}${extension}`;
+    const ext = extension.startsWith('.') ? extension : `.${extension}`;
+    let candidate = `${rawTitle}${ext}`;
     let counter = 2;
-    
-    // Supporte Set.has ou Array.includes
+
     const hasName = (name) => {
       if (existingNames instanceof Set) return existingNames.has(name);
-      return existingNames.includes(name);
+      return Array.isArray(existingNames) ? existingNames.includes(name) : false;
     };
 
     while (hasName(candidate)) {
-      candidate = `${rawTitle} (${counter})${extension}`;
+      candidate = `${rawTitle} (${counter})${ext}`;
       counter++;
     }
-    
-    // S'assurer qu'on peut ajouter la nouvelle valeur si c'est un Set
+
     if (existingNames instanceof Set) {
       existingNames.add(candidate);
     } else if (Array.isArray(existingNames)) {
@@ -78,7 +77,6 @@
 
     return candidate;
   }
-
 
   /**
    * Trouve l'identifiant de source correspondant au titre par matching robuste.

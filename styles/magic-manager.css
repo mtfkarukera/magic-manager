@@ -494,6 +494,23 @@
   gap: var(--mm-spacing-sm);
 }
 
+.mm-dialog-progress {
+  max-width: 440px;
+  width: 90%;
+}
+
+.mm-dialog-fallback {
+  max-width: 460px;
+  width: 90%;
+}
+
+.mm-fallback-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mm-spacing-sm);
+  margin-bottom: var(--mm-spacing-md);
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
    Boutons (Optimisations Premium & Accessibilité)
    ═══════════════════════════════════════════════════════════════════════ */

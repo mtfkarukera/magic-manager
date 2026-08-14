@@ -6,18 +6,24 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 
 ## [0.28.0] — 2026-08-14
 
-### 📦 Batch ZIP Déduplication & UI Glassmorphism
-- **Déduplication au niveau ZIP (`getUniqueZipFileName`)** : Le module d'exportation en lot via ZIP gère désormais nativement les conflits de nom de fichiers, en incrémentant intelligemment (`Titre (2).md`, `Titre (3).pdf`) pour garantir aucune perte lors d'exports massifs de documents homonymes.
-- **Modale de progression Glassmorphic** : L'interface d'attente d'export s'aligne sur le design system avec un flou d'arrière-plan natif (`backdrop-filter`) et des angles fluides, sans bloquer le fil principal de l'UI.
+### 📦 Export par Lot ZIP avec Déduplication & Modale Glassmorphism
+- **Déduplication des Noms de Fichiers ZIP (`export-utils.js`)** : Intégration de la fonction `getUniqueZipFileName(existingNames, rawTitle, extension)` dans la boucle de création d'archive ZIP, garantissant des noms uniques (`titre.md`, `titre (2).md`) sans écrasement en cas de doublons de titres.
+- **Modale de Progression Glassmorphism (`dialogs.js` & `magic-manager.css`)** : Implémentation soignée de `showProgressDialog` avec backdrop blur 20px, coins arrondis 16px, barre de progression fluide et retour d'état en temps réel.
 
-### 💬 Chat Export Fallback Verbatim
-- **Garde-fou Longueur API (15k caractères)** : L'export du chat surveille désormais activement les seuils de rejet de l'API NotebookLM. 
-- **Modale de Repli Double Action** : En cas de conversation fleuve ou d'erreur serveur, Magic Manager propose un dialogue élégant offrant le téléchargement direct du fichier `.md` ou, grâce à un prompt pré-rédigé multilingue (7 langues supportées), la délégation de la tâche de rédaction à l'IA du Studio de NotebookLM.
+### 💬 Export du Chat Fiabilisé (Note par défaut + Garde-fou 15 000 chars + Repli Verbatim)
+- **Sauvegarde par défaut en Note (`chatexport.js`)** : Enregistrement de l'historique de discussion mot pour mot via RPC direct (`CYK0Xb` + `cYAfTb`) en arrière-plan.
+- **Garde-fou 15 000 Caractères & Modale de Repli (`dialogs.js`)** : Détection automatique des discussions volumineuses (>15 000 chars) ou erreurs API ouvrant `showChatExportFallbackDialog` avec 2 options :
+  - *Option 1* : Téléchargement direct du fichier `.md` sur le poste.
+  - *Option 2* : Envoi automatique du prompt internationalisé calibré (`chatExportStudioPromptText`) dans le chat pour génération d'un rapport Studio Verbatim par l'IA.
+- **Support International 7 Langues (`_locales/`)** : Déclinaison complète des textes et prompts en FR, EN, DE, ES, PT, JA, VI avec validation 100% `check-i18n.js`.
 
-### 📋 Dual-MIME & Extraction Universelle (Notes & Studio)
-- **Détection des Artefacts Markdown** : Le bouton "Copier sans sources" ne se limite plus aux notes classiques. Il détecte intelligemment si l'utilisateur consulte un artéfact généré (`.md` ou `.markdown`) dans le Studio.
-- **Règle Zéro Altération DOM Angular** : Injection strictement non-intrusive (au même niveau ou en position absolue) du bouton de copie, garantissant l'intégrité absolue de la réconciliation DOM interne d'Angular.
-- **Copie Textuelle Fidèle (`innerText`)** : Sur les artéfacts `.md`, l'extraction s'effectue purement par `innerText` en épurant les balises UI contextuelles Google, évitant ainsi toute dégradation due aux convertisseurs HTML-to-Markdown classiques.
+### 📋 Bouton « Copier sans sources » Universel (Studio .md & Notes classiques)
+- **Détection Polymorphe Studio & Notes (`note-copy.js`)** : Détection universelle des documents Markdown ouverts dans le Studio (`input.artifact-title` se terminant par `.md` ou `.markdown`) et des Notes classiques.
+- **Ancrage Ergonomique & Zéro Altération DOM Angular** : Bouton injecté à gauche de `expand_content` en mode Desktop et dans la barre d'en-tête en mode Mobile, sans perturber la réconciliation Angular.
+- **Extraction Dual-MIME Intégrale & Éradication `codeCopier`** : Extraction sémantique préservant la mise en page riche (titres `<h1>`-`<h2>`, listes, blocs de code propres sans mot parasite `codeCopier` ni résidu de barre d'outils d'édition), et écriture Dual-MIME (`text/plain` Markdown + `text/html`) dans le presse-papier avec confirmation visuelle.
+
+### 🔍 Visibilité Dynamique de la Pilule de Recherche Studio
+- **Masquage Intelligent en Mode Consultation / Édition (`studio-search.js`)** : Détection structurelle différentielle masquant automatiquement la pilule de recherche et son conteneur d'en-tête dès qu'un document, une note ou un artéfact est ouvert pour offrir un confort de lecture maximal sans obstruction visuelle. Réapparition instantanée dès le retour à la grille de cartes du Studio.
 
 ## [0.27.0] — 2026-08-02
 

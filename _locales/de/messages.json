@@ -536,5 +536,21 @@
   "chatExportStudioPromptText": {
     "message": "Exportiere den vollständigen und genauen Verlauf unserer Unterhaltung in ein Markdown-Dokument (.md) im Studio. Schreibe es als ausführliches, chronologisches Transkript (Nutzeranfragen und vollständige Antworten des Assistenten, wobei alle Codeblöcke erhalten bleiben). Füge oben im Dokument einen Metadatenblock (Notizbuch, Datum, Sitzung) ein. Benenne die Datei mit der Endung .md.",
     "description": "Prompt for fallback chat export to studio"
+  },
+  "chatExportFallbackTitle": {
+    "message": "Konversation zu lang",
+    "description": "Titel des Rückfall-Dialogs beim Chat-Export"
+  },
+  "chatExportFallbackMessage": {
+    "message": "Die Konversation überschreitet das Limit oder es ist ein Fehler beim Speichern der Notiz aufgetreten. Wählen Sie eine Alternative:",
+    "description": "Nachricht des Rückfall-Dialogs beim Chat-Export"
+  },
+  "chatExportFallbackDownload": {
+    "message": "⬇ Als .md herunterladen",
+    "description": "Download-Schaltfläche im Rückfall-Dialog"
+  },
+  "chatExportFallbackStudio": {
+    "message": "✏ Via Studio generieren (KI)",
+    "description": "Studio-Prompt-Schaltfläche im Rückfall-Dialog"
   }
 }

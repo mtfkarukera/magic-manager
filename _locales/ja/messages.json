@@ -536,5 +536,21 @@
   "chatExportStudioPromptText": {
     "message": "私たちの会話の完全かつ正確な履歴を、StudioのMarkdown（.md）ドキュメントにエクスポートしてください。時系列に沿った詳細なトランスクリプトとして記述してください（ユーザーのリクエストとアシスタントの完全な回答、すべてのコードブロックを保持）。ドキュメントの先頭にメタデータブロック（ノートブック、日付、セッション）を含めてください。ファイル名には.md拡張子を付けてください。",
     "description": "Prompt for fallback chat export to studio"
+  },
+  "chatExportFallbackTitle": {
+    "message": "会話が長すぎます",
+    "description": "チャットエクスポートのフォールバックダイアログのタイトル"
+  },
+  "chatExportFallbackMessage": {
+    "message": "会話が制限を超えているか、ノートの保存中にエラーが発生しました。別の方法を選択してください：",
+    "description": "チャットエクスポートのフォールバックダイアログのメッセージ"
+  },
+  "chatExportFallbackDownload": {
+    "message": "⬇ .mdとしてダウンロード",
+    "description": "フォールバックダイアログのダウンロードボタン"
+  },
+  "chatExportFallbackStudio": {
+    "message": "✏ Studio経由で生成（AI）",
+    "description": "フォールバックダイアログのStudioプロンプトボタン"
   }
 }

@@ -117,7 +117,7 @@
       }
 
       const zipFiles = [];
-      const usedZipNames = new Set();
+      const existingZipNames = new Set();
       const activeNotebookName = getActiveNotebookName();
       const timestamp = getFormattedTimestamp();
       let anyTruncated = false;
@@ -143,6 +143,10 @@
 
       const title = cleanSourceTitle(sourceInfo.title);
       console.log(`[MM] Export batch : traitement de "${title.slice(0, 50)}" (${i+1}/${checkboxes.length})`);
+
+      if (progressDialog && typeof progressDialog.update === 'function') {
+        progressDialog.update(i + 1, title);
+      }
 
       // 1. Extraire l'ID de la source
       let sourceId = window.MM.extractSourceId(sourceInfo.card);
@@ -188,16 +192,16 @@
               downloadBlob(pdfBlob, `${safeTitle}_${timestamp}.pdf`);
             }
           } else {
-            // Plusieurs fichiers : empiler pour le ZIP (nom simple dans le ZIP)
+            // Plusieurs fichiers : empiler pour le ZIP avec déduplication des noms
             if (format === 'md-riche' || format === 'md-simple') {
-              const uniqueName = getUniqueZipFileName(usedZipNames, safeTitle, '.md');
-              zipFiles.push({ name: uniqueName, data: content });
+              const fileName = getUniqueZipFileName(existingZipNames, safeTitle, '.md');
+              zipFiles.push({ name: fileName, data: content });
             } else {
               const isStructured = format === 'pdf-riche';
               const pdfBlob = await generatePdfBlob(content, title, { structured: isStructured, loadImages: true });
               const pdfBytes = new Uint8Array(await pdfBlob.arrayBuffer());
-              const uniqueName = getUniqueZipFileName(usedZipNames, safeTitle, '.pdf');
-              zipFiles.push({ name: uniqueName, data: pdfBytes });
+              const fileName = getUniqueZipFileName(existingZipNames, safeTitle, '.pdf');
+              zipFiles.push({ name: fileName, data: pdfBytes });
             }
           }
         } else {

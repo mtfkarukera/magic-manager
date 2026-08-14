@@ -528,6 +528,44 @@
     }, 0);
   }
 
+  /**
+   * Détecte si le Studio est actuellement en mode consultation/édition de note ou artéfact.
+   * Ne renvoie true que si nous sommes RÉELLEMENT dans un document ouvert et PAS dans la liste générale.
+   * @param {Element} studioPanel
+   * @returns {boolean}
+   */
+  function isStudioInDocumentView(studioPanel) {
+    if (!studioPanel) return false;
+
+    // 1. Si des cartes du Studio sont présentes et visibles dans le panneau, nous sommes en mode liste
+    const cards = studioPanel.querySelectorAll('.artifact-item-button, [class*="artifact-item"]');
+    for (let i = 0; i < cards.length; i++) {
+      if (cards[i].offsetHeight > 0) {
+        return false;
+      }
+    }
+
+    // 2. Si les boutons de création rapide d'artéfacts (audio, vidéo, quiz...) sont visibles, nous sommes en mode liste
+    const createTile = studioPanel.querySelector('.create-artifact-button-container, [class*="create-artifact"]');
+    if (createTile && createTile.offsetHeight > 0) {
+      return false;
+    }
+
+    // 3. Détecter la présence active du bouton retour (arrow_back) ou d'un éditeur ouvert dans le Studio
+    const backBtn = studioPanel.querySelector(
+      'button[aria-label*="back" i], button[aria-label*="retour" i], button[mattooltip*="retour" i], button.back-button'
+    );
+    const hasBackIcon = Array.from(studioPanel.querySelectorAll('mat-icon')).some(function (el) {
+      const text = (el.textContent || '').trim();
+      return text === 'arrow_back' || text === 'arrow_backward' || text === 'chevron_left';
+    });
+
+    const hasActiveEditor = !!studioPanel.querySelector('form.note-form, .note-editor-content, [contenteditable="true"]');
+    const hasActiveViewer = !!studioPanel.querySelector('artifact-viewer, .artifact-viewer-container');
+
+    return !!(backBtn || hasBackIcon || hasActiveEditor || (hasActiveViewer && cards.length === 0));
+  }
+
   // ═══════════════════════════════════════════════════════════════════════
   // Injection et Cycle de vie
   // ═══════════════════════════════════════════════════════════════════════
@@ -591,14 +629,15 @@
     }
 
     // Garde 2 : Détecter si un artéfact ou une note est ouvert en consultation
-    const isViewing = !!document.querySelector(
-      "button[aria-label='Expand'], button[aria-label='Close note view'], " +
-      ".artifact-viewer-container, [class*='artifact-viewer'], [class*='note-view']"
-    );
+    const isViewing = isStudioInDocumentView(studioPanel);
 
     if (isViewing) {
       if (searchBarContainer) {
         searchBarContainer.style.display = 'none';
+      }
+      const headerContainer = document.querySelector('.mm-studio-header-container');
+      if (headerContainer) {
+        headerContainer.style.display = 'none';
       }
       if (filterPopoverEl) {
         filterPopoverEl.remove();
@@ -626,6 +665,10 @@
     // Réafficher si masqué précédemment
     if (searchBarContainer && searchBarContainer.style.display === 'none') {
       searchBarContainer.style.display = '';
+      const headerContainer = document.querySelector('.mm-studio-header-container');
+      if (headerContainer && headerContainer.style.display === 'none') {
+        headerContainer.style.display = '';
+      }
       applyFilters();
       return;
     }
