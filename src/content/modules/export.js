@@ -29,6 +29,7 @@
   const {
     cleanSourceTitle,
     stripSourceExtension,
+    getUniqueZipFileName,
     findSourceIdByTitle,
     getFormattedTimestamp,
     buildZipBlob,
@@ -116,6 +117,7 @@
       }
 
       const zipFiles = [];
+      const usedZipNames = new Set();
       const activeNotebookName = getActiveNotebookName();
       const timestamp = getFormattedTimestamp();
       let anyTruncated = false;
@@ -188,12 +190,14 @@
           } else {
             // Plusieurs fichiers : empiler pour le ZIP (nom simple dans le ZIP)
             if (format === 'md-riche' || format === 'md-simple') {
-              zipFiles.push({ name: safeTitle + '.md', data: content });
+              const uniqueName = getUniqueZipFileName(usedZipNames, safeTitle, '.md');
+              zipFiles.push({ name: uniqueName, data: content });
             } else {
               const isStructured = format === 'pdf-riche';
               const pdfBlob = await generatePdfBlob(content, title, { structured: isStructured, loadImages: true });
               const pdfBytes = new Uint8Array(await pdfBlob.arrayBuffer());
-              zipFiles.push({ name: safeTitle + '.pdf', data: pdfBytes });
+              const uniqueName = getUniqueZipFileName(usedZipNames, safeTitle, '.pdf');
+              zipFiles.push({ name: uniqueName, data: pdfBytes });
             }
           }
         } else {

@@ -46,6 +46,41 @@
   }
 
   /**
+   * Génère un nom de fichier unique pour l'archive ZIP afin d'éviter d'écraser des fichiers de même nom.
+   * Ajoute un incrément (2), (3)... si le nom existe déjà.
+   *
+   * @param {Set|Array} existingNames - Les noms complets déjà ajoutés au ZIP
+   * @param {string} rawTitle - Le nom de base (sans extension)
+   * @param {string} extension - L'extension avec le point (ex: '.md', '.pdf')
+   * @returns {string} Le nom de fichier complet et unique
+   */
+  function getUniqueZipFileName(existingNames, rawTitle, extension) {
+    let candidate = `${rawTitle}${extension}`;
+    let counter = 2;
+    
+    // Supporte Set.has ou Array.includes
+    const hasName = (name) => {
+      if (existingNames instanceof Set) return existingNames.has(name);
+      return existingNames.includes(name);
+    };
+
+    while (hasName(candidate)) {
+      candidate = `${rawTitle} (${counter})${extension}`;
+      counter++;
+    }
+    
+    // S'assurer qu'on peut ajouter la nouvelle valeur si c'est un Set
+    if (existingNames instanceof Set) {
+      existingNames.add(candidate);
+    } else if (Array.isArray(existingNames)) {
+      existingNames.push(candidate);
+    }
+
+    return candidate;
+  }
+
+
+  /**
    * Trouve l'identifiant de source correspondant au titre par matching robuste.
    * Normalise en enlevant les extensions des deux côtés avant comparaison.
    *
@@ -936,6 +971,7 @@
   window.MM.exportUtils = {
     cleanSourceTitle,
     stripSourceExtension,
+    getUniqueZipFileName,
     findSourceIdByTitle,
     getFormattedTimestamp,
     sanitizePdfText,

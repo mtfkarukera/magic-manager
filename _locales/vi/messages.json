@@ -532,5 +532,9 @@
   "noteCopyTooltip": {
     "message": "Sao chép ghi chú có định dạng không có trích dẫn nguồn",
     "description": "Chú thích cho nút sao chép"
+  },
+  "chatExportStudioPromptText": {
+    "message": "Xuất lịch sử cuộc trò chuyện đầy đủ và chính xác của chúng ta vào một tài liệu Markdown (.md) trong Studio. Viết dưới dạng một bản ghi chép theo trình tự thời gian chi tiết (yêu cầu của người dùng và phản hồi đầy đủ của trợ lý, giữ nguyên tất cả các khối mã). Bao gồm một khối siêu dữ liệu ở đầu tài liệu (Sổ tay, Ngày, Phiên). Đặt tên tệp với phần mở rộng .md.",
+    "description": "Prompt for fallback chat export to studio"
   }
 }

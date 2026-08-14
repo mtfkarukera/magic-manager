@@ -133,6 +133,142 @@
   }
 
   /**
+   * Affiche un dialogue de progression non bloquant.
+   *
+   * @param {string} title - Titre de la modale
+   * @param {number} maxCount - Le nombre total d'éléments
+   * @param {Function} onCancel - Callback appelé si l'utilisateur annule
+   * @returns {Object} Objet avec méthode { close: () => void, update: (current, text) => void }
+   */
+  function showProgressDialog(title, maxCount, onCancel) {
+    lastFocusedElement = document.activeElement;
+    closeDialog();
+
+    const progressBar = createElement('progress', {
+      className: 'mm-progress-bar',
+      max: maxCount,
+      value: 0
+    });
+
+    const progressText = createElement('div', {
+      className: 'mm-progress-text',
+      textContent: `0 / ${maxCount}`
+    });
+
+    const cancelBtn = createElement('button', {
+      className: 'mm-btn mm-btn-secondary',
+      textContent: t('dialogCancelButton') || 'Annuler',
+      onClick: () => {
+        closeDialog();
+        if (onCancel) onCancel();
+      }
+    });
+
+    const dialogTitleId = 'mm-dialog-title-' + Date.now();
+    const dialog = createElement('dialog', {
+      className: 'mm-dialog mm-dialog-progress',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': dialogTitleId
+    }, [
+      createElement('h2', { id: dialogTitleId, className: 'mm-dialog-title', textContent: title }),
+      createElement('div', { className: 'mm-dialog-content' }, [progressBar, progressText]),
+      createElement('div', { className: 'mm-dialog-actions' }, [cancelBtn])
+    ]);
+
+    activeDialog = dialog;
+
+    // Bloquer la fermeture par clic à l'extérieur pour un chargement
+    dialog.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      closeDialog();
+      if (onCancel) onCancel();
+    });
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    cancelBtn.focus();
+
+    return {
+      update: (current, text) => {
+        progressBar.value = current;
+        progressText.textContent = text ? `${current} / ${maxCount} — ${text}` : `${current} / ${maxCount}`;
+      },
+      close: () => closeDialog()
+    };
+  }
+
+  /**
+   * Affiche le dialogue de fallback pour l'export du chat (quand la limite de caractères est atteinte ou l'API échoue).
+   * Propose deux options : téléchargement direct en .md ou génération via prompt dans le Studio.
+   *
+   * @param {Function} onDownloadMd - Callback pour télécharger le fichier Markdown
+   * @param {Function} onStudioPrompt - Callback pour injecter le prompt verbatim dans le chat
+   */
+  function showChatExportFallbackDialog(onDownloadMd, onStudioPrompt) {
+    lastFocusedElement = document.activeElement;
+    closeDialog();
+
+    const btnDownload = createElement('button', {
+      className: 'mm-btn mm-btn-primary',
+      textContent: t('chatExportFallbackDownload') || 'Télécharger le fichier .md',
+      onClick: () => {
+        closeDialog();
+        if (typeof onDownloadMd === 'function') onDownloadMd();
+      }
+    });
+
+    const btnStudio = createElement('button', {
+      className: 'mm-btn mm-btn-secondary',
+      textContent: t('chatExportFallbackStudio') || 'Générer dans le Studio (Prompt)',
+      onClick: () => {
+        closeDialog();
+        if (typeof onStudioPrompt === 'function') onStudioPrompt();
+      }
+    });
+
+    const cancelBtn = createElement('button', {
+      className: 'mm-btn',
+      textContent: t('dialogCancelButton') || 'Annuler',
+      onClick: () => closeDialog()
+    });
+
+    const dialogTitleId = 'mm-dialog-title-' + Date.now();
+    const dialog = createElement('dialog', {
+      className: 'mm-dialog mm-dialog-fallback',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': dialogTitleId
+    }, [
+      createElement('h2', { id: dialogTitleId, className: 'mm-dialog-title', textContent: t('chatExportFallbackTitle') || 'Export impossible via l\'API' }),
+      createElement('p', { className: 'mm-dialog-message', textContent: t('chatExportFallbackMessage') || 'La conversation est trop longue ou le serveur a refusé la requête. Que voulez-vous faire ?' }),
+      createElement('div', { className: 'mm-dialog-actions', style: 'flex-direction: column; gap: 8px;' }, [
+        btnDownload,
+        btnStudio,
+        cancelBtn
+      ])
+    ]);
+
+    activeDialog = dialog;
+
+    dialog.addEventListener('cancel', (e) => {
+      e.preventDefault();
+      closeDialog();
+    });
+
+    dialog.addEventListener('click', (e) => {
+      if (e.target === dialog) closeDialog();
+    });
+
+    document.body.appendChild(dialog);
+    dialog.showModal();
+
+    btnDownload.focus();
+  }
+
+
+  /**
    * Affiche un dialogue de choix de format (Markdown, PDF Simple ou PDF Structuré).
    * Utilisé pour l'export individuel.
    *
@@ -400,6 +536,8 @@
 
   // Exposition dans le namespace global MM
   window.MM.showConfirmDialog = showConfirmDialog;
+  window.MM.showProgressDialog = showProgressDialog;
+  window.MM.showChatExportFallbackDialog = showChatExportFallbackDialog;
   window.MM.showFormatChoiceDialog = showFormatChoiceDialog;
   window.MM.showExportFormatDialog = showExportFormatDialog;
   window.MM.showAlertDialog = showAlertDialog;

@@ -532,5 +532,9 @@
   "noteCopyTooltip": {
     "message": "Copy note with rich formatting, without source citations",
     "description": "Tooltip for copy without sources button"
+  },
+  "chatExportStudioPromptText": {
+    "message": "Export the full and accurate history of our conversation into a Markdown (.md) document in the Studio. Write it as an exhaustive chronological turn-by-turn transcript (user requests and full assistant responses, with all code blocks preserved). Include a metadata block at the top of the document (Notebook, Date, Session). Name the file with the .md extension.",
+    "description": "Prompt for fallback chat export to studio"
   }
 }

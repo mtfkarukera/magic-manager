@@ -358,7 +358,39 @@
         day: '2-digit', month: '2-digit', year: 'numeric'
       });
       const notebookName = getActiveNotebookName();
+      const safeNotebookName = notebookName.replace(/[\/\\?%*:|"<>\s]/g, '_');
       const noteTitle = `Discussion - ${notebookName} (${dateStr})`;
+      const safeTitle = `Discussion_${safeNotebookName}_${dateStr}`;
+
+      const triggerFallback = () => {
+        showButtonFeedback('error');
+        if (typeof window.MM.showChatExportFallbackDialog === 'function') {
+          window.MM.showChatExportFallbackDialog(
+            // Callback Téléchargement MD
+            () => {
+              if (window.MM.exportUtils && window.MM.exportUtils.downloadBlob) {
+                const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' });
+                window.MM.exportUtils.downloadBlob(blob, `${safeTitle}.md`);
+              }
+            },
+            // Callback Génération Studio Verbatim
+            () => {
+              const chatInput = document.querySelector(
+                'textarea[aria-label*="Ask" i], textarea[placeholder*="Ask" i], textarea[aria-label*="tapez" i], textarea[aria-label*="Start typing" i], .chat-input textarea'
+              );
+              if (chatInput) {
+                setNativeValue(chatInput, t('chatExportStudioPromptText') || "Exporte l'historique complet et fidèle de notre conversation dans un document Markdown (.md) dans le Studio.");
+              }
+            }
+          );
+        }
+      };
+
+      if (markdownContent.length > 15000) {
+        console.warn(`[MM] ChatExport : Contenu trop long (${markdownContent.length} chars) pour une note API, repli sur le fallback.`);
+        triggerFallback();
+        return; // Le return évite de réactiver le bouton manuellement ici (géré dans finally, mais le dialogue est ouvert)
+      }
 
       // Créer la note via le RPC direct en tâche de fond (sans toucher au DOM)
       await createNoteViaRpc(notebookId, noteTitle, markdownContent);
@@ -367,7 +399,32 @@
 
     } catch (err) {
       console.error('[MM] ChatExport : erreur lors de la création de la note :', err);
+      
+      // En cas d'erreur de l'API (ex: refus serveur, 429), déclencher le fallback
+      const markdownContent = formatAsMarkdown(collectConversationTurns());
+      const dateStr = new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+      const safeNotebookName = getActiveNotebookName().replace(/[\/\\?%*:|"<>\s]/g, '_');
+      const safeTitle = `Discussion_${safeNotebookName}_${dateStr}`;
+
+      const triggerFallback = () => {
+        if (typeof window.MM.showChatExportFallbackDialog === 'function') {
+          window.MM.showChatExportFallbackDialog(
+            () => {
+              if (window.MM.exportUtils && window.MM.exportUtils.downloadBlob) {
+                const blob = new Blob([markdownContent], { type: 'text/markdown;charset=utf-8;' });
+                window.MM.exportUtils.downloadBlob(blob, `${safeTitle}.md`);
+              }
+            },
+            () => {
+              const chatInput = document.querySelector('textarea[aria-label*="Ask" i], textarea[placeholder*="Ask" i], textarea[aria-label*="tapez" i], textarea[aria-label*="Start typing" i], .chat-input textarea');
+              if (chatInput) setNativeValue(chatInput, t('chatExportStudioPromptText'));
+            }
+          );
+        }
+      };
+      
       showButtonFeedback('error');
+      triggerFallback();
     } finally {
 
       // Réactiver le bouton après un délai

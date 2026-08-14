@@ -111,28 +111,31 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
-   * Trouve le conteneur principal de la note active ouverte.
-   * @returns {Element|null}
+   * Trouve le conteneur de l'élément à copier (Note classique ou artefact Markdown).
+   * @returns {{el: Element, type: 'note'|'markdown'}|null}
    */
-  function findNoteContainer() {
-    // 1. Exclure explicitement tous les artefacts non-notes (infographies, cartes mentales, résumés audio, etc.)
-    const activeArtifact = document.querySelector(
-      'artifact-viewer, [class*="artifact-view"], [class*="infographic"], [class*="mindmap"], [class*="audio-player"]'
-    );
-
-    // 2. Balises et classes exactes de NotebookLM pour les NOTES textuelles uniquement
-    const explicit = document.querySelector('note-editor, .note-editor, form.note-form, .note-title-container');
-    if (explicit) {
-      // S'assurer qu'il ne s'agit pas d'un sous-élément d'artefact
-      if (!explicit.closest('artifact-viewer, [class*="artifact-view"]')) {
-        return explicit.closest('note-editor, form.note-form') || explicit;
-      }
+  function findCopyableContainer() {
+    // 1. Détection des Notes classiques
+    const explicitNote = document.querySelector('note-editor, .note-editor, form.note-form, .note-title-container');
+    if (explicitNote && !explicitNote.closest('artifact-viewer, [class*="artifact-view"]')) {
+      return { el: explicitNote.closest('note-editor, form.note-form') || explicitNote, type: 'note' };
     }
 
-    // 3. Fallback via le bouton corbeille natif DE NOTE uniquement (note-editor-delete-button)
     const deleteBtn = document.querySelector('button.note-editor-delete-button');
     if (deleteBtn && !deleteBtn.closest('artifact-viewer, [class*="artifact-view"]')) {
-      return deleteBtn.closest('note-editor, form.note-form, div.note-title-container') || deleteBtn.parentElement;
+      return { el: deleteBtn.closest('note-editor, form.note-form, div.note-title-container') || deleteBtn.parentElement, type: 'note' };
+    }
+
+    // 2. Détection des artefacts Markdown (.md / .markdown)
+    const artifactViewer = document.querySelector('artifact-viewer, [class*="artifact-view"]');
+    if (artifactViewer) {
+      const titleInput = artifactViewer.querySelector('input.artifact-title, .title-label-inner, input[aria-label*="titre" i]');
+      if (titleInput) {
+        const titleText = (titleInput.value || titleInput.textContent || '').trim().toLowerCase();
+        if (titleText.endsWith('.md') || titleText.endsWith('.markdown')) {
+          return { el: artifactViewer, type: 'markdown' };
+        }
+      }
     }
 
     return null;
@@ -170,26 +173,28 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
-   * Extrait le titre et le contenu de la note active et effectue la copie Dual-MIME sans sources.
-   * @param {Element} noteContainer
+   * Extrait le titre et le contenu de la note/artefact active et effectue la copie Dual-MIME sans sources.
+   * @param {{el: Element, type: 'note'|'markdown'}} containerInfo
    * @param {HTMLButtonElement} btnElement
    */
-  async function handleCopyNoteWithoutSources(noteContainer, btnElement) {
+  async function handleCopyNoteWithoutSources(containerInfo, btnElement) {
     try {
-      if (!noteContainer) {
-        noteContainer = findNoteContainer();
+      if (!containerInfo) {
+        containerInfo = findCopyableContainer();
       }
-      if (!noteContainer) return;
+      if (!containerInfo) return;
+      
+      const { el: container, type } = containerInfo;
 
-      // 1. Extraire le titre de la note (cibler uniquement les champs de saisie ou balises H1-H3)
+      // 1. Extraire le titre (cibler uniquement les champs de saisie ou balises H1-H3)
       let titleText = '';
-      const inputEl = noteContainer.querySelector(
-        'input.note-header__editable-title, input[aria-label*="titre" i], input[formcontrolname="name"], input.title-input'
+      const inputEl = container.querySelector(
+        'input.note-header__editable-title, input.artifact-title, input[aria-label*="titre" i], input[formcontrolname="name"], input.title-input'
       );
       if (inputEl && typeof inputEl.value === 'string' && inputEl.value.trim().length > 0) {
         titleText = inputEl.value.trim();
       } else {
-        const headingEl = noteContainer.querySelector('h1, h2, h3');
+        const headingEl = container.querySelector('h1, h2, h3, .title-label-inner');
         if (headingEl && headingEl.textContent && headingEl.textContent.trim().length > 0) {
           titleText = headingEl.textContent.trim();
         }
@@ -200,30 +205,37 @@
         titleText = '';
       }
 
-      // 2. Extraire le corps de la note
-      const contentEl = noteContainer.querySelector(
+      // 2. Extraire le corps
+      const contentEl = container.querySelector(
         'labs-tailwind-doc-viewer, element-list-renderer, .note-editor--readonly, .content, .note-content, [contenteditable], .ProseMirror, [class*="content"], [class*="body"]'
-      ) || noteContainer;
+      ) || container;
 
       if (!contentEl) {
-        console.warn('[MM] NoteCopy : Aucun conteneur de contenu trouvé dans la note.');
+        console.warn('[MM] NoteCopy : Aucun conteneur de contenu trouvé.');
         return;
       }
 
-      // 3. Générer le HTML nettoyé et convertir ce HTML nettoyé en Markdown riche via Turndown (html-to-md.js)
-      const cleanHtmlBody = cleanHtmlCitations(contentEl);
-
+      // 3. Générer le HTML nettoyé et le Markdown
+      let cleanHtmlBody = '';
       let markdownBody = '';
-      const converter = window.MM.convertHtmlToMarkdown || window.MM.htmlToMd;
-      if (typeof converter === 'function') {
-        markdownBody = converter(cleanHtmlBody);
-      } else {
-        const rawTextBody = contentEl.textContent || '';
-        markdownBody = cleanMarkdownCitations(rawTextBody);
-      }
 
-      // Purger d'éventuels résidus parasites dans le Markdown
-      markdownBody = cleanMarkdownCitations(markdownBody);
+      if (type === 'markdown') {
+        // Mode artefact Markdown : Extraction textuelle fidèle (innerText)
+        markdownBody = contentEl.innerText || contentEl.textContent || '';
+        // Épuration des reliquats UI de Google qui pourraient s'infiltrer
+        markdownBody = markdownBody.replace(/Thumb up|Thumb down|Copy|Good response|Bad response|expand_content/gi, '').trim();
+        cleanHtmlBody = `<pre>${markdownBody}</pre>`;
+      } else {
+        // Mode Note classique
+        cleanHtmlBody = cleanHtmlCitations(contentEl);
+        const converter = window.MM.convertHtmlToMarkdown || window.MM.htmlToMd;
+        if (typeof converter === 'function') {
+          markdownBody = converter(cleanHtmlBody);
+        } else {
+          markdownBody = cleanMarkdownCitations(contentEl.textContent || '');
+        }
+        markdownBody = cleanMarkdownCitations(markdownBody);
+      }
 
       // Combiner le titre avec le contenu
       const fullText = titleText ? `# ${titleText}\n\n${markdownBody}` : markdownBody;
@@ -289,8 +301,7 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   /**
-   * Vérifie la présence d'un note-viewer actif et y injecte le bouton "Copier sans sources"
-   * immédiatement à gauche de l'icône corbeille (suppression native).
+   * Vérifie la présence d'un note-viewer ou artefact md actif et y injecte le bouton "Copier sans sources"
    */
   function checkAndInjectNoteCopy() {
     // Garde-fou préférence active

@@ -532,5 +532,9 @@
   "noteCopyTooltip": {
     "message": "Notiz mit Formatierung ohne Quellenangaben kopieren",
     "description": "Tooltip für den Kopierbutton"
+  },
+  "chatExportStudioPromptText": {
+    "message": "Exportiere den vollständigen und genauen Verlauf unserer Unterhaltung in ein Markdown-Dokument (.md) im Studio. Schreibe es als ausführliches, chronologisches Transkript (Nutzeranfragen und vollständige Antworten des Assistenten, wobei alle Codeblöcke erhalten bleiben). Füge oben im Dokument einen Metadatenblock (Notizbuch, Datum, Sitzung) ein. Benenne die Datei mit der Endung .md.",
+    "description": "Prompt for fallback chat export to studio"
   }
 }

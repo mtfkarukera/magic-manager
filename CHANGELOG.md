@@ -4,6 +4,21 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
 
+## [0.28.0] — 2026-08-14
+
+### 📦 Batch ZIP Déduplication & UI Glassmorphism
+- **Déduplication au niveau ZIP (`getUniqueZipFileName`)** : Le module d'exportation en lot via ZIP gère désormais nativement les conflits de nom de fichiers, en incrémentant intelligemment (`Titre (2).md`, `Titre (3).pdf`) pour garantir aucune perte lors d'exports massifs de documents homonymes.
+- **Modale de progression Glassmorphic** : L'interface d'attente d'export s'aligne sur le design system avec un flou d'arrière-plan natif (`backdrop-filter`) et des angles fluides, sans bloquer le fil principal de l'UI.
+
+### 💬 Chat Export Fallback Verbatim
+- **Garde-fou Longueur API (15k caractères)** : L'export du chat surveille désormais activement les seuils de rejet de l'API NotebookLM. 
+- **Modale de Repli Double Action** : En cas de conversation fleuve ou d'erreur serveur, Magic Manager propose un dialogue élégant offrant le téléchargement direct du fichier `.md` ou, grâce à un prompt pré-rédigé multilingue (7 langues supportées), la délégation de la tâche de rédaction à l'IA du Studio de NotebookLM.
+
+### 📋 Dual-MIME & Extraction Universelle (Notes & Studio)
+- **Détection des Artefacts Markdown** : Le bouton "Copier sans sources" ne se limite plus aux notes classiques. Il détecte intelligemment si l'utilisateur consulte un artéfact généré (`.md` ou `.markdown`) dans le Studio.
+- **Règle Zéro Altération DOM Angular** : Injection strictement non-intrusive (au même niveau ou en position absolue) du bouton de copie, garantissant l'intégrité absolue de la réconciliation DOM interne d'Angular.
+- **Copie Textuelle Fidèle (`innerText`)** : Sur les artéfacts `.md`, l'extraction s'effectue purement par `innerText` en épurant les balises UI contextuelles Google, évitant ainsi toute dégradation due aux convertisseurs HTML-to-Markdown classiques.
+
 ## [0.27.0] — 2026-08-02
 
 ### 🎯 Refonte du Moteur de Détection des Doublons (Zero False-Positives)
