@@ -552,5 +552,13 @@
   "chatExportFallbackStudio": {
     "message": "✏ Générer dans le Studio (IA)",
     "description": "Bouton pour envoyer le prompt de génération dans le chat"
+  },
+  "settingsFeatureNoteCopy": {
+    "message": "📄 Copie de notes sans sources",
+    "description": "Toggle de la feature copie de note sans sources dans les paramètres"
+  },
+  "privacy100PercentLocal": {
+    "message": "🔒 100% Local",
+    "description": "Badge indiquant le fonctionnement 100% local dans la popup"
   }
 }

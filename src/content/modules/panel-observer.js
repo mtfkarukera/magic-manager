@@ -273,56 +273,64 @@
     if (globalPageObserver) globalPageObserver.disconnect();
     if (panelObserver && currentObservedPanel) panelObserver.disconnect();
 
+    function safeExecute(moduleName, injectionFn) {
+      try {
+        injectionFn();
+      } catch (err) {
+        console.warn(`[MM] [${moduleName}] Erreur d'injection isolée (les autres modules continuent) :`, err);
+      }
+    }
+
     try {
       // 1. Gérer l'observation du panneau des sources
-      tryObservePanel();
+      safeExecute('SourcePanelObserver', tryObservePanel);
 
       // 2. Recherche : Barre de recherche
       if (window.MM.isFeatureEnabled('search') && typeof window.MM.checkAndInjectSearch === 'function') {
-        window.MM.checkAndInjectSearch();
+        safeExecute('Search', window.MM.checkAndInjectSearch);
       }
 
       // 3. Chat Export : Bouton d'export de conversation
       if (window.MM.isFeatureEnabled('chatExport') && typeof window.MM.checkAndInjectChatExport === 'function') {
-        window.MM.checkAndInjectChatExport();
+        safeExecute('ChatExport', window.MM.checkAndInjectChatExport);
       }
 
       // 4. Syntaxe : Coloration des blocs de code
       if (window.MM.isFeatureEnabled('syntax') && typeof window.MM.scanAndHighlight === 'function') {
-        window.MM.scanAndHighlight();
+        safeExecute('Syntax', window.MM.scanAndHighlight);
       }
 
       // 4.5 Badges de type de source
       if (window.MM.isFeatureEnabled('badges') && typeof window.MM.injectBadges === 'function') {
-        window.MM.injectBadges();
+        safeExecute('Badges', window.MM.injectBadges);
       }
 
       // 4.6 Checkboxes et suppression Studio
       if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.dispatchStudioInjections === 'function') {
-        window.MM.dispatchStudioInjections();
+        safeExecute('StudioDelete', window.MM.dispatchStudioInjections);
       }
 
       // 4.7 Recherche Studio (Sprint 4)
       if (window.MM.isFeatureEnabled('studioSearch') && typeof window.MM.checkAndInjectStudioSearch === 'function') {
-        window.MM.checkAndInjectStudioSearch();
+        safeExecute('StudioSearch', window.MM.checkAndInjectStudioSearch);
       }
 
       // 4.8 Copie sans sources (Note Viewer / Studio — Sprint 4)
       if (window.MM.isFeatureEnabled('noteCopy') && typeof window.MM.checkAndInjectNoteCopy === 'function') {
-        window.MM.checkAndInjectNoteCopy();
+        safeExecute('NoteCopy', window.MM.checkAndInjectNoteCopy);
       }
 
       // 5. Injections individuelles (Poubelle, Export & Transfert) s'il y a un source-viewer actif
       const sourceViewer = document.querySelector('source-viewer');
       if (sourceViewer) {
         if (window.MM.isFeatureEnabled('delete') && typeof window.MM.checkAndInjectIndividualDelete === 'function') {
-          window.MM.checkAndInjectIndividualDelete();
+          safeExecute('IndividualDelete', window.MM.checkAndInjectIndividualDelete);
         }
         if (window.MM.isFeatureEnabled('export') && typeof window.MM.checkAndInjectIndividualExport === 'function') {
-          window.MM.checkAndInjectIndividualExport();
+          safeExecute('IndividualExport', window.MM.checkAndInjectIndividualExport);
         }
         if (window.MM.isFeatureEnabled('transfer') && typeof window.MM.checkAndInjectIndividualTransfer === 'function') {
-          window.MM.checkAndInjectIndividualTransfer();
+          safeExecute('IndividualTransfer', window.MM.checkAndInjectIndividualTransfer);
         }
       }
     } catch (err) {
@@ -397,6 +405,9 @@
       if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateBatchDeleteButtonState === 'function') {
         window.MM.updateBatchDeleteButtonState();
       }
+      if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateStudioBatchDeleteButtonState === 'function') {
+        window.MM.updateStudioBatchDeleteButtonState();
+      }
 
       // Second dispatch retardé — filet de sécurité pour les hydratations Angular tardives
       if (lateDispatchTimer) {
@@ -405,6 +416,9 @@
       lateDispatchTimer = setTimeout(function () {
         lateDispatchTimer = null;
         dispatchCentralInjections();
+        if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateStudioBatchDeleteButtonState === 'function') {
+          window.MM.updateStudioBatchDeleteButtonState();
+        }
         console.debug('[MM] Second dispatch post-resize exécuté (filet de sécurité)');
       }, LATE_DISPATCH_DELAY);
     }
@@ -444,6 +458,9 @@
         }
         if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateBatchDeleteButtonState === 'function') {
           window.MM.updateBatchDeleteButtonState();
+        }
+        if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateStudioBatchDeleteButtonState === 'function') {
+          window.MM.updateStudioBatchDeleteButtonState();
         }
       }, 300);
     }

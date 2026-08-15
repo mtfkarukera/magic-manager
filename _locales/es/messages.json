@@ -552,5 +552,13 @@
   "chatExportFallbackStudio": {
     "message": "✏ Generar vía Studio (IA)",
     "description": "Botón de inyección de prompt Studio en el diálogo de respaldo"
+  },
+  "settingsFeatureNoteCopy": {
+    "message": "📄 Copiar notas sin fuentes",
+    "description": "Toggle de la función copiar notas sin fuentes"
+  },
+  "privacy100PercentLocal": {
+    "message": "🔒 100% Local",
+    "description": "Insignia de 100% local"
   }
 }

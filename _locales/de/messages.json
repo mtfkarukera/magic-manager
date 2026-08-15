@@ -552,5 +552,13 @@
   "chatExportFallbackStudio": {
     "message": "✏ Via Studio generieren (KI)",
     "description": "Studio-Prompt-Schaltfläche im Rückfall-Dialog"
+  },
+  "settingsFeatureNoteCopy": {
+    "message": "📄 Notizen ohne Quellen kopieren",
+    "description": "Toggle für Notizen ohne Quellen kopieren Funktion"
+  },
+  "privacy100PercentLocal": {
+    "message": "🔒 100% Lokal",
+    "description": "Badge für 100% lokale Ausführung"
   }
 }

@@ -552,5 +552,13 @@
   "chatExportFallbackStudio": {
     "message": "✏ Generate via Studio (AI)",
     "description": "Studio prompt injection button in the fallback dialog"
+  },
+  "settingsFeatureNoteCopy": {
+    "message": "📄 Copy notes without sources",
+    "description": "Toggle for copy note without sources feature in settings"
+  },
+  "privacy100PercentLocal": {
+    "message": "🔒 100% Local",
+    "description": "Badge indicating 100% local execution in popup"
   }
 }

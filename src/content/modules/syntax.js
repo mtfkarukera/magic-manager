@@ -249,9 +249,21 @@
   }
 
   /**
-   * Nettoie les listeners.
+   * Nettoie les conteneurs décorés et restaure les balises pre natives.
    */
   function cleanupSyntax() {
+    const codeBlocks = document.querySelectorAll('.mm-code-block');
+    codeBlocks.forEach(block => {
+      const codeEl = block.querySelector('code');
+      const rawText = codeEl ? codeEl.textContent : '';
+      const originalPre = document.createElement('pre');
+      const originalCode = document.createElement('code');
+      originalCode.textContent = rawText;
+      originalPre.appendChild(originalCode);
+      if (block.parentNode) {
+        block.parentNode.replaceChild(originalPre, block);
+      }
+    });
     console.log('[MM] Module coloration syntaxique nettoyé');
   }
 

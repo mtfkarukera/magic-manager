@@ -206,6 +206,7 @@
       const checkbox = createElement('input', {
         type: 'checkbox',
         className: isMobile ? 'mm-studio-checkbox mm-studio-checkbox-mobile' : 'mm-studio-checkbox',
+        title: t('selectButton') || 'Cocher pour sélectionner',
         'aria-label': `${t('selectButton') || 'Sélectionner'} ${title || 'élément'}`
       });
       checkbox.dataset.mmUuid = itemKey;
@@ -224,25 +225,41 @@
       }
 
       if (isMobile) {
-        // En mode mobile, insérer simplement à gauche de la carte sans wrapper l'icône
         card.classList.add('mm-studio-mobile-item');
         card.insertBefore(checkbox, card.firstChild);
       } else {
-        // En mode desktop, survol d'icône avec wrapper
+        card.classList.add('mm-studio-item');
+        let iconWrapper = card.querySelector('.mm-studio-icon-wrapper');
         const nativeIcon = findNativeIcon(card);
-        if (nativeIcon) {
-          card.classList.add('mm-studio-item');
-          nativeIcon.classList.add('mm-studio-native-icon');
 
-          // Créer un wrapper relative pour confiner le survol à l'icône seule
-          const iconWrapper = createElement('div', { className: 'mm-studio-icon-wrapper' });
+        if (!iconWrapper && nativeIcon && nativeIcon.parentNode) {
+          iconWrapper = createElement('div', {
+            className: 'mm-studio-icon-wrapper',
+            title: t('selectButton') || 'Cocher pour sélectionner'
+          });
+
+          iconWrapper.addEventListener('click', function (e) {
+            e.stopPropagation();
+            if (e.target !== checkbox) {
+              checkbox.checked = !checkbox.checked;
+              handleCheckboxChange(checkbox);
+            }
+          });
+          iconWrapper.addEventListener('pointerdown', function (e) {
+            e.stopPropagation();
+          });
+          iconWrapper.addEventListener('mousedown', function (e) {
+            e.stopPropagation();
+          });
+
           nativeIcon.parentNode.insertBefore(iconWrapper, nativeIcon);
-
-          // checkbox en premier, nativeIcon en second dans le wrapper
           iconWrapper.appendChild(checkbox);
           iconWrapper.appendChild(nativeIcon);
+        } else if (iconWrapper) {
+          if (!iconWrapper.querySelector('.mm-studio-checkbox')) {
+            iconWrapper.insertBefore(checkbox, iconWrapper.firstChild);
+          }
         } else {
-          // Fallback si pas d'icône détectée
           card.insertBefore(checkbox, card.firstChild);
         }
       }
@@ -275,7 +292,13 @@
     const count = selectedUuids.size;
 
     if (count > 0) {
-      if (!batchDeleteWrapper) {
+      if (!batchDeleteWrapper || !document.body.contains(batchDeleteWrapper)) {
+        if (batchDeleteWrapper) {
+          batchDeleteWrapper.remove();
+          batchDeleteWrapper = null;
+          batchDeleteBtn = null;
+        }
+
         // Chercher une zone d'en-tête du Studio pour injecter le bouton
         const header = studioPanel.querySelector('.studio-header, [class*="header"], h2, h3');
 
@@ -285,7 +308,7 @@
         });
 
         batchDeleteBtn = createElement('button', {
-          className: 'mm-btn mm-btn-error',
+          className: 'mm-btn mm-btn-danger',
           style: 'flex: 1; justify-content: center; height: 36px; display: inline-flex; align-items: center;',
           textContent: `${t('studioDeleteButton') || 'Supprimer la sélection'} (${count})`,
           onClick: handleBatchDeleteClick
@@ -505,52 +528,34 @@
     const studioPanel = findStudioPanel();
     if (!studioPanel) return;
 
-    // Déconnecter temporairement l'observer pour éviter une cascade de mutations auto-déclenchée
-    if (studioObserver) studioObserver.disconnect();
     injectStudioCheckboxes(studioPanel);
-    if (studioObserver) {
-      studioObserver.observe(studioPanel, {
-        childList: true,
-        subtree: true
-      });
-    }
+    updateBatchDeleteButtonState();
   }
 
   // ═══════════════════════════════════════════════════════════════════════
   // Cycle de vie
   // ═══════════════════════════════════════════════════════════════════════
 
+  let initRetryCount = 0;
+
   function initStudioDelete() {
     if (typeof window.MM.isFeatureEnabled === 'function' &&
         !window.MM.isFeatureEnabled('batchDelete')) return;
 
-    let studioPanel = findStudioPanel();
+    const studioPanel = findStudioPanel();
     if (!studioPanel) {
-      // Retenter plus tard si le Studio n'est pas encore monté
-      setTimeout(initStudioDelete, 1000);
+      // Retenter jusqu'à 10 fois max (10s) si le Studio n'est pas encore monté
+      if (initRetryCount < 10) {
+        initRetryCount++;
+        setTimeout(initStudioDelete, 1000);
+      }
       return;
     }
-
-    // Observer les changements du panneau Studio pour injecter les checkboxes dynamiquement
-    studioObserver = new MutationObserver(function () {
-      dispatchStudioInjections();
-    });
-
-    studioObserver.observe(studioPanel, {
-      childList: true,
-      subtree: true
-    });
+    initRetryCount = 0;
 
     // Écouter les changements d'onglet mobile avec un handler nommé nettoyable
     mobileTabHandler = function () {
       setTimeout(function () {
-        const currentPanel = findStudioPanel();
-        if (currentPanel && currentPanel !== studioPanel) {
-          if (studioObserver) studioObserver.disconnect();
-          studioPanel = currentPanel;
-          studioObserver = new MutationObserver(dispatchStudioInjections);
-          studioObserver.observe(studioPanel, { childList: true, subtree: true });
-        }
         dispatchStudioInjections();
       }, 300);
     };
@@ -565,10 +570,7 @@
   }
 
   function cleanupStudioDelete() {
-    if (studioObserver) {
-      studioObserver.disconnect();
-      studioObserver = null;
-    }
+    initRetryCount = 0;
 
     if (mobileTabHandler && observedMobileTabs.length > 0) {
       observedMobileTabs.forEach(tab => {
@@ -584,25 +586,19 @@
       batchDeleteBtn = null;
     }
 
-    // Retirer toutes les checkboxes, wrappers et classes injectées
+    // Retirer toutes les checkboxes et restaurer les icônes natives
     const studioPanel = findStudioPanel();
     if (studioPanel) {
-      // Unwrapper les icônes natives
+      studioPanel.querySelectorAll('.mm-studio-checkbox').forEach(cb => cb.remove());
       studioPanel.querySelectorAll('.mm-studio-icon-wrapper').forEach(wrapper => {
-        const nativeIcon = wrapper.querySelector('.mm-studio-native-icon');
-        if (nativeIcon) {
+        const nativeIcon = wrapper.querySelector('mat-icon, svg, [class*="icon"], [class*="avatar"]');
+        if (nativeIcon && wrapper.parentNode) {
           wrapper.parentNode.insertBefore(nativeIcon, wrapper);
-          nativeIcon.classList.remove('mm-studio-native-icon');
         }
         wrapper.remove();
       });
-
-      studioPanel.querySelectorAll('.mm-studio-checkbox').forEach(cb => cb.remove());
-      studioPanel.querySelectorAll('.mm-studio-item').forEach(card => {
-        card.classList.remove('mm-studio-item');
-      });
-      studioPanel.querySelectorAll('.mm-studio-mobile-item').forEach(card => {
-        card.classList.remove('mm-studio-mobile-item');
+      studioPanel.querySelectorAll('.mm-studio-item, .mm-studio-mobile-item').forEach(card => {
+        card.classList.remove('mm-studio-item', 'mm-studio-mobile-item');
       });
     }
 
@@ -613,6 +609,7 @@
 
   // Exposition publique
   window.MM.dispatchStudioInjections = dispatchStudioInjections;
+  window.MM.updateStudioBatchDeleteButtonState = updateBatchDeleteButtonState;
   window.MM.initStudioDelete = initStudioDelete;
   window.MM.cleanupStudioDelete = cleanupStudioDelete;
 })();

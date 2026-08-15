@@ -51,7 +51,7 @@
   /* Bordures */
   --mm-radius-sm: 4px;
   --mm-radius-md: 8px;
-  --mm-radius-lg: 12px;
+  --mm-radius-lg: 16px;
   --mm-radius-full: 9999px;
 
   /* Transitions cinématiques premium */
@@ -166,6 +166,11 @@
     opacity: 1;
     transform: scale(1) translateY(0);
   }
+}
+
+@keyframes mm-spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -471,7 +476,7 @@
 .mm-dialog-warning {
   font-family: var(--mm-font-family);
   font-size: var(--mm-font-size-sm);
-  color: #d97706;
+  color: #b45309;
   background: rgba(245, 158, 11, 0.08);
   border-left: 3px solid #f59e0b;
   padding: var(--mm-spacing-sm) var(--mm-spacing-md);
@@ -635,17 +640,24 @@
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
+  box-sizing: border-box;
+  width: auto;
   animation: mm-slideIn var(--mm-transition-normal) ease-out;
 }
 
 .mm-search-bar.mm-desktop-header {
   position: relative;
   margin: 8px 16px;
+  max-width: calc(100% - 32px);
+  box-sizing: border-box;
   z-index: 99;
 }
 
 .mm-search-input {
   flex: 1;
+  min-width: 0 !important;
+  width: 100%;
+  box-sizing: border-box;
   font-family: var(--mm-font-family);
   font-size: var(--mm-font-size-md);
   color: var(--mm-on-surface);
@@ -654,6 +666,7 @@
   border-radius: var(--mm-radius-full);
   padding: var(--mm-spacing-sm) var(--mm-spacing-md);
   outline: none;
+  text-overflow: ellipsis;
   transition: border-color var(--mm-transition-fast), box-shadow var(--mm-transition-fast);
 }
 
@@ -762,11 +775,6 @@
 /* Spinner de scan (rotation de l'icône SVG pendant la Passe 2) */
 .mm-search-dupes-btn.mm-scanning svg {
   animation: mm-spin 1s linear infinite;
-}
-
-@keyframes mm-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -1168,10 +1176,6 @@
   vertical-align: middle;
 }
 
-@keyframes mm-spin {
-  to { transform: rotate(360deg); }
-}
-
 /* Styles de la modale de fusion (Merge Dialog) */
 .mm-merge-dialog {
   width: 400px;
@@ -1280,20 +1284,8 @@
   border-radius: 50%;
   width: 28px;
   height: 28px;
-  animation: mmSpin 1s linear infinite;
+  animation: mm-spin 1s linear infinite;
   margin-bottom: 16px;
-}
-@keyframes mmFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
-@keyframes mmSlideUp {
-  from { transform: translateY(20px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
-@keyframes mmSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
@@ -1369,55 +1361,121 @@
    ═══════════════════════════════════════════════════════════════════════ */
 
 .mm-studio-icon-wrapper {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  z-index: 10 !important;
+  position: relative !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 24px !important;
+  height: 24px !important;
+  flex-shrink: 0 !important;
+  margin-right: var(--mm-spacing-sm, 8px) !important;
+  z-index: 20 !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
 }
 
-.mm-studio-checkbox {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 20px;
-  height: 20px;
+.mm-studio-icon-wrapper mat-icon,
+.mm-studio-icon-wrapper svg,
+.mm-studio-icon-wrapper [class*="icon"],
+.mm-studio-icon-wrapper [class*="avatar"] {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 20px !important;
+  height: 20px !important;
+  transition: opacity var(--mm-transition-fast) ease;
+  pointer-events: none !important;
+}
+
+.mm-studio-icon-wrapper .mm-studio-checkbox {
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) scale(1) !important;
+  width: 18px !important;
+  height: 18px !important;
   margin: 0 !important;
   padding: 0 !important;
   opacity: 0;
+  cursor: pointer !important;
+  z-index: 25 !important;
   pointer-events: auto !important;
-  cursor: pointer;
-  accent-color: var(--mm-primary);
-  z-index: 10 !important;
+  accent-color: var(--mm-primary) !important;
+  border-radius: 4px !important;
+  transition: opacity var(--mm-transition-fast) ease, transform var(--mm-transition-fast) ease, box-shadow var(--mm-transition-fast) ease !important;
 }
 
-.mm-studio-native-icon {
-  transition: opacity var(--mm-transition-fast);
-  pointer-events: none;
+.mm-studio-item {
+  position: relative !important;
+  transition: background-color var(--mm-transition-fast), border-color var(--mm-transition-fast);
 }
 
-/* La checkbox devient visible au survol direct d'elle-même ou si cochée */
+/* État coché : fond de carte délicatement surligné (style Google Drive) + bordure gauche */
+.mm-studio-item:has(.mm-studio-checkbox:checked) {
+  background-color: var(--mm-surface-container, rgba(66, 133, 244, 0.1)) !important;
+  border-left: 3px solid var(--mm-primary) !important;
+  border-radius: var(--mm-radius-sm, 8px);
+}
+
+/* 1. Survol de la carte : la checkbox apparaît en mode visible contrasté (opacity 0.75) */
+.mm-studio-item:hover .mm-studio-checkbox {
+  opacity: 0.75 !important;
+}
+
+.mm-studio-item:hover .mm-studio-icon-wrapper mat-icon,
+.mm-studio-item:hover .mm-studio-icon-wrapper svg,
+.mm-studio-item:hover .mm-studio-icon-wrapper [class*="icon"],
+.mm-studio-item:hover .mm-studio-icon-wrapper [class*="avatar"] {
+  opacity: 0.15 !important;
+}
+
+/* 2. Survol direct de l'icône/wrapper / focus clavier / état coché : 100% net + Halo Material 3 + Zoom scale(1.15) */
+.mm-studio-icon-wrapper:hover .mm-studio-checkbox,
 .mm-studio-checkbox:hover,
+.mm-studio-checkbox:focus-visible,
 .mm-studio-checkbox:checked {
   opacity: 1 !important;
+  transform: translate(-50%, -50%) scale(1.15) !important;
+  box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.4), 0 2px 8px rgba(0,0,0,0.3) !important;
 }
 
-/* Masquer l'icône native uniquement au survol de la checkbox ou si cochée */
-.mm-studio-checkbox:hover ~ .mm-studio-native-icon,
-.mm-studio-checkbox:checked ~ .mm-studio-native-icon {
+/* Masquage total de l'icône native quand le wrapper est survolé directement ou la case cochée */
+.mm-studio-icon-wrapper:hover mat-icon,
+.mm-studio-icon-wrapper:hover svg,
+.mm-studio-icon-wrapper:hover [class*="icon"],
+.mm-studio-icon-wrapper:hover [class*="avatar"],
+.mm-studio-checkbox:hover ~ mat-icon,
+.mm-studio-checkbox:hover ~ svg,
+.mm-studio-checkbox:hover ~ [class*="icon"],
+.mm-studio-checkbox:hover ~ [class*="avatar"],
+.mm-studio-checkbox:focus-visible ~ mat-icon,
+.mm-studio-checkbox:focus-visible ~ svg,
+.mm-studio-checkbox:focus-visible ~ [class*="icon"],
+.mm-studio-checkbox:focus-visible ~ [class*="avatar"],
+.mm-studio-checkbox:checked ~ mat-icon,
+.mm-studio-checkbox:checked ~ svg,
+.mm-studio-checkbox:checked ~ [class*="icon"],
+.mm-studio-checkbox:checked ~ [class*="avatar"],
+.mm-studio-item:has(.mm-studio-checkbox:checked) .mm-studio-icon-wrapper mat-icon,
+.mm-studio-item:has(.mm-studio-checkbox:checked) .mm-studio-icon-wrapper svg {
   opacity: 0 !important;
 }
 
+.mm-studio-checkbox:focus-visible {
+  outline: 2px solid var(--mm-primary) !important;
+  outline-offset: 2px;
+}
+
 /* Mode mobile : la checkbox s'insère à côté de l'icône, reste visible en permanence */
-.mm-studio-checkbox-mobile {
+.mm-studio-mobile-item .mm-studio-checkbox {
   position: static !important;
   transform: none !important;
   opacity: 1 !important;
   pointer-events: auto !important;
   margin-right: var(--mm-spacing-sm) !important;
-  flex-shrink: 0;
+  flex-shrink: 0 !important;
+  align-self: center !important;
 }
 
 /* Actions batch Studio (Supprimer + Désélectionner tout) */

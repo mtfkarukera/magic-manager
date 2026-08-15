@@ -552,5 +552,13 @@
   "chatExportFallbackStudio": {
     "message": "✏ Studio経由で生成（AI）",
     "description": "フォールバックダイアログのStudioプロンプトボタン"
+  },
+  "settingsFeatureNoteCopy": {
+    "message": "📄 ソースなしでメモをコピー",
+    "description": "設定のソースなしメモコピー切り替え"
+  },
+  "privacy100PercentLocal": {
+    "message": "🔒 100% ローカル",
+    "description": "100%ローカル実行バッジ"
   }
 }

@@ -2,7 +2,32 @@
 
 Toutes les modifications notables de ce projet sont documentées dans ce fichier.
 
-Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte le [Versionnage Sémantique](https://semver.org/lang/fr/).
+Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte une numérotation sémantique `X.Y.Z` (où `X` consacre la maturité stable de production, `Y` la branche d'innovation des 28 sprints majeurs, et `Z` les consolidations et audits qualité).
+
+## [1.28.1] — 2026-08-15
+
+### 🏷️ Transition Majeure vers la Version de Production Stable (v1.X.X)
+- **Maturité Logicielle (`1.28.1`)** : Passage officiel du cycle de développement initial `0.X.X` au palier de production stable `1.X.X`. Le chiffre `1` consacre la maturité et la robustesse de l'extension pour une utilisation quotidienne et professionnelle fiable, tout en conservant l'historique et la continuité de nos 28 sprints d'innovation (`.28`) et de consolidation qualité (`.1`).
+
+### 🛡️ Architecture Résiliente, Safe Runner & Robustesse DOM Studio
+- **Isolation Étanche des Modules (*Safe Runner* dans `panel-observer.js`)** : Encapsulation de chaque module d'injection (Syntaxe, Badges, Suppression Studio, Recherche Studio, Copie de note, Actions individuelles) dans son propre bac à sable d'exécution `safeExecute`. Élimination totale de tout effet domino lors d'une mutation inattendue du DOM d'Angular.
+- **Alignement Pixel-Perfect Absolu (`studio-delete.js`)** : Encapsulation locale de l'icône dans un conteneur 24x24px (`mm-studio-icon-wrapper`) avec centrage absolu 50%/50% (0 pixel de décalage), injection idempotente et nettoyage réversible (*unwrapping* propre dans `cleanupStudioDelete()`).
+- **Zone Tactile 24x24px & Clic Infaillible (`studio-delete.js`)** : Élévation de surface à `z-index: 25` et interception `stopPropagation` sur toute la zone 24x24px de l'icône. Cliquer sur l'icône/case sélectionne immédiatement la carte sans jamais ouvrir la note (le clic sur le titre ouvre la note).
+- **Persistance Physique du Bouton Batch Studio (`studio-delete.js`)** : Détection des nœuds détachés (`!document.body.contains(batchDeleteWrapper)`), assurant la réinjection continue du bouton rouge « Supprimer la sélection » lors des redimensionnements de fenêtre (Desktop $\leftrightarrow$ Mobile) et des bascules d'onglets.
+- **Gouvernance & Sanctuarisation ADR (`AGENTS.md`)** : Enregistrement de l'Architecture Decision Record officiel pour immuniser le wrapper d'icône contre les faux positifs lors des audits futurs.
+- **Élasticité Bidirectionnelle de la Barre des Sources (`magic-manager.css`)** : Déverrouillage Flexbox sans plancher (`min-width: 0 !important; width: 100%; box-sizing: border-box;`) et plafonnement strict (`max-width: calc(100% - 32px)`), permettant à la barre de recherche des sources de s'étirer et de se comprimer continuellement avec troncature du placeholder (`text-overflow: ellipsis`) lors des réductions de volet.
+- **Nettoyage Coloration Syntaxique (`syntax.js`)** : Restauration propre des éléments `<pre><code>` natifs dans `cleanupSyntax()`.
+
+### ♿ Accessibilité Numérique WCAG 2.1 AA & Affordance Renforcée
+- **Chorégraphie d'Affordance Progressive (`magic-manager.css`)** :
+  - *Au repos* : Interface 100% native Google, zéro case visible.
+  - *Survol de la carte* : Case révélée nettement à `opacity: 0.75` avec icône estompée à 15%.
+  - *Survol direct de la zone 24x24px / Focus clavier* : Case à 100% nette, micro-zoom tactile `scale(1.15)` et halo bleu Material 3 éclatant (`box-shadow: 0 0 0 4px rgba(66, 133, 244, 0.4)`).
+  - *Carte sélectionnée* : Surlignage bleuté doux et bordure gauche Material (`border-left: 3px solid var(--mm-primary)`).
+- **Contraste Lisible en Mode Clair (`popup.css`)** : Correction du ratio de contraste sur le bandeau d'avertissement (`color: var(--warning-text, #5a3b00)`).
+- **Navigation Clavier Intégrale de la Popup (`popup.css`)** : Masquage accessible des cases à cocher avec prise en charge du focus visible (`:focus-within`), permettant la navigation au `Tab` et la bascule à l'`Espace` sur l'ensemble des 12 fonctionnalités.
+- **Internationalisation Multilingue Popup (`popup.html` & `popup.js`)** : Intégration des attributs `data-i18n` et de `applyI18n()` pour une traduction dynamique instantanée dans les 7 langues supportées.
+- **Finition Material Design 3 (`magic-manager.css`)** : Rayon de courbure `--mm-radius-lg` à 16px pour les modales et déduplication des keyframes d'animation CSS (`@keyframes mm-spin`).
 
 ## [0.28.0] — 2026-08-14
 

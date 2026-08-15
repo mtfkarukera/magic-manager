@@ -1,6 +1,6 @@
 # 🧩 Magic Manager for Gemini Notebook
 
-![GitHub release](https://img.shields.io/badge/release-v0.28.0-green)
+![GitHub release](https://img.shields.io/badge/release-v1.28.1-green)
 ![GitHub license](https://img.shields.io/github/license/mtfkarukera/magic-manager?color=blue)
 
 **Magic Manager** est une extension Firefox qui enrichit l'interface de **Google Gemini Notebook** (anciennement NotebookLM) sur [notebook.google.com](https://notebook.google.com/) avec des fonctionnalités avancées de productivité.
@@ -24,6 +24,13 @@ Magic Manager est optimisé pour être le plus léger possible et préserver vos
 - **0% CPU au repos** : L'observation des modifications de l'interface par MutationObserver est centralisée, debouncée à 250ms, et filtrée pour éviter tout calcul inutile lorsque la page est stable.
 - **Requêtes directes via l'API interne (RPC)** : Pas de simulations de clics de souris ou de manipulations visuelles lentes. L'extension communique directement en tâche de fond avec l'API officielle sécurisée de Gemini Notebook pour toutes ses actions lourdes (suppression, fusion, etc.).
 - **Zéro script persistant** : L'extension s'exécute uniquement sous forme de scripts de contenu injectés à la demande. Aucun script d'arrière-plan permanent ne consomme votre mémoire vive (RAM) inutilement.
+
+## 🏷️ Logique de Versioning
+
+Magic Manager adopte une numérotation sémantique pragmatique **`X.Y.Z`** :
+- **`X` (Maturité Logicielle / Majeur)** : `1` atteste d'une version stable de production, mature, éprouvée et recommandée pour les travaux quotidiens et professionnels (faisant suite au cycle initial de R&D `0.X.X`).
+- **`Y` (Branche Fonctionnelle / Sprints)** : Reflète l'historique et l'incrémentation continue de nos 28 sprints de développement.
+- **`Z` (Consolidation & Patch)** : Indique les itérations d'audit technique, de robustesse, d'accessibilité et de maintenance qualité.
 
 ## 📦 Installation
 

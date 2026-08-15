@@ -23,6 +23,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   const warningBanner = document.getElementById('permission-warning-banner');
   const btnGrantPermission = document.getElementById('btn-grant-permission');
 
+  // Internationalisation automatique des éléments avec data-i18n
+  function applyI18n() {
+    if (typeof browser !== 'undefined' && browser.i18n?.getMessage) {
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        const msg = browser.i18n.getMessage(key);
+        if (msg) {
+          el.textContent = msg;
+        }
+      });
+    }
+  }
+
+  applyI18n();
+
   // Afficher la version dynamique de l'extension
   const versionEl = document.getElementById('ext-version');
   if (versionEl && typeof browser !== 'undefined' && browser.runtime?.getManifest) {

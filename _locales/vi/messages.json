@@ -552,5 +552,13 @@
   "chatExportFallbackStudio": {
     "message": "✏ Tạo qua Studio (AI)",
     "description": "Nút chèn prompt Studio trong hộp thoại dự phòng"
+  },
+  "settingsFeatureNoteCopy": {
+    "message": "📄 Sao chép ghi chú không có nguồn",
+    "description": "Bật/tắt tính năng sao chép ghi chú không có nguồn trong cài đặt"
+  },
+  "privacy100PercentLocal": {
+    "message": "🔒 100% Cục bộ",
+    "description": "Huy hiệu thực thi 100% cục bộ"
   }
 }

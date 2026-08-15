@@ -1,6 +1,6 @@
 # Privacy Policy — Magic Manager for Gemini Notebook
 
-*Last updated: July 31, 2026*
+*Last updated: August 15, 2026*
 
 **Magic Manager for Gemini Notebook** is committed to protecting your privacy. This Privacy Policy describes how we handle information when you use our browser extension.
 
@@ -12,13 +12,12 @@ The extension communicates exclusively with the official Google Gemini Notebook 
 
 ## 3. Permissions Used
 - `storage` : Used solely to save your local user preferences (such as enabling/disabling features).
-- `activeTab` / `scripting` : Required to inject content scripts into `notebook.google.com` and `notebooklm.google.com` to enhance the user interface.
 
 ---
 
 # Politique de Confidentialité — Magic Manager for Gemini Notebook
 
-*Dernière mise à jour : 31 juillet 2026*
+*Dernière mise à jour : 15 août 2026*
 
 **Magic Manager for Gemini Notebook** s'engage à protéger ta vie privée. Cette politique de confidentialité décrit comment sont gérées tes informations lors de l'utilisation de l'extension.
 
@@ -30,4 +29,3 @@ L'extension communique exclusivement avec les API officielles de Google Gemini N
 
 ## 3. Permissions utilisées
 - `storage` : Utilisé uniquement pour sauvegarder tes préférences locales (activation/désactivation de fonctionnalités).
-- `activeTab` / `scripting` : Requis pour injecter les scripts de contenu sur `notebook.google.com` et `notebooklm.google.com` afin d'enrichir l'interface utilisateur.
