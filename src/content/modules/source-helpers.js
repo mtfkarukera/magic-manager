@@ -152,34 +152,54 @@
     }
 
     // Sélecteurs précis — checkboxes MDC natives (structure réelle confirmée par DevTools)
-    const checkboxes = Array.from(list.querySelectorAll(
+    const rawCheckboxes = Array.from(list.querySelectorAll(
       '.select-checkbox-container input[type="checkbox"], input[type="checkbox"], [role="checkbox"]'
     ));
 
-    return checkboxes.filter(function (cb) {
+    const seenCards = new Set();
+    const checkedCheckboxes = [];
+
+    for (let i = 0; i < rawCheckboxes.length; i++) {
+      const cb = rawCheckboxes[i];
+
       // Exclure la case globale "Tout sélectionner" de façon sémantique
       const isGlobal = selectAllRow && (cb === selectAllRow || selectAllRow.contains(cb));
-      if (isGlobal) return false;
+      if (isGlobal) continue;
 
       // Vérifier si la checkbox est cochée (structure MDC réelle)
-      const isCheckedVisually =
-        cb.checked === true ||
-        cb.getAttribute('aria-checked') === 'true';
+      // Si l'élément est un input type checkbox, sa propriété JS .checked fait foi
+      let isChecked = false;
+      if (cb.tagName === 'INPUT' && cb.type === 'checkbox') {
+        isChecked = cb.checked === true;
+      } else {
+        isChecked =
+          cb.getAttribute('aria-checked') === 'true' ||
+          cb.classList.contains('mat-mdc-checkbox-checked') ||
+          cb.classList.contains('mat-checkbox-checked');
+      }
 
-      if (!isCheckedVisually) return false;
+      if (!isChecked) continue;
 
       const cardInfo = findSourceCardFromCheckbox(cb);
-      const cardTitle = cardInfo ? (cardInfo.title || '').trim().toLowerCase() : '';
+      if (!cardInfo || !cardInfo.card) continue;
+
+      // Déduplication stricte : ne compter qu'une seule case par carte source unique
+      if (seenCards.has(cardInfo.card)) continue;
+
+      const cardTitle = (cardInfo.title || '').trim().toLowerCase();
 
       // Si la source correspond au document ouvert dans le source-viewer (lecture seule), l'exclure
       if (activeViewerTitle && cardTitle) {
         if (cardTitle.includes(activeViewerTitle) || activeViewerTitle.includes(cardTitle)) {
-          return false;
+          continue;
         }
       }
 
-      return true;
-    });
+      seenCards.add(cardInfo.card);
+      checkedCheckboxes.push(cb);
+    }
+
+    return checkedCheckboxes;
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -558,6 +578,132 @@
     return container;
   }
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // Synchronisation & Persistance de la sélection des sources (par UUID)
+  // ═══════════════════════════════════════════════════════════════════════
+
+  let lastSelectedSourceIds = null;
+  let isRestoringSelection = false;
+
+  /**
+   * Associe l'attribut data-mm-source-id="<uuid>" sur chaque carte DOM de source
+   * à partir des données fournies par l'API RPC getNotebookSources.
+   */
+  function tagSourceCardsWithIds() {
+    const cards = findSourceCards();
+    if (!cards || cards.length === 0) return;
+
+    const rpcSources = typeof window.MM.getRpcSourcesList === 'function' ? window.MM.getRpcSourcesList() : [];
+    const typesCache = typeof window.MM.getSourceTypesCache === 'function' ? window.MM.getSourceTypesCache() : null;
+
+    cards.forEach(function (card, index) {
+      if (card.getAttribute('data-mm-source-id')) return;
+
+      // 1. Priorité à la correspondance ordinale directe avec le RPC
+      if (rpcSources && rpcSources[index] && rpcSources[index].id) {
+        const stretchedBtn = card.querySelector('button.source-stretched-button');
+        const ariaLabel = (stretchedBtn ? stretchedBtn.getAttribute('aria-label') : '') || '';
+        const cardTitle = ariaLabel.trim().toLowerCase();
+        const rpcTitle = (rpcSources[index].title || '').trim().toLowerCase();
+
+        if (!cardTitle || !rpcTitle || cardTitle.startsWith(rpcTitle.slice(0, 15)) || rpcTitle.startsWith(cardTitle.slice(0, 15))) {
+          card.setAttribute('data-mm-source-id', rpcSources[index].id);
+          return;
+        }
+      }
+
+      // 2. Recherche par correspondance de titre dans le cache
+      if (typesCache) {
+        const stretchedBtn = card.querySelector('button.source-stretched-button');
+        const ariaLabel = (stretchedBtn ? stretchedBtn.getAttribute('aria-label') : '') || '';
+        const cardTitle = ariaLabel.trim().toLowerCase();
+        if (cardTitle && typesCache.has(cardTitle)) {
+          const info = typesCache.get(cardTitle);
+          if (info && info.id) {
+            card.setAttribute('data-mm-source-id', info.id);
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Mémorise la sélection active des sources de l'utilisateur sous forme d'un Set d'UUIDs.
+   */
+  function recordSourceSelection() {
+    if (isRestoringSelection) return;
+
+    tagSourceCardsWithIds();
+    const checkedCbs = getCheckedSourceCheckboxes();
+    const selectedIds = new Set();
+
+    for (let i = 0; i < checkedCbs.length; i++) {
+      const cardInfo = findSourceCardFromCheckbox(checkedCbs[i]);
+      if (cardInfo && cardInfo.card) {
+        const sid = cardInfo.card.getAttribute('data-mm-source-id');
+        if (sid) {
+          selectedIds.add(sid);
+        }
+      }
+    }
+
+    if (selectedIds.size > 0 || (lastSelectedSourceIds !== null && checkedCbs.length === 0)) {
+      lastSelectedSourceIds = selectedIds;
+    }
+  }
+
+  /**
+   * Restaure la sélection de sources de l'utilisateur lors d'un changement de layout (Desktop <-> Mobile).
+   */
+  function restoreSourceSelection() {
+    if (!lastSelectedSourceIds || lastSelectedSourceIds.size === 0) return;
+
+    const cards = findSourceCards();
+    if (!cards || cards.length === 0) return;
+
+    tagSourceCardsWithIds();
+
+    isRestoringSelection = true;
+    let restoredCount = 0;
+
+    try {
+      cards.forEach(function (card) {
+        const sid = card.getAttribute('data-mm-source-id');
+        if (!sid) return;
+
+        const shouldBeChecked = lastSelectedSourceIds.has(sid);
+        const cb = card.querySelector('.select-checkbox-container input[type="checkbox"], input[type="checkbox"], [role="checkbox"]');
+        if (!cb) return;
+
+        let isCurrentlyChecked = false;
+        if (cb.tagName === 'INPUT' && cb.type === 'checkbox') {
+          isCurrentlyChecked = cb.checked === true;
+        } else {
+          isCurrentlyChecked =
+            cb.getAttribute('aria-checked') === 'true' ||
+            cb.classList.contains('mat-mdc-checkbox-checked') ||
+            cb.classList.contains('mat-checkbox-checked');
+        }
+
+        if (isCurrentlyChecked !== shouldBeChecked) {
+          cb.click();
+          restoredCount++;
+        }
+      });
+
+      if (restoredCount > 0) {
+        console.log(`[MM] Sélection de sources restaurée fidèlement (${lastSelectedSourceIds.size} source(s) active(s)) post-changement de layout`);
+      }
+    } catch (err) {
+      console.error('[MM] Erreur lors de la restauration de la sélection :', err);
+    } finally {
+      isRestoringSelection = false;
+      if (typeof window.MM.debouncedPanelInteraction === 'function') {
+        window.MM.debouncedPanelInteraction();
+      }
+    }
+  }
+
   // Registre de source auto-cochée par Angular (viewer-open)
   window.MM.setAutoCheckedSource = setAutoCheckedSource;
   window.MM.getAutoCheckedSource = getAutoCheckedSource;
@@ -565,4 +711,7 @@
   window.MM.getSourceProvenance = getSourceProvenance;
   window.MM.getStudioCardUuid = getStudioCardUuid;
   window.MM.getOrCreateStudioHeaderContainer = getOrCreateStudioHeaderContainer;
+  window.MM.tagSourceCardsWithIds = tagSourceCardsWithIds;
+  window.MM.recordSourceSelection = recordSourceSelection;
+  window.MM.restoreSourceSelection = restoreSourceSelection;
 })();

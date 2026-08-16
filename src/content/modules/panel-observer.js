@@ -160,26 +160,43 @@
    * le titre pour pouvoir décocher automatiquement à la fermeture du viewer.
    * @param {MouseEvent} e
    */
+  /**
+   * Intercepte les clics sur le panneau sources en phase de capture.
+   * Distingue les clics intentionnels sur les checkboxes (sélection pour batch)
+   * des clics sur le corps de la carte (lecture dans le source-viewer).
+   * Quand un clic de lecture est détecté sur une source non cochée, on note
+   * le titre pour pouvoir décocher automatiquement à la fermeture du viewer.
+   * @param {MouseEvent} e
+   */
   function handlePanelClickCapture(e) {
     const target = e.target;
     if (!target) return;
 
-    // 1. Clic dans la zone checkbox → sélection intentionnelle
-    if (target.closest('.select-checkbox-container')) {
+    // 1. Clic dans la zone checkbox ou sur la ligne "Tout sélectionner" → sélection intentionnelle
+    const selectAllRow = typeof window.MM.findSelectAllRow === 'function' ? window.MM.findSelectAllRow() : null;
+    const isSelectAllClick = selectAllRow && (target === selectAllRow || selectAllRow.contains(target));
+    const isCheckboxClick = !!target.closest('.select-checkbox-container, mat-checkbox, mat-pseudo-checkbox, [role="checkbox"], input[type="checkbox"]');
+
+    if (isCheckboxClick || isSelectAllClick) {
       // Effacer le registre auto-coche (l'utilisateur agit volontairement)
       if (typeof window.MM.clearAutoCheckedSource === 'function') {
         window.MM.clearAutoCheckedSource();
       }
-      // Recalculer les boutons batch après qu'Angular ait traité le clic
-      setTimeout(debouncedPanelInteraction, 50);
+      // Recalculer les boutons batch et enregistrer la sélection post-clic
+      setTimeout(function () {
+        debouncedPanelInteraction();
+        if (typeof window.MM.recordSourceSelection === 'function') {
+          window.MM.recordSourceSelection();
+        }
+      }, 50);
       return;
     }
 
     // 2. Clic sur une carte source (stretched-button, titre, etc.) → lecture
-    const card = target.closest('.single-source-container');
+    const card = target.closest('.single-source-container, .source-card, [class*="source-card"]');
     if (!card) return;
 
-    const checkbox = card.querySelector('.select-checkbox-container input[type="checkbox"]');
+    const checkbox = card.querySelector('.select-checkbox-container input[type="checkbox"], input[type="checkbox"]');
     if (!checkbox) return;
 
     // 3. Mémoriser l'état AVANT le clic (avant qu'Angular ne modifie quoi que ce soit)
@@ -201,12 +218,17 @@
    * Tente de connecter le MutationObserver de panneau sur l'élément actif du DOM.
    */
   function tryObservePanel() {
-    const sourcePanel = document.querySelector('section.source-panel');
+    const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
 
     // Cas 1 : Nouveau panneau détecté
     if (sourcePanel && sourcePanel !== currentObservedPanel) {
-      if (currentObservedPanel && panelClickHandler) {
-        currentObservedPanel.removeEventListener('click', panelClickHandler, true);
+      if (currentObservedPanel) {
+        if (panelClickHandler) {
+          currentObservedPanel.removeEventListener('click', panelClickHandler, true);
+        }
+        if (panelChangeHandler) {
+          currentObservedPanel.removeEventListener('change', panelChangeHandler, true);
+        }
       }
       if (panelObserver) {
         panelObserver.disconnect();
@@ -223,10 +245,18 @@
       });
 
       panelClickHandler = handlePanelClickCapture;
+      panelChangeHandler = function () {
+        debouncedPanelInteraction();
+        if (typeof window.MM.recordSourceSelection === 'function') {
+          window.MM.recordSourceSelection();
+        }
+      };
+
       sourcePanel.addEventListener('click', panelClickHandler, true);
+      sourcePanel.addEventListener('change', panelChangeHandler, true);
 
       currentObservedPanel = sourcePanel;
-      console.log('[MM] Panel observer connecté (childList + attributes checkboxes + protection clic lecture)');
+      console.log('[MM] Panel observer connecté (childList + attributes checkboxes + listeners click/change)');
       
       // Exécuter une première vérification des éléments
       onPanelMutation();
@@ -236,6 +266,10 @@
       if (panelClickHandler) {
         currentObservedPanel.removeEventListener('click', panelClickHandler, true);
         panelClickHandler = null;
+      }
+      if (panelChangeHandler) {
+        currentObservedPanel.removeEventListener('change', panelChangeHandler, true);
+        panelChangeHandler = null;
       }
       if (panelObserver) {
         panelObserver.disconnect();
@@ -354,21 +388,27 @@
    * @returns {boolean} true si le layout desktop est détecté.
    */
   function detectDesktopLayout() {
-    const sourcePanel = document.querySelector('section.source-panel');
-    const chatPanel = document.querySelector('section.chat-panel, [class*="chat-panel"]');
+    const hasMobileTabs = !!document.querySelector('mat-tab-header, .mat-mdc-tab-header, [role="tablist"]');
+    if (hasMobileTabs) {
+      return false;
+    }
+
+    const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
+    const chatPanel = document.querySelector('section.chat-panel, [class*="chat-panel"], [class*="conversation-panel"]');
 
     // Vérifier que les deux panneaux sont VISIBLES (pas juste présents dans le DOM)
-    // offsetParent === null pour les éléments masqués via display:none
-    // getBoundingClientRect().width > 0 comme fallback si visibility:hidden est utilisé
     function isVisible(el) {
       if (!el) return false;
       if (el.offsetParent !== null) return true;
-      // Fallback pour les éléments avec position:fixed ou visibility:hidden
       const rect = el.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     }
 
-    return isVisible(sourcePanel) && isVisible(chatPanel);
+    if (sourcePanel && chatPanel) {
+      return isVisible(sourcePanel) && isVisible(chatPanel);
+    }
+
+    return window.matchMedia('(min-width: 960px)').matches;
   }
 
   /**
@@ -390,6 +430,11 @@
 
       // Premier dispatch immédiat pour la reconstruction rapide
       dispatchCentralInjections();
+
+      // Restaurer la sélection personnalisée de l'utilisateur par UUID
+      if (typeof window.MM.restoreSourceSelection === 'function') {
+        window.MM.restoreSourceSelection();
+      }
 
       // Mettre à jour les boutons batch après changement de layout
       // (ne pas inclure dans dispatchCentralInjections pour éviter les boucles)
@@ -416,6 +461,9 @@
       lateDispatchTimer = setTimeout(function () {
         lateDispatchTimer = null;
         dispatchCentralInjections();
+        if (typeof window.MM.restoreSourceSelection === 'function') {
+          window.MM.restoreSourceSelection();
+        }
         if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateStudioBatchDeleteButtonState === 'function') {
           window.MM.updateStudioBatchDeleteButtonState();
         }
@@ -447,6 +495,9 @@
       tabClickTimer = setTimeout(function () {
         tabClickTimer = null;
         dispatchCentralInjections();
+        if (typeof window.MM.restoreSourceSelection === 'function') {
+          window.MM.restoreSourceSelection();
+        }
         if (window.MM.isFeatureEnabled('export') && typeof window.MM.updateBatchExportButtonState === 'function') {
           window.MM.updateBatchExportButtonState();
         }
@@ -531,6 +582,9 @@
     if (currentObservedPanel) {
       if (panelClickHandler) {
         currentObservedPanel.removeEventListener('click', panelClickHandler, true);
+      }
+      if (panelChangeHandler) {
+        currentObservedPanel.removeEventListener('change', panelChangeHandler, true);
       }
       currentObservedPanel = null;
     }

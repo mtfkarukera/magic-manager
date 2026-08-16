@@ -15,6 +15,7 @@
   
   // Verrou pour éviter des appels RPC concurrents de récupération de sources
   let isFetching = false;
+  let rpcSourcesList = [];
 
   // Variables pour la logique de retry intelligent en cas de DOM non hydraté
   let retryCount = 0;
@@ -86,10 +87,12 @@
       console.log('[MM] Chargement des types de sources via RPC...');
       const rpcSources = await window.MM.rpc.getNotebookSources(notebookId);
       if (Array.isArray(rpcSources)) {
+        rpcSourcesList = rpcSources;
         rpcSources.forEach(function (src) {
           if (src && src.title && src.kind !== undefined) {
             const normalizedTitle = src.title.trim().toLowerCase();
             sourceTypesCache.set(normalizedTitle, {
+              id: src.id || null,
               kind: src.kind,
               url: src.url,
               driveFileId: src.driveFileId,
@@ -233,6 +236,10 @@
         const titleText = stretchedBtn.getAttribute('aria-label') || '';
         const titleNode = findTitleNode(card, titleText);
 
+        if (foundSrcInfo && foundSrcInfo.id) {
+          card.setAttribute('data-mm-source-id', foundSrcInfo.id);
+        }
+
         if (titleNode) {
           titleNode.parentNode.insertBefore(badge, titleNode);
           card.setAttribute('data-mm-badge', 'true');
@@ -332,4 +339,6 @@
   window.MM.initBadges = initBadges;
   window.MM.cleanupBadges = cleanupBadges;
   window.MM.injectBadges = injectBadges;
+  window.MM.getRpcSourcesList = function () { return rpcSourcesList; };
+  window.MM.getSourceTypesCache = function () { return sourceTypesCache; };
 })();

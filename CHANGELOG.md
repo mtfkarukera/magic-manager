@@ -4,6 +4,26 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte une numérotation sémantique `X.Y.Z` (où `X` consacre la maturité stable de production, `Y` la branche d'innovation des 28 sprints majeurs, et `Z` les consolidations et audits qualité).
 
+## [1.28.2] — 2026-08-16
+
+### 🔄 Synchronisation Bidirectionnelle & Persistance des Sélections par UUID (Desktop ↔ Mobile)
+- **Synchroniseur Intelligent par UUID Réel (`source-helpers.js` & `source-badges.js`)** : Correction du comportement natif d'Angular dans NotebookLM (qui réinitialise toutes les cases à 17/17 lors du premier montage responsive d'une vue). Mémorisation continue des choix de l'utilisateur sous forme de `Set` d'UUIDs v4 backend (`data-mm-source-id`) et restauration instantanée post-redimensionnement (`desktop → mobile` et `mobile → desktop`).
+- **Immunité Totale aux Doublons & Ajouts de Sources** : L'utilisation de l'identifiant immuable UUID élimine tout risque de confusion entre documents portant le même nom et garantit la conservation de la sélection même en cas d'insertion de sources par le Clipper.
+
+### 📱 Robustesse Responsive & Persistance des Boutons d'Actions
+- **Déduplication & Détection Checkboxes (`source-helpers.js`)** : Filtrage strict par carte source unique (`Set(seenCards)`) et priorité à la propriété native `cb.checked === true` sur les inputs `<input type="checkbox">`. Élimination définitive des faux décomptes résiduels ou doublons parent-enfant (`[role="checkbox"]` vs `<input>`).
+- **Événements Réactifs Délégués (`panel-observer.js`)** : Ajout d'un écouteur `change` délégué sur le panneau des sources et interception instantanée des clics sur la ligne « Tout sélectionner » (`handlePanelClickCapture`), assurant un recalcul immédiat des boutons batch dès qu'une case est cochée ou décochée.
+- **Préservation Non-Destructive de l'En-Tête Collant Mobile (`search.js`)** : Suppression de l'instruction destructrice `mobileHeader.remove()`, garantissant la visibilité et la persistance continue des 4 boutons d'actions batch sur mobile.
+- **Fiabilisation de la Détection de Layout Responsive (`panel-observer.js`)** : Détection multi-critères combinant la présence de la barre d'onglets (`[role="tablist"]`), la visibilité physique simultanée des panneaux et la Media Query `min-width: 960px`.
+
+### 🎯 Standardisation Stricte de l'Ordre des Boutons Batch (Desktop = Mobile)
+- **Harmonisation Ergonomique Unifiée (`export.js`, `transfer.js`, `merge.js`, `batch-delete.js`)** : Disposition strictement identique des 4 actions par lot sur tous les layouts : `[ ⬆ Export ]  [ ➔ Transfert ]  [ [+] Fusion ]  [ 🗑 Suppression ]`.
+- **Double Verrouillage DOM & CSS Flexbox (`magic-manager.css`)** : Séquençage ordonné à l'insertion et affectation explicite des propriétés `order: 10`, `20`, `30`, `40`, sécurisant la position du bouton de suppression rouge tout à droite en zone de sécurité.
+
+### 💬 Ciblage Hermétique de l'Export Discussion vers Studio (`chatexport.js`)
+- **Isolation Discussion & Anti-Collision Fast Research** : Recherche scopée à l'intérieur du conteneur de discussion (`section.chat-panel`, `query-input`) avec exclusion formelle de tout champ de saisie situé dans le panneau des sources ou lié à Fast Research.
+- **Bascule d'Onglet Mobile Automatique** : Activation transparente de l'onglet Discussion en mode mobile avant l'envoi du prompt si un autre onglet était actif.
+
 ## [1.28.1] — 2026-08-15
 
 ### 🏷️ Transition Majeure vers la Version de Production Stable (v1.X.X)

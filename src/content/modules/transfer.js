@@ -699,16 +699,13 @@
           })
         ]);
 
-        if (isHeader && !isMobileSticky) {
-          const mergeBtn = anchor.querySelector('.mm-batch-merge-btn');
-          const exportBtn = anchor.querySelector('.mm-batch-export-btn');
-          const collapseBtn = window.MM.getNativeCollapseBtn(anchor);
-          const targetBefore = mergeBtn || exportBtn || collapseBtn;
-          if (targetBefore) {
-            targetBefore.parentNode.insertBefore(batchTransferButton, targetBefore);
-          } else {
-            anchor.appendChild(batchTransferButton);
-          }
+        const mergeBtn = anchor.querySelector('.mm-batch-merge-btn');
+        const deleteBtn = anchor.querySelector('.mm-batch-delete-btn');
+        const collapseBtn = (isHeader && !isMobileSticky) ? window.MM.getNativeCollapseBtn(anchor) : null;
+        const targetBefore = mergeBtn || deleteBtn || collapseBtn;
+
+        if (targetBefore) {
+          targetBefore.parentNode.insertBefore(batchTransferButton, targetBefore);
         } else {
           anchor.appendChild(batchTransferButton);
         }

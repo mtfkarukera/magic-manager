@@ -371,31 +371,85 @@
 
       const onStudioPrompt = () => {
         const promptText = t('chatExportStudioPromptText');
-        const chatInputSelectors = [
-          'chat-input textarea',
-          'section.chat-panel textarea',
-          '.chat-input textarea',
-          'textarea[aria-label*="Ask" i]',
-          'textarea[placeholder*="Ask" i]',
-          'textarea[aria-label*="tapez" i]',
-          'textarea'
-        ];
-        let input = null;
-        for (const sel of chatInputSelectors) {
-          input = document.querySelector(sel);
-          if (input) break;
-        }
-        if (input) {
-          setNativeValue(input, promptText);
-          input.focus();
-          const sendBtn = document.querySelector(
-            'button[aria-label*="Send" i], button[aria-label*="Envoyer" i], button.chat-send-button, .chat-input-container button'
-          );
-          if (sendBtn && !sendBtn.disabled) {
-            sendBtn.click();
-          } else {
-            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
+
+        // 1. En mode mobile, si l'onglet Discussion n'est pas actif, le basculer
+        const hasMobileTabs = !!document.querySelector('mat-tab-header, .mat-mdc-tab-header, [role="tablist"]');
+        if (hasMobileTabs) {
+          const tabs = Array.from(document.querySelectorAll('.mat-mdc-tab, [role="tab"], .mat-tab-label'));
+          for (const tab of tabs) {
+            const txt = (tab.textContent || '').trim().toLowerCase();
+            if (txt.includes('discussion') || txt.includes('chat')) {
+              if (tab.getAttribute('aria-selected') !== 'true') {
+                tab.click();
+              }
+              break;
+            }
           }
+        }
+
+        function executeSend() {
+          // 2. Recherche ciblée du textarea de discussion (hermétique, anti-sources)
+          function findChatTextarea() {
+            // A. Chercher en priorité dans le conteneur explicite du chat
+            const chatContainers = document.querySelectorAll(
+              'section.chat-panel, [class*="chat-panel"], [class*="conversation-panel"], chat-window, app-chat, query-input, .chat-input-container'
+            );
+            for (const container of chatContainers) {
+              if (container.closest('section.source-panel, .source-panel, [class*="source-panel"], .mm-sticky-header')) continue;
+              const ta = container.querySelector('textarea');
+              if (ta) return ta;
+            }
+
+            // B. Chercher parmi tous les textareas en filtrant strictement
+            const allTextareas = Array.from(document.querySelectorAll('textarea'));
+            for (const ta of allTextareas) {
+              // Rejeter formellement si dans le panneau sources, sticky-header ou recherche web
+              if (ta.closest('section.source-panel, .source-panel, [class*="source-panel"], .mm-sticky-header, [class*="fast-research"], [class*="source-search"]')) {
+                continue;
+              }
+              const placeholder = (ta.getAttribute('placeholder') || '').toLowerCase();
+              const ariaLabel = (ta.getAttribute('aria-label') || '').toLowerCase();
+              if (
+                placeholder.includes('posez') || placeholder.includes('ask') || placeholder.includes('frage') ||
+                placeholder.includes('pregunta') || placeholder.includes('pergunta') || placeholder.includes('créez') ||
+                placeholder.includes('start typing') || ariaLabel.includes('ask') || ariaLabel.includes('posez') ||
+                ta.closest('.chat-input, [class*="chat-input"], query-input, [class*="query-input"]')
+              ) {
+                return ta;
+              }
+            }
+
+            return null;
+          }
+
+          const input = findChatTextarea();
+          if (input) {
+            setNativeValue(input, promptText);
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+            input.focus();
+
+            // Rechercher le bouton d'envoi dans le conteneur du chat
+            const chatContainer = input.closest('section.chat-panel, [class*="chat-panel"], query-input, .chat-input-container') || document.body;
+            const sendBtn = chatContainer.querySelector(
+              'button[aria-label*="Send" i], button[aria-label*="Envoyer" i], button[aria-label*="Senden" i], button[aria-label*="Enviar" i], button.chat-send-button, [class*="send-button"]'
+            );
+
+            if (sendBtn && !sendBtn.disabled) {
+              sendBtn.click();
+            } else {
+              input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', code: 'Enter', keyCode: 13, bubbles: true }));
+            }
+            console.log('[MM] ChatExport : prompt Studio envoyé dans le chat avec succès.');
+          } else {
+            console.warn('[MM] ChatExport : impossible de localiser le champ de chat pour envoyer le prompt Studio.');
+          }
+        }
+
+        if (hasMobileTabs) {
+          setTimeout(executeSend, 200);
+        } else {
+          executeSend();
         }
       };
 

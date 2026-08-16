@@ -456,13 +456,14 @@
         ]);
 
 
-        if (isHeader && !isMobileSticky) {
-          const collapseBtn = window.MM.getNativeCollapseBtn(anchor);
-          if (collapseBtn) {
-            collapseBtn.parentNode.insertBefore(batchExportButton, collapseBtn);
-          } else {
-            anchor.appendChild(batchExportButton);
-          }
+        const transferBtn = anchor.querySelector('.mm-batch-transfer-btn');
+        const mergeBtn = anchor.querySelector('.mm-batch-merge-btn');
+        const deleteBtn = anchor.querySelector('.mm-batch-delete-btn');
+        const collapseBtn = (isHeader && !isMobileSticky) ? window.MM.getNativeCollapseBtn(anchor) : null;
+        const targetBefore = transferBtn || mergeBtn || deleteBtn || collapseBtn;
+
+        if (targetBefore) {
+          targetBefore.parentNode.insertBefore(batchExportButton, targetBefore);
         } else {
           anchor.appendChild(batchExportButton);
         }

@@ -506,18 +506,15 @@
       ]);
 
 
-      if (isHeader && !isMobileSticky) {
-        const exportBtn = anchor.querySelector('.mm-batch-export-btn');
-        const collapseBtn = window.MM.getNativeCollapseBtn(anchor);
-        const targetBefore = exportBtn || collapseBtn;
+        const deleteBtn = anchor.querySelector('.mm-batch-delete-btn');
+        const collapseBtn = (isHeader && !isMobileSticky) ? window.MM.getNativeCollapseBtn(anchor) : null;
+        const targetBefore = deleteBtn || collapseBtn;
+
         if (targetBefore) {
           targetBefore.parentNode.insertBefore(batchMergeButton, targetBefore);
         } else {
           anchor.appendChild(batchMergeButton);
         }
-      } else {
-        anchor.appendChild(batchMergeButton);
-      }
     } else {
       const span = batchMergeButton.querySelector('span');
       if (span) span.textContent = `(${count})`;

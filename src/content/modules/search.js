@@ -773,15 +773,22 @@
     const isMobileLayout = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
 
     if (sourcePanel && header && !isMobileLayout) {
-      // Nettoyer l'en-tête collant mobile s'il existe (transition mobile → desktop)
+      // Nettoyer l'en-tête collant mobile uniquement s'il ne contient aucune action active
       const mobileHeader = sourcePanel.querySelector('.mm-sticky-header');
       if (mobileHeader) {
-        mobileHeader.remove();
+        const actionsWrapper = mobileHeader.querySelector('.mm-sticky-header-actions');
+        const hasActions = actionsWrapper && actionsWrapper.children.length > 0;
+        if (!hasActions) {
+          mobileHeader.remove();
+        }
       }
 
       // Injecter juste après le header (hors zone scrollable, fixe dans le flux flexbox)
-      header.parentNode.insertBefore(searchBarContainer, header.nextSibling);
+      if (searchBarContainer.parentNode !== header.parentNode || searchBarContainer.nextSibling !== header.nextSibling) {
+        header.parentNode.insertBefore(searchBarContainer, header.nextSibling);
+      }
       searchBarContainer.classList.add('mm-desktop-header');
+      searchBarContainer.style.backgroundColor = '';
       console.log('[MM] Barre de recherche injectée de façon fixe après le header');
     } else {
       // Mode mobile / sans-header : utilisation de l'en-tête collant MM (.mm-sticky-header)
