@@ -4,7 +4,7 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte une numérotation sémantique `X.Y.Z` (où `X` consacre la maturité stable de production, `Y` la branche d'innovation des 28 sprints majeurs, et `Z` les consolidations et audits qualité).
 
-## [1.28.3] — 2026-09-28
+## [1.28.4] — 2026-09-29
 
 ### 💬 Citation Synthétique de Réponses dans le Chat (Quote-to-Prompt)
 - **Module Modulaire Dédié (`chat-quote.js`)** : Nouveau composant autonome injecté au surlignage de texte dans n'importe quelle bulle de réponse de l'IA.
@@ -14,6 +14,8 @@ Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/)
 - **Bouton Flottant Material Design 3 (`.mm-floating-quote-pill`)** : Mini-bulle d'action compacte (32px, `border-radius: 9999px`, élévation Level 2) avec icône `format_quote`, positionnée dynamiquement sur la sélection et immunisée contre la désélection native via `e.preventDefault()`.
 - **Support Multi-Citations Cumulatif Réactif** : Concaténation automatique avec double saut de ligne sans écraser le texte déjà présent dans le chat, synchronisation réactive avec le modèle Angular (`input`/`change`) pour déclencher l'auto-resize (`cdkTextareaAutosize`) et activer le bouton « Envoyer » natif de NotebookLM.
 - **Intégration Complète & Localisation** : Toggle dédié `feature_chatQuote` dans le popup et le menu de réglages in-page, avec traductions dans les 7 langues supportées (FR, EN, DE, ES, PT, JA, VI).
+
+## [1.28.3] — 2026-09-28
 
 ### 🎨 Détection Dynamique du Thème DOM & Parité Visuelle Caméléon (Sources & Studio)
 - **Détection Dynamique par le DOM Réel (`panel-observer.js` & `orchestrator.js`)** : Fin des suppositions basées sur les Media Queries OS (`prefers-color-scheme`) ou les tokens Angular internes de Google. Implémentation d'une détection par calcul de luminance sRGB de l'arrière-plan effectif de NotebookLM (`getComputedStyle`), positionnant dynamiquement l'attribut `data-mm-theme="dark|light"` sur l'élément racine `<html>`.
