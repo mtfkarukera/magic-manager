@@ -560,5 +560,17 @@
   "privacy100PercentLocal": {
     "message": "🔒 100% Local",
     "description": "Selo de execução 100% local"
+  },
+  "chatQuoteButton": {
+    "message": "Citar",
+    "description": "Botão flutuante para citar um trecho no chat"
+  },
+  "chatQuoteTooltip": {
+    "message": "Citar este trecho no chat para adicionar uma observação",
+    "description": "Dica do botão flutuante de citação"
+  },
+  "settingsFeatureChatQuote": {
+    "message": "💬 Citação rápida de respostas no chat",
+    "description": "Alternador para recurso de citação rápida no chat nas configurações"
   }
 }

@@ -560,5 +560,17 @@
   "privacy100PercentLocal": {
     "message": "🔒 100% Cục bộ",
     "description": "Huy hiệu thực thi 100% cục bộ"
+  },
+  "chatQuoteButton": {
+    "message": "Trích dẫn",
+    "description": "Nút nổi để trích dẫn đoạn trích trong trò chuyện"
+  },
+  "chatQuoteTooltip": {
+    "message": "Trích dẫn đoạn này trong trò chuyện để thêm ghi chú hoặc câu hỏi",
+    "description": "Chú thích của nút trích dẫn nổi"
+  },
+  "settingsFeatureChatQuote": {
+    "message": "💬 Trích dẫn nhanh câu trả lời trong trò chuyện",
+    "description": "Bật/tắt tính năng trích dẫn nhanh câu trả lời trong cài đặt"
   }
 }

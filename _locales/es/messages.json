@@ -560,5 +560,17 @@
   "privacy100PercentLocal": {
     "message": "🔒 100% Local",
     "description": "Insignia de 100% local"
+  },
+  "chatQuoteButton": {
+    "message": "Citar",
+    "description": "Botón flotante para citar un fragmento en el chat"
+  },
+  "chatQuoteTooltip": {
+    "message": "Citar este fragmento en el chat para añadir una precisión",
+    "description": "Información sobre herramientas del botón flotante de cita"
+  },
+  "settingsFeatureChatQuote": {
+    "message": "💬 Cita rápida de respuestas en el chat",
+    "description": "Toggle de la función cita rápida de respuestas en ajustes"
   }
 }

@@ -1,6 +1,6 @@
 # 🧩 Magic Manager for Gemini Notebook
 
-![GitHub release](https://img.shields.io/badge/release-v1.28.2-green)
+![GitHub release](https://img.shields.io/badge/release-v1.28.3-green)
 ![GitHub license](https://img.shields.io/github/license/mtfkarukera/magic-manager?color=blue)
 
 **Magic Manager** est une extension Firefox qui enrichit l'interface de **Google Gemini Notebook** (anciennement NotebookLM) sur [notebook.google.com](https://notebook.google.com/) avec des fonctionnalités avancées de productivité.
@@ -16,6 +16,7 @@
 - 🔎 **Recherche & Filtres Studio** — Recherchez et filtrez les notes et artéfacts du Studio par texte et par type (résumés audio, quiz, cartes mentales, infographies, etc.) avec une pilule de recherche rétractable.
 - 🎨 **Coloration syntaxique** — Mise en valeur du code dans les réponses du chat avec coloration syntaxique.
 - 💬 **Export du chat** — Sauvegardez vos conversations avec l'IA sous forme de notes.
+- 💬 **Citation rapide dans le chat (Quote-to-Prompt)** — Sélectionnez un extrait dans une réponse de l'IA pour faire apparaître une mini-bulle flottante « Citer ». La sélection est automatiquement synthétisée (80 caractères max avec troncature « Tête + Queue » sur les mots entiers) et injectée sous forme de bloc Markdown (`> « extrait »`) dans le champ de saisie, avec support cumulatif multi-citations dans la même requête.
 - ⌨️ **Raccourcis clavier** — Accélérez votre navigation avec des raccourcis dédiés (`Cmd/Ctrl+Shift+F` pour la recherche sources, `Cmd/Ctrl+Shift+E` pour le chat, `Cmd/Ctrl+Shift+L` pour la recherche Studio).
 
 ## ⚡ Performance & Sobriété énergétique

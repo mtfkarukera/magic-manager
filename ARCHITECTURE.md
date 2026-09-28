@@ -34,7 +34,8 @@ magic-manager/
 │   │   │   ├── studio-search.js # Module de recherche et filtrage du Studio
 │   │   │   ├── transfer.js    # Module de copie inter-carnets de sources [NEW]
 │   │   │   ├── syntax.js      # Module de coloration syntaxique
-│   │   │   └── chatexport.js  # Module d'export du chat
+│   │   │   ├── chatexport.js  # Module d'export du chat
+│   │   │   └── chat-quote.js  # Module de citation synthétique dans le chat (Quote-to-Prompt) [NEW]
 │   │   └── ui/                # Composants d'interface partagés
 │   │       ├── dialogs.js     # Boîtes de dialogue Material Design 3
 │   │       └── settings.js    # Panneau de réglages utilisateur
@@ -106,6 +107,9 @@ Chaque fonctionnalité peut être activée/désactivée individuellement via le 
 | `feature_studioSearch` | `boolean` | `true` | Recherche et filtrage du Studio |
 | `feature_syntax` | `boolean` | `true` | Coloration syntaxique |
 | `feature_chatExport` | `boolean` | `true` | Export du chat |
+| `feature_chatQuote` | `boolean` | `true` | Citation rapide de réponses dans le chat (Quote-to-Prompt) |
+| `feature_transfer` | `boolean` | `true` | Copie de sources inter-carnets |
+| `feature_noteCopy` | `boolean` | `true` | Copie rapide de notes sans sources |
 
 ## Couche de transport RPC
 

@@ -282,9 +282,40 @@
   }
 
   /**
-   * Exécute les vérifications et injections pour l'ensemble des modules actifs.
-   * Appelé de manière centralisée lors des mutations globales.
+   * Détecte le thème réel (sombre / clair) de NotebookLM via la couleur calculée
+   * du fond effectif de l'application et positionne l'attribut data-mm-theme sur <html>.
+   * Élimine toute dépendance erratique envers l'OS ou des tokens internes Google.
    */
+  function detectAndApplyTheme() {
+    try {
+      const probeEl = document.querySelector('section.source-panel') ||
+                      document.querySelector('studio-panel') ||
+                      document.querySelector('.conversation-panel, section.chat-panel') ||
+                      document.body;
+      if (!probeEl) return;
+
+      const bg = window.getComputedStyle(probeEl).backgroundColor;
+      // Analyse du format rgb(...) ou rgba(...)
+      const match = bg && bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+      if (match) {
+        const r = parseInt(match[1], 10);
+        const g = parseInt(match[2], 10);
+        const b = parseInt(match[3], 10);
+        // Formule standard de luminance perçue sRGB (Rec. 601)
+        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
+        const newTheme = luminance < 128 ? 'dark' : 'light';
+        const currentTheme = document.documentElement.getAttribute('data-mm-theme');
+
+        if (currentTheme !== newTheme) {
+          document.documentElement.setAttribute('data-mm-theme', newTheme);
+          console.log(`[MM] Thème NotebookLM détecté : ${newTheme} (luminance: ${Math.round(luminance)}, fond: ${bg})`);
+        }
+      }
+    } catch (e) {
+      console.warn('[MM] Erreur lors de la détection du thème :', e);
+    }
+  }
+
   /**
    * Exécute les injections MM en déconnectant temporairement les observers.
    * Garantit que les mutations générées par l'extension ne déclenchent pas
@@ -316,6 +347,9 @@
     }
 
     try {
+      // 0. Détection et application dynamique du thème réel (sombre/clair)
+      safeExecute('ThemeDetector', detectAndApplyTheme);
+
       // 1. Gérer l'observation du panneau des sources
       safeExecute('SourcePanelObserver', tryObservePanel);
 
@@ -537,6 +571,9 @@
     // Écouter explicitement les clics sur les onglets mobiles
     document.addEventListener('click', handleTabClick);
 
+    // Détection immédiate du thème réel de l'application
+    detectAndApplyTheme();
+
     // ResizeObserver pour détecter les basculements de layout responsive
     if (typeof ResizeObserver !== 'undefined') {
       resizeObserver = new ResizeObserver(onLayoutResize);
@@ -601,6 +638,7 @@
     console.log('[MM] Observer global de page centralisé nettoyé');
   }
 
+  window.MM.detectAndApplyTheme = detectAndApplyTheme;
   window.MM.initPanelObserver = initPanelObserver;
   window.MM.cleanupPanelObserver = cleanupPanelObserver;
   window.MM.detectDesktopLayout = detectDesktopLayout;

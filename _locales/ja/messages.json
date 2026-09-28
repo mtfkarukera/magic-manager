@@ -560,5 +560,17 @@
   "privacy100PercentLocal": {
     "message": "🔒 100% ローカル",
     "description": "100%ローカル実行バッジ"
+  },
+  "chatQuoteButton": {
+    "message": "引用",
+    "description": "チャットで抜粋を引用するフローティングボタン"
+  },
+  "chatQuoteTooltip": {
+    "message": "チャットでこの抜粋を引用して質問や補足を追加",
+    "description": "フローティング引用ボタンのツールチップ"
+  },
+  "settingsFeatureChatQuote": {
+    "message": "💬 チャット回答のクイック引用",
+    "description": "設定内のチャット回答クイック引用機能の切り替え"
   }
 }

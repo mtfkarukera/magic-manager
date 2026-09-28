@@ -560,5 +560,17 @@
   "privacy100PercentLocal": {
     "message": "🔒 100% Lokal",
     "description": "Badge für 100% lokale Ausführung"
+  },
+  "chatQuoteButton": {
+    "message": "Zitieren",
+    "description": "Schaltfläche zum Zitieren eines Auszugs im Chat"
+  },
+  "chatQuoteTooltip": {
+    "message": "Diesen Auszug im Chat zitieren, um einen Hinweis hinzuzufügen",
+    "description": "Tooltip der schwebenden Zitat-Schaltfläche"
+  },
+  "settingsFeatureChatQuote": {
+    "message": "💬 Schnelles Zitieren von Antworten im Chat",
+    "description": "Toggle für schnelles Zitieren von Chat-Antworten in den Einstellungen"
   }
 }

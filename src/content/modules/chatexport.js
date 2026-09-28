@@ -550,7 +550,7 @@
       pl.setAttribute('points', '4 12 9 17 20 6');
       svg.appendChild(pl);
       exportChatBtn.appendChild(svg);
-      exportChatBtn.title = 'Note créée !';
+      exportChatBtn.title = t('chatExportSuccess') || 'Note créée !';
 
     } else if (state === 'error') {
       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
@@ -569,7 +569,7 @@
       svg.appendChild(l1);
       svg.appendChild(l2);
       exportChatBtn.appendChild(svg);
-      exportChatBtn.title = 'Erreur — voir la console pour le détail';
+      exportChatBtn.title = t('chatExportError') || 'Erreur — voir la console pour le détail';
     }
   }
 
@@ -580,8 +580,6 @@
     if (!exportChatBtn) return;
     exportChatBtn.replaceChildren();
     exportChatBtn.appendChild(createExportIcon());
-    const exportLabel = createElement('span', { className: 'mm-btn-label' }, [t('chatExportButtonShort') || 'Sauvegarder']);
-    exportChatBtn.appendChild(exportLabel);
     exportChatBtn.title = t('chatExportButton') || 'Exporter toute la conversation en note';
   }
 
@@ -729,7 +727,84 @@
   }
 
   /**
-   * Injecte le bouton d'export dans l'en-tête du panneau Discussion.
+   * Recherche l'emplacement d'ancrage dans la capsule d'entrée du chat.
+   * L'objectif est d'insérer le bouton immédiatement à gauche de la pilule des sources,
+   * ou à défaut immédiatement avant le bouton d'envoi (Submit).
+   * @returns {{ parent: Element, beforeElement: Element|null }|null}
+   */
+  function findChatInputAnchor() {
+    // 1. Détecter prioritairement la zone d'action inférieure droite de la boîte de discussion (Gemini Notebook 2026)
+    const bottomRight = document.querySelector('.bottom-right-container, [class*="bottom-right-container"]');
+    if (bottomRight) {
+      // Recherche de la pilule native des sources (ex: .selected-num-container avec "17 sources")
+      const sourcesChip = bottomRight.querySelector('.selected-num-container, .selected-num')
+        || Array.from(bottomRight.querySelectorAll('div, span, button')).find(function (el) {
+          const text = (el.textContent || '').trim();
+          return /\d+\s*source/i.test(text);
+        });
+
+      if (sourcesChip) {
+        let targetChild = sourcesChip;
+        while (targetChild && targetChild.parentNode !== bottomRight) {
+          targetChild = targetChild.parentNode;
+        }
+        return { parent: bottomRight, beforeElement: targetChild || sourcesChip };
+      }
+
+      // Fallback dans bottomRight : avant le bouton d'envoi
+      const submitBtn = bottomRight.querySelector(
+        'nb-icon-button, button.submit-button, [class*="submit-button"], button[aria-label*="Envoyer" i], button[aria-label*="Submit" i], button[aria-label*="Send" i]'
+      );
+      if (submitBtn) {
+        let targetChild = submitBtn;
+        while (targetChild && targetChild.parentNode !== bottomRight) {
+          targetChild = targetChild.parentNode;
+        }
+        return { parent: bottomRight, beforeElement: targetChild || submitBtn };
+      }
+
+      return { parent: bottomRight, beforeElement: null };
+    }
+
+    // 2. Détecter via le textarea si .bottom-right-container n'a pas été trouvé directement
+    const chatInput = document.querySelector(
+      'textarea.query-box-input, ' +
+      'textarea[placeholder*="question" i], ' +
+      'textarea[placeholder*="Posez" i], ' +
+      'textarea[placeholder*="Ask" i], ' +
+      'textarea[aria-label*="Query" i], ' +
+      'textarea[aria-label*="requête" i], ' +
+      'chat-input textarea, .chat-input textarea'
+    ) || document.querySelector('textarea');
+
+    if (!chatInput) return null;
+
+    // Remonter au conteneur de message (en évitant le textarea lui-même !)
+    const messageContainer = chatInput.closest('.message-container, form, query-box, [class*="query-box-container"]');
+    if (messageContainer) {
+      const br = messageContainer.querySelector('.bottom-right-container, [class*="bottom-right-container"]');
+      if (br) {
+        const sourcesChip = br.querySelector('.selected-num-container, .selected-num')
+          || Array.from(br.querySelectorAll('div, span, button')).find(function (el) {
+            const text = (el.textContent || '').trim();
+            return /\d+\s*source/i.test(text);
+          });
+        if (sourcesChip) {
+          let targetChild = sourcesChip;
+          while (targetChild && targetChild.parentNode !== br) {
+            targetChild = targetChild.parentNode;
+          }
+          return { parent: br, beforeElement: targetChild || sourcesChip };
+        }
+        return { parent: br, beforeElement: null };
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Injecte le bouton d'export dans la capsule de chat (Gemini Notebook) ou dans l'en-tête (fallback).
    * Fonction pure, sans debounce intégré.
    */
   function tryInjectButton() {
@@ -744,58 +819,86 @@
       }
     }
 
-    // Bouton déjà présent dans le DOM → on applique quand même le contrôle de visibilité
-    let justCreated = false;
-    if (!exportChatBtn || !document.contains(exportChatBtn)) {
-      if (exportChatBtn) exportChatBtn = null;
+    // Si le bouton est déjà présent et attaché dans le DOM
+    if (exportChatBtn && document.contains(exportChatBtn)) {
+      return;
+    }
 
-      const header = findChatPanelHeader();
-      if (!header) {
-        console.warn('[MM] [ChatExport] En-tête de Discussion introuvable dans la page.');
-        return;
+    // Nettoyer toute référence orpheline éventuelle
+    if (exportChatBtn) {
+      exportChatBtn.remove();
+      exportChatBtn = null;
+    }
+
+    ensureSpinnerCss();
+
+    // ═══════════════════════════════════════════════════════════════════
+    // STRATÉGIE 1 (Gemini Notebook 2026) : Capsule de saisie de prompt
+    // Bouton d'icône rond GM3 (Piste A) - Zéro texte, intégration pure et respirante
+    // ═══════════════════════════════════════════════════════════════════
+    const anchor = findChatInputAnchor();
+    if (anchor && anchor.parent) {
+      exportChatBtn = createElement('button', {
+        className: 'mm-chat-export-btn mm-btn-icon',
+        type: 'button',
+        title: t('chatExportButton') || 'Exporter toute la conversation en note',
+        'aria-label': t('chatExportButton') || 'Exporter toute la conversation en note',
+        onClick: function (e) {
+          e.preventDefault();
+          e.stopPropagation();
+          handleExportChat();
+        }
+      }, [createExportIcon()]);
+
+      if (anchor.beforeElement) {
+        anchor.parent.insertBefore(exportChatBtn, anchor.beforeElement);
+      } else {
+        anchor.parent.appendChild(exportChatBtn);
       }
+      console.log('[MM] ChatExport : bouton icône ronde GM3 injecté dans la capsule de prompt (avant les sources).');
+      return;
+    }
 
-      console.log('[MM] [ChatExport] Bouton injecté dans :', header.tagName + '.' + header.className);
-      ensureSpinnerCss();
-
+    // ═══════════════════════════════════════════════════════════════════
+    // STRATÉGIE 2 : Fallback legacy en-tête de discussion
+    // ═══════════════════════════════════════════════════════════════════
+    const header = findChatPanelHeader();
+    if (header) {
       const exportLabel = createElement('span', { className: 'mm-btn-label' }, [t('chatExportButtonShort') || 'Sauvegarder']);
 
       exportChatBtn = createElement('button', {
         className: 'mm-chat-export-btn mm-btn-icon',
+        type: 'button',
         title: t('chatExportButton') || 'Exporter toute la conversation en note',
         'aria-label': t('chatExportButton') || 'Exporter toute la conversation en note',
         onClick: function (e) {
+          e.preventDefault();
           e.stopPropagation();
           handleExportChat();
         }
       }, [createExportIcon(), exportLabel]);
 
-      // Insérer au début de l'en-tête (avant les icônes natives de Google)
       header.insertBefore(exportChatBtn, header.firstChild);
-      console.log('[MM] ChatExport : bouton injecté dans l\'en-tête du panneau Discussion.');
-      justCreated = true;
+      console.log('[MM] ChatExport : bouton injecté dans l\'en-tête legacy du panneau Discussion.');
+
+      // Gestion mobile legacy
+      const isMobileMode = typeof window.MM.detectDesktopLayout === 'function' ? !window.MM.detectDesktopLayout() : false;
+      if (isMobileMode) {
+        exportChatBtn.classList.add('mm-mobile-chat-btn');
+        const activeTab = document.querySelector('div[role="tab"][aria-selected="true"], .mat-mdc-tab-active');
+        const isChatActive = activeTab && /discussion|chat/i.test(activeTab.textContent || '');
+        if (!isChatActive) {
+          exportChatBtn.style.setProperty('display', 'none', 'important');
+        } else {
+          exportChatBtn.style.setProperty('display', 'inline-flex', '');
+          exportChatBtn.style.setProperty('margin-right', 'auto', 'important');
+          exportChatBtn.style.setProperty('align-self', 'center', 'important');
+        }
+      }
+      return;
     }
 
-    // Gestion de la visibilité et du positionnement en mode mobile (Option 1 : Poussée à gauche & Centrage)
-    const isMobileMode = typeof window.MM.detectDesktopLayout === 'function' ? !window.MM.detectDesktopLayout() : false;
-    if (isMobileMode) {
-      exportChatBtn.classList.add('mm-mobile-chat-btn');
-      const activeTab = document.querySelector('div[role="tab"][aria-selected="true"], .mat-mdc-tab-active');
-      const isChatActive = activeTab && /discussion|chat/i.test(activeTab.textContent || '');
-      if (!isChatActive) {
-        exportChatBtn.style.setProperty('display', 'none', 'important');
-      } else {
-        exportChatBtn.style.setProperty('display', 'inline-flex', '');
-        exportChatBtn.style.setProperty('margin-right', 'auto', 'important');
-        exportChatBtn.style.setProperty('align-self', 'center', 'important');
-      }
-    } else {
-      // Sur desktop, toujours visible dans l'en-tête dédié (réinitialiser les styles mobile)
-      exportChatBtn.classList.remove('mm-mobile-chat-btn');
-      exportChatBtn.style.setProperty('display', '', '');
-      exportChatBtn.style.removeProperty('margin-right');
-      exportChatBtn.style.removeProperty('align-self');
-    }
+    console.debug('[MM] [ChatExport] En attente de l\'apparition de la capsule de prompt de discussion.');
   }
 
   // ═══════════════════════════════════════════════════════════════════════

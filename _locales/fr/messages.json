@@ -560,5 +560,17 @@
   "privacy100PercentLocal": {
     "message": "🔒 100% Local",
     "description": "Badge indiquant le fonctionnement 100% local dans la popup"
+  },
+  "chatQuoteButton": {
+    "message": "Citer",
+    "description": "Libellé du bouton flottant pour citer un passage dans le chat"
+  },
+  "chatQuoteTooltip": {
+    "message": "Citer ce passage dans le chat pour apporter une précision",
+    "description": "Info-bulle du bouton flottant de citation"
+  },
+  "settingsFeatureChatQuote": {
+    "message": "💬 Citation rapide de réponses dans le chat",
+    "description": "Toggle de la feature citation rapide de chat dans les paramètres"
   }
 }

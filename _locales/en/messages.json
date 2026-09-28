@@ -560,5 +560,17 @@
   "privacy100PercentLocal": {
     "message": "🔒 100% Local",
     "description": "Badge indicating 100% local execution in popup"
+  },
+  "chatQuoteButton": {
+    "message": "Quote",
+    "description": "Label of the floating button to quote an excerpt in chat"
+  },
+  "chatQuoteTooltip": {
+    "message": "Quote this excerpt in chat to add a note",
+    "description": "Tooltip of the floating quote button"
+  },
+  "settingsFeatureChatQuote": {
+    "message": "💬 Quick quote responses in chat",
+    "description": "Toggle for quick quote responses in chat feature in settings"
   }
 }

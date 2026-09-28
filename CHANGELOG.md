@@ -4,6 +4,29 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte une numérotation sémantique `X.Y.Z` (où `X` consacre la maturité stable de production, `Y` la branche d'innovation des 28 sprints majeurs, et `Z` les consolidations et audits qualité).
 
+## [1.28.3] — 2026-09-28
+
+### 💬 Citation Synthétique de Réponses dans le Chat (Quote-to-Prompt)
+- **Module Modulaire Dédié (`chat-quote.js`)** : Nouveau composant autonome injecté au surlignage de texte dans n'importe quelle bulle de réponse de l'IA.
+- **Synthèse Calibrée à 80 Caractères** :
+  - *Extrait court (≤ 80 car.)* : Conservation intégrale du texte sélectionné sans altération.
+  - *Extrait long (> 80 car.)* : Découpage intelligent « Tête + Queue » (`~35 car. [...] ~30 car.`) calé proprement sur les frontières de mots entiers pour préserver le sens sans saturer le champ de prompt.
+- **Bouton Flottant Material Design 3 (`.mm-floating-quote-pill`)** : Mini-bulle d'action compacte (32px, `border-radius: 9999px`, élévation Level 2) avec icône `format_quote`, positionnée dynamiquement sur la sélection et immunisée contre la désélection native via `e.preventDefault()`.
+- **Support Multi-Citations Cumulatif Réactif** : Concaténation automatique avec double saut de ligne sans écraser le texte déjà présent dans le chat, synchronisation réactive avec le modèle Angular (`input`/`change`) pour déclencher l'auto-resize (`cdkTextareaAutosize`) et activer le bouton « Envoyer » natif de NotebookLM.
+- **Intégration Complète & Localisation** : Toggle dédié `feature_chatQuote` dans le popup et le menu de réglages in-page, avec traductions dans les 7 langues supportées (FR, EN, DE, ES, PT, JA, VI).
+
+### 🎨 Détection Dynamique du Thème DOM & Parité Visuelle Caméléon (Sources & Studio)
+- **Détection Dynamique par le DOM Réel (`panel-observer.js` & `orchestrator.js`)** : Fin des suppositions basées sur les Media Queries OS (`prefers-color-scheme`) ou les tokens Angular internes de Google. Implémentation d'une détection par calcul de luminance sRGB de l'arrière-plan effectif de NotebookLM (`getComputedStyle`), positionnant dynamiquement l'attribut `data-mm-theme="dark|light"` sur l'élément racine `<html>`.
+- **Harmonisation Caméléon des Pilules de Recherche (`magic-manager.css`)** :
+  - *Mode Sombre* : Fond discret anthracite `#282a2c !important` (couleur 1:1 exacte des cartes du Studio de NotebookLM), texte clair `#e3e3e3`, bordure subtile `rgba(255, 255, 255, 0.12)` et disparition totale de tout éclat blanc aveuglant.
+  - *Mode Clair* : Fond gris doux Google `#f1f3f4 !important`, texte sombre `#1f1f1f`, bordure fine `#dadce0`.
+- **Transparence Absolue du Conteneur Studio (`magic-manager.css`)** : Suppression intégrale de tout fond, bordure ou ombre parasite sur `.mm-studio-header-container` et `.mm-studio-search-wrapper`. Seul l'input textuel porte la forme de pilule, éliminant tout rectangle résiduel non transparent.
+- **Harmonisation Géométrique 1:1** : Hauteur unifiée à 40px, rayon plein (`border-radius: 9999px`), marges identiques (`8px 12px`) et positionnement symétrique des boutons d'actions (croix de réinitialisation à 46px, détection doublons / filtres à 10px).
+- **Adoucissement des Boutons d'Action Actifs (`magic-manager.css`)** : Remplacement des fonds bleus massifs et criards par un halo translucide Material 3 discret et élégant (`rgba(66, 133, 244, 0.16)`).
+
+### 💬 Refonte Iconographique du Bouton Sauvegarde Chat (Piste A)
+- **Bouton d'Icône GM3 Circulaire (`chatexport.js` & `magic-manager.css`)** : Suppression du label textuel encombrant au profit d'un bouton d'icône rond 32×32px Material 3 discret et réactif, inséré proprement dans `.bottom-right-container` avant l'indicateur de sources sans risque de chevauchement.
+
 ## [1.28.2] — 2026-08-16
 
 ### 🔄 Synchronisation Bidirectionnelle & Persistance des Sélections par UUID (Desktop ↔ Mobile)

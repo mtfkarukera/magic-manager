@@ -28,6 +28,7 @@
     studioSearch: 'feature_studioSearch',
     syntax: 'feature_syntax',
     chatExport: 'feature_chatExport',
+    chatQuote: 'feature_chatQuote',
     transfer: 'feature_transfer',
     noteCopy: 'feature_noteCopy'
   };
@@ -94,6 +95,11 @@
   function initAllModules() {
     console.log('[MM] Initialisation des modules activés');
 
+    // Détecter et appliquer immédiatement le thème réel (sombre/clair)
+    if (typeof window.MM.detectAndApplyTheme === 'function') {
+      window.MM.detectAndApplyTheme();
+    }
+
     // Chaque module est isolé dans un try-catch pour qu'un crash
     // dans l'un n'empêche pas l'initialisation des suivants.
     const modules = [
@@ -108,6 +114,7 @@
       { key: FEATURES.studioSearch, init: 'initStudioSearch', label: 'Recherche Studio' },
       { key: FEATURES.syntax, init: 'initSyntax', label: 'Syntaxe' },
       { key: FEATURES.chatExport, init: 'initChatExport', label: 'ChatExport' },
+      { key: FEATURES.chatQuote, init: 'initChatQuote', label: 'ChatQuote' },
       { key: FEATURES.transfer, init: 'initTransfer', label: 'Transfert' },
       { key: FEATURES.noteCopy, init: 'initNoteCopy', label: 'Copie Note' }
     ];
@@ -150,6 +157,7 @@
       { name: 'StudioSearch', fn: window.MM.cleanupStudioSearch },
       { name: 'Syntax', fn: window.MM.cleanupSyntax },
       { name: 'ChatExport', fn: window.MM.cleanupChatExport },
+      { name: 'ChatQuote', fn: window.MM.cleanupChatQuote },
       { name: 'Transfer', fn: window.MM.cleanupTransfer },
       { name: 'NoteCopy', fn: window.MM.cleanupNoteCopy }
     ];
