@@ -549,7 +549,8 @@
     const html = card.outerHTML || '';
     const uuids = html.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi);
     if (uuids && uuids.length > 0) {
-      const currentNotebookId = window.MM?.notebookId || '';
+      const currentNotebookId = (typeof window.MM?.getActiveNotebookId === 'function'
+        ? window.MM.getActiveNotebookId() : '') || window.MM?.notebookId || '';
       const validUuids = uuids.filter(u => u.toLowerCase() !== currentNotebookId.toLowerCase());
       if (validUuids.length > 0) {
         return validUuids[0];
@@ -567,7 +568,10 @@
     let container = document.querySelector('.mm-studio-header-container');
     if (container && document.body.contains(container)) return container;
 
-    const scrollableContent = document.querySelector('studio-panel .panel-content-scrollable, studio-panel');
+    // Détection robuste du conteneur Studio (balise custom, section ou div avec classe)
+    const scrollableContent = document.querySelector(
+      'studio-panel .panel-content-scrollable, section.studio-panel .panel-content-scrollable, .studio-panel .panel-content-scrollable, studio-panel, section.studio-panel, .studio-panel, [class*="studio-panel"]'
+    );
     if (!scrollableContent) return null;
 
     container = window.MM.createElement('div', {

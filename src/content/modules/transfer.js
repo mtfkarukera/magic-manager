@@ -355,6 +355,7 @@
       textContent: t('transferFallbackInfo') || 'Les fichiers locaux seront convertis en Markdown enrichi.'
     });
 
+    const triggerEl = document.activeElement;
     const dialogTitleId = 'mm-dialog-title-' + Date.now();
     const dialog = createElement('dialog', {
       className: 'mm-dialog mm-transfer-dialog',
@@ -373,6 +374,9 @@
     function closeDialog() {
       dialog.close();
       dialog.remove();
+      if (triggerEl && typeof triggerEl.focus === 'function') {
+        try { triggerEl.focus(); } catch (_) {}
+      }
     }
 
     dialog.addEventListener('cancel', (e) => {
@@ -386,6 +390,9 @@
 
     document.body.appendChild(dialog);
     dialog.showModal();
+    setTimeout(() => {
+      try { cancelBtn.focus(); } catch (_) {}
+    }, 50);
     searchInput.focus();
   }
 
@@ -441,6 +448,9 @@
 
     document.body.appendChild(dialog);
     dialog.showModal();
+    setTimeout(() => {
+      try { cancelBtn.focus(); } catch (_) {}
+    }, 50);
 
     return {
       updateItem: (index, status, title, details) => {
@@ -797,7 +807,7 @@
 
           if (!targetSource) {
             targetSource = {
-              id: 'fallback_' + Date.now(),
+              id: null,
               title: cleanedTitle,
               kind: 1
             };
@@ -837,6 +847,7 @@
       batchTransferButton.remove();
       batchTransferButton = null;
     }
+    document.querySelectorAll('.mm-individual-transfer-btn').forEach(btn => btn.remove());
     lastBatchTransferCount = -1;
     console.log('[MM] Module transfert nettoyé');
   }

@@ -252,6 +252,7 @@
             e.stopPropagation();
           });
 
+          nativeIcon.classList.add('mm-studio-native-icon');
           nativeIcon.parentNode.insertBefore(iconWrapper, nativeIcon);
           iconWrapper.appendChild(checkbox);
           iconWrapper.appendChild(nativeIcon);

@@ -116,10 +116,16 @@ body {
 }
 
 .banner-text code {
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.08);
   padding: 1px 4px;
   border-radius: 3px;
   font-family: monospace;
+}
+
+@media (prefers-color-scheme: dark) {
+  .banner-text code {
+    background: rgba(255, 255, 255, 0.14);
+  }
 }
 
 .btn-grant {
@@ -137,6 +143,12 @@ body {
 
 .btn-grant:hover {
   background-color: var(--accent-hover);
+}
+
+.btn-grant:focus-visible,
+.footer-link:focus-visible {
+  outline: 2px solid var(--accent-color);
+  outline-offset: 2px;
 }
 
 /* Section Fonctionnalités */

@@ -16,6 +16,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     mm_feature_studioSearch: true,
     mm_feature_syntax: true,
     mm_feature_chatExport: true,
+    mm_feature_chatQuote: true,
     mm_feature_transfer: true,
     mm_feature_noteCopy: true
   };

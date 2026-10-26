@@ -82,7 +82,13 @@ function applyI18n(root = document) {
 function createElement(tag, attrs = {}, children = []) {
   const el = document.createElement(tag);
   for (const [key, value] of Object.entries(attrs)) {
-    if (key === 'className') {
+    if (key === 'attributes' && typeof value === 'object' && value !== null) {
+      for (const [attrKey, attrVal] of Object.entries(value)) {
+        if (attrVal !== undefined && attrVal !== null) {
+          el.setAttribute(attrKey, attrVal);
+        }
+      }
+    } else if (key === 'className') {
       el.className = value;
     } else if (key === 'textContent') {
       el.textContent = value;
@@ -180,6 +186,22 @@ function getActiveNotebookId() {
 }
 
 /**
+ * Échappe les caractères HTML spéciaux pour prévenir les injections XSS.
+ *
+ * @param {string} str - Chaîne à échapper.
+ * @returns {string} - Chaîne échappée sûre.
+ */
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+/**
  * Extrait de façon robuste l'identifiant de source à partir de son conteneur DOM.
  * Scanne les attributs du conteneur et de tous ses descendants à la recherche d'UUIDs
  * ou du préfixe spécifique s:... de Google.
@@ -190,8 +212,8 @@ function getActiveNotebookId() {
 function extractSourceId(container) {
   if (!container) return null;
 
-  // 1. Recherche d'attributs de données explicites
-  const dataAttrs = ['data-id', 'data-source-id', 'data-sourceid', 'data-doc-id'];
+  // 1. Recherche d'attributs de données explicites (priorité à data-mm-source-id)
+  const dataAttrs = ['data-mm-source-id', 'data-id', 'data-source-id', 'data-sourceid', 'data-doc-id'];
   for (const attr of dataAttrs) {
     let val = container.getAttribute(attr);
     if (val) return val;
@@ -257,6 +279,7 @@ window.MM.createElement = createElement;
 window.MM.debounce = debounce;
 window.MM.findElementsInShadows = findElementsInShadows;
 window.MM.isInsideSelector = isInsideSelector;
+window.MM.escapeHtml = escapeHtml;
 window.MM.getActiveNotebookId = getActiveNotebookId;
 window.MM.extractSourceId = extractSourceId;
 window.MM.htmlToMarkdown = htmlToMarkdown;

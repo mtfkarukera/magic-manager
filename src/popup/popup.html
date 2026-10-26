@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -13,11 +13,11 @@
         <img src="/icons/icon-32.png" alt="Magic Manager Logo" class="brand-logo" width="20" height="20">
         <h1>Magic Manager</h1>
       </div>
-      <span class="version" id="ext-version">v1.28.4</span>
+      <span class="version" id="ext-version">v1.28.5</span>
     </header>
 
     <!-- Bandeau dynamique d'alerte permission (masqué par défaut) -->
-    <div id="permission-warning-banner" class="banner-warning" style="display: none;">
+    <div id="permission-warning-banner" class="banner-warning" role="alert" style="display: none;">
       <div class="banner-header">
         <span class="banner-icon">⚠️</span>
         <strong>Action requise (Migration Google)</strong>
@@ -35,79 +35,79 @@
       
       <div class="features-list">
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_shortcuts" data-feature="feature_shortcuts">
+          <input type="checkbox" role="switch" id="feature_shortcuts" data-feature="feature_shortcuts">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureShortcuts">⌨️ Raccourcis clavier (Cmd+Shift+F…)</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_search" data-feature="feature_search">
+          <input type="checkbox" role="switch" id="feature_search" data-feature="feature_search">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureSearch">🔍 Barre de recherche des sources</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_badges" data-feature="feature_badges">
+          <input type="checkbox" role="switch" id="feature_badges" data-feature="feature_badges">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureBadges">🏷️ Badges de provenance (Drive, URL, Local)</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_merge" data-feature="feature_merge">
+          <input type="checkbox" role="switch" id="feature_merge" data-feature="feature_merge">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureMerge">🔀 Fusion intelligente de sources</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_export" data-feature="feature_export">
+          <input type="checkbox" role="switch" id="feature_export" data-feature="feature_export">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureExport">📤 Exportation simplifiée (MD, PDF, ZIP)</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_delete" data-feature="feature_delete">
+          <input type="checkbox" role="switch" id="feature_delete" data-feature="feature_delete">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureDelete">🗑️ Suppression directe des sources</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_batchDelete" data-feature="feature_batchDelete">
+          <input type="checkbox" role="switch" id="feature_batchDelete" data-feature="feature_batchDelete">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureBatchDelete">🧹 Suppression par lot (sources + Studio)</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_studioSearch" data-feature="feature_studioSearch">
+          <input type="checkbox" role="switch" id="feature_studioSearch" data-feature="feature_studioSearch">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureStudioSearch">🎨 Recherche et filtrage du Studio</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_syntax" data-feature="feature_syntax">
+          <input type="checkbox" role="switch" id="feature_syntax" data-feature="feature_syntax">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureSyntax">🎨 Coloration syntaxique du code</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_chatExport" data-feature="feature_chatExport">
+          <input type="checkbox" role="switch" id="feature_chatExport" data-feature="feature_chatExport">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureChatExport">💬 Exportation du chat en note</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_chatQuote" data-feature="feature_chatQuote">
+          <input type="checkbox" role="switch" id="feature_chatQuote" data-feature="feature_chatQuote">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureChatQuote">💬 Citation rapide de réponses dans le chat</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_transfer" data-feature="feature_transfer">
+          <input type="checkbox" role="switch" id="feature_transfer" data-feature="feature_transfer">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureTransfer">📋 Copie de sources inter-carnets</span>
         </label>
 
         <label class="feature-toggle">
-          <input type="checkbox" id="feature_noteCopy" data-feature="feature_noteCopy">
+          <input type="checkbox" role="switch" id="feature_noteCopy" data-feature="feature_noteCopy">
           <span class="slider"></span>
           <span class="label-text" data-i18n="settingsFeatureNoteCopy">📄 Copie rapide de contenu de notes</span>
         </label>
@@ -119,7 +119,7 @@
         <span>🌐 Google Notebook</span>
         <span class="badge-local" data-i18n="privacy100PercentLocal">🔒 100% Local</span>
       </div>
-      <a href="https://magic-clipper.mtfk.fr/" target="_blank" class="footer-link">Suite magic-softs</a>
+      <a href="https://magic-clipper.mtfk.fr/" target="_blank" rel="noopener noreferrer" class="footer-link">Suite magic-softs</a>
     </footer>
   </div>
 

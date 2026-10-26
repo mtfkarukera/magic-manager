@@ -408,8 +408,10 @@
       filterPopoverEl.remove();
       filterPopoverEl = null;
     }
-    if (anchorBtn) {
-      anchorBtn.classList.toggle('mm-active', activeTypeFilters.size > 0);
+    const btn = anchorBtn || (searchBarContainer && searchBarContainer.querySelector('.mm-studio-search-filter'));
+    if (btn) {
+      btn.classList.toggle('mm-active', activeTypeFilters.size > 0);
+      btn.setAttribute('aria-expanded', 'false');
     }
   }
 
@@ -440,6 +442,8 @@
       type: 'button',
       'aria-label': t('studioFilterLabel') || 'Filtrer par type',
       title: t('studioFilterLabel') || 'Filtrer par type',
+      'aria-expanded': 'false',
+      'aria-haspopup': 'dialog',
       onClick: function (e) {
         e.stopPropagation();
         toggleFilterPopover(filterBtn);
@@ -459,14 +463,25 @@
     }
 
     anchorBtn.classList.add('mm-active');
+    anchorBtn.setAttribute('aria-expanded', 'true');
     filterPopoverEl = createElement('div', {
-      className: 'mm-studio-filter-popover'
+      className: 'mm-studio-filter-popover',
+      role: 'dialog',
+      'aria-label': t('studioFilterLabel') || 'Filtrer par type'
     });
 
     // Isoler le popover de l'interception Angular : bloquer la propagation
     // des clics/mousedown pour que les handlers de cartes Angular ne capturent pas nos clics
     filterPopoverEl.addEventListener('click', function (e) { e.stopPropagation(); });
     filterPopoverEl.addEventListener('mousedown', function (e) { e.stopPropagation(); });
+    filterPopoverEl.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        closeStudioFilterPopover(anchorBtn);
+        anchorBtn.focus();
+      }
+    });
 
     // Injecter les options pour chaque type d'artéfact
     ARTIFACT_TYPES.forEach(type => {
@@ -537,33 +552,27 @@
   function isStudioInDocumentView(studioPanel) {
     if (!studioPanel) return false;
 
-    // 1. Si des cartes du Studio sont présentes et visibles dans le panneau, nous sommes en mode liste
-    const cards = studioPanel.querySelectorAll('.artifact-item-button, [class*="artifact-item"]');
-    for (let i = 0; i < cards.length; i++) {
-      if (cards[i].offsetHeight > 0) {
-        return false;
-      }
-    }
-
-    // 2. Si les boutons de création rapide d'artéfacts (audio, vidéo, quiz...) sont visibles, nous sommes en mode liste
-    const createTile = studioPanel.querySelector('.create-artifact-button-container, [class*="create-artifact"]');
-    if (createTile && createTile.offsetHeight > 0) {
-      return false;
-    }
-
-    // 3. Détecter la présence active du bouton retour (arrow_back) ou d'un éditeur ouvert dans le Studio
-    const backBtn = studioPanel.querySelector(
-      'button[aria-label*="back" i], button[aria-label*="retour" i], button[mattooltip*="retour" i], button.back-button'
+    // 1. Détecter formellement un éditeur de note actif
+    const hasActiveEditor = !!studioPanel.querySelector(
+      'form.note-form, .note-editor-content, [contenteditable="true"]'
     );
-    const hasBackIcon = Array.from(studioPanel.querySelectorAll('mat-icon')).some(function (el) {
-      const text = (el.textContent || '').trim();
-      return text === 'arrow_back' || text === 'arrow_backward' || text === 'chevron_left';
-    });
+    if (hasActiveEditor) return true;
 
-    const hasActiveEditor = !!studioPanel.querySelector('form.note-form, .note-editor-content, [contenteditable="true"]');
-    const hasActiveViewer = !!studioPanel.querySelector('artifact-viewer, .artifact-viewer-container');
+    // 2. Détecter formellement un visualiseur d'artéfact ou de note actif
+    const hasActiveViewer = !!studioPanel.querySelector(
+      'artifact-viewer, .artifact-viewer-container, note-viewer, .note-viewer'
+    );
+    if (hasActiveViewer) return true;
 
-    return !!(backBtn || hasBackIcon || hasActiveEditor || (hasActiveViewer && cards.length === 0));
+    // 3. Détecter un bouton explicite de fermeture/retour d'une note ou d'un artéfact
+    const backBtn = studioPanel.querySelector(
+      'note-viewer button[aria-label*="retour" i], note-viewer button[aria-label*="back" i], ' +
+      'artifact-viewer button[aria-label*="retour" i], artifact-viewer button[aria-label*="back" i], ' +
+      'button.back-button'
+    );
+    if (backBtn && backBtn.offsetParent !== null) return true;
+
+    return false;
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -600,12 +609,11 @@
         if (input) input.value = '';
         const clearBtn = searchBarContainer.querySelector('.mm-studio-search-clear');
         if (clearBtn) clearBtn.classList.remove('mm-visible');
-        const filterBtn = searchBarContainer.querySelector('.mm-studio-filter-btn');
+        const filterBtn = searchBarContainer.querySelector('.mm-studio-search-filter');
         if (filterBtn) filterBtn.classList.remove('mm-active');
       }
       if (filterPopoverEl) {
-        filterPopoverEl.remove();
-        filterPopoverEl = null;
+        closeStudioFilterPopover();
       }
       applyFilters();
     } else {
@@ -622,8 +630,7 @@
         searchBarContainer.style.display = 'none';
       }
       if (filterPopoverEl) {
-        filterPopoverEl.remove();
-        filterPopoverEl = null;
+        closeStudioFilterPopover();
       }
       return;
     }
@@ -640,8 +647,7 @@
         headerContainer.style.display = 'none';
       }
       if (filterPopoverEl) {
-        filterPopoverEl.remove();
-        filterPopoverEl = null;
+        closeStudioFilterPopover();
       }
       return;
     }
@@ -656,81 +662,79 @@
         searchBarContainer.remove();
         searchBarContainer = null;
         if (filterPopoverEl) {
-          filterPopoverEl.remove();
-          filterPopoverEl = null;
+          closeStudioFilterPopover();
         }
       }
     }
 
-    // Réafficher si masqué précédemment
-    if (searchBarContainer && searchBarContainer.style.display === 'none') {
-      searchBarContainer.style.display = '';
+    const isAttached = searchBarContainer && document.body.contains(searchBarContainer);
+
+    // Si la barre est déjà dans le DOM actif
+    if (searchBarContainer && isAttached) {
+      if (searchBarContainer.style.display === 'none') {
+        searchBarContainer.style.display = '';
+      }
       const headerContainer = document.querySelector('.mm-studio-header-container');
       if (headerContainer && headerContainer.style.display === 'none') {
         headerContainer.style.display = '';
       }
+      if (headerContainer && !headerContainer.contains(searchBarContainer)) {
+        headerContainer.appendChild(searchBarContainer);
+      }
       applyFilters();
       return;
     }
 
-    // Si déjà injectée, ré-appliquer les filtres
-    if (searchBarContainer && studioPanel.contains(searchBarContainer)) {
-      applyFilters();
-      return;
-    }
+    // ═══ Construction de la barre de recherche (si absente en mémoire) ═══
+    if (!searchBarContainer) {
+      const input = createElement('input', {
+        type: 'text',
+        className: 'mm-studio-search-input',
+        placeholder: t('studioSearchPlaceholder') || 'Rechercher dans le Studio…',
+        'aria-label': t('studioSearchPlaceholder') || 'Rechercher dans le Studio…',
+        value: currentQuery,
+        onInput: function () {
+          clearBtn.classList.toggle('mm-visible', input.value.length > 0);
+          performSearch();
+        },
+        onKeydown: function (e) {
+          if (e.key === 'Escape') {
+            input.value = '';
+            currentQuery = '';
+            applyFilters();
+            clearBtn.classList.remove('mm-visible');
+            input.blur();
+          }
+        }
+      });
 
-    // Nettoyer d'éventuels orphelins
-    if (searchBarContainer) {
-      searchBarContainer.remove();
-      searchBarContainer = null;
-    }
-
-    // ═══ Construction de la barre de recherche ═══
-    const input = createElement('input', {
-      type: 'text',
-      className: 'mm-studio-search-input',
-      placeholder: t('studioSearchPlaceholder') || 'Rechercher dans le Studio…',
-      'aria-label': t('studioSearchPlaceholder') || 'Rechercher dans le Studio…',
-      value: currentQuery,
-      onInput: function () {
-        clearBtn.classList.toggle('mm-visible', input.value.length > 0);
-        performSearch();
-      },
-      onKeydown: function (e) {
-        if (e.key === 'Escape') {
+      const clearBtn = createElement('button', {
+        className: 'mm-studio-search-clear' + (currentQuery ? ' mm-visible' : ''),
+        type: 'button',
+        'aria-label': t('searchClearLabel') || 'Effacer',
+        textContent: '×',
+        onClick: function () {
           input.value = '';
           currentQuery = '';
           applyFilters();
           clearBtn.classList.remove('mm-visible');
-          input.blur();
+          input.focus();
         }
-      }
-    });
+      });
 
-    const clearBtn = createElement('button', {
-      className: 'mm-studio-search-clear' + (currentQuery ? ' mm-visible' : ''),
-      type: 'button',
-      'aria-label': t('searchClearLabel') || 'Effacer',
-      textContent: '×',
-      onClick: function () {
-        input.value = '';
-        currentQuery = '';
-        applyFilters();
-        clearBtn.classList.remove('mm-visible');
-        input.focus();
-      }
-    });
+      const filterBtn = createFilterButton();
 
-    const filterBtn = createFilterButton();
+      const searchWrapper = createElement('div', {
+        className: 'mm-studio-search-wrapper'
+      }, [input, clearBtn, filterBtn]);
 
-    const searchWrapper = createElement('div', {
-      className: 'mm-studio-search-wrapper'
-    }, [input, clearBtn, filterBtn]);
-
-    searchBarContainer = createElement('div', {
-      className: 'mm-studio-search',
-      style: 'order: 1;'
-    }, [searchWrapper]);
+      searchBarContainer = createElement('div', {
+        className: 'mm-studio-search',
+        style: 'order: 1;'
+      }, [searchWrapper]);
+    } else {
+      searchBarContainer.style.display = '';
+    }
 
     const headerContainer = typeof window.MM?.getOrCreateStudioHeaderContainer === 'function'
       ? window.MM.getOrCreateStudioHeaderContainer()

@@ -187,6 +187,22 @@
   }
 
   /**
+   * Liste blanche des RPCs de mutation/suppression dont le serveur Google
+   * renvoie un résultat légitimement null en cas de succès (ex: ["wrb.fr", rpcId, null, ...]).
+   */
+  const RPC_ALLOW_NULL_RESULT = new Set([
+    'tGMBJ',  // DELETE_SOURCE
+    'AH0mwd', // DELETE_NOTE
+    'V5N4be', // DELETE_ARTIFACT
+    'WWINqb', // DELETE_NOTEBOOK
+    'GyzE7e', // DELETE_LABEL
+    'J7Gthc', // DELETE_CONVERSATION
+    'FLmJqe', // REFRESH_SOURCE
+    'rc3d8d', // RENAME_ARTIFACT
+    'b7Wfje'  // UPDATE_SOURCE
+  ]);
+
+  /**
    * Valide la structure globale et extrait le résultat utile.
    */
   function validateAndExtractRpcResponse(rawResponse, rpcId) {
@@ -196,6 +212,11 @@
 
     const chunks = parseChunkedResponse(stripAntiXssi(rawResponse));
     const result = extractRpcResult(chunks, rpcId);
+
+    // Les RPCs de suppression ou de mutation sans payload retour renvoient légitimement null
+    if (result === null && RPC_ALLOW_NULL_RESULT.has(rpcId)) {
+      return null;
+    }
 
     if (result === null || result === undefined) {
       // Aperçu tronqué et nettoyé pour éviter toute fuite de données privées (correction audit S-1)
@@ -410,6 +431,9 @@
     }
 
     // Associer chaque requête au chunk de résultat correspondant par index positionnel
+    let succeeded = 0;
+    let failed = 0;
+    const errors = [];
     const consumedIndex = {}; // Compteur par rpcId pour consommer dans l'ordre
     for (const req of requests) {
       const id = req.rpcId;
@@ -484,11 +508,12 @@
    * Supprime un artéfact via RPC V5N4be (DELETE_ARTIFACT).
    * @param {string} artifactId - ID de l'artéfact.
    * @param {string} notebookId - ID du carnet.
+   * @param {number} [typeCode=2] - Code de type d'artéfact (2 par défaut pour rapport/doc).
    */
-  async function deleteArtifact(artifactId, notebookId) {
+  async function deleteArtifact(artifactId, notebookId, typeCode = 2) {
     const rpcId = 'V5N4be';
-    const params = [artifactId];
-    console.log(`[MM] Appel RPC deleteArtifact (artifact: ${artifactId})`);
+    const params = [[typeCode], artifactId];
+    console.log(`[MM] Appel RPC deleteArtifact (artifact: ${artifactId}, typeCode: ${typeCode})`);
     await sendBatchExecute(rpcId, params, notebookId);
     return true;
   }

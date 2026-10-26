@@ -35,6 +35,7 @@
   // ═══════════════════════════════════════════════════════════════════════
 
   function showMergeDialog(checkboxes) {
+    const triggerEl = document.activeElement;
     const timestamp = getFormattedTimestamp();
     const defaultTitle = `${t('mergedSourcesTitle') || 'Sources fusionnées'} - ${timestamp}`;
 
@@ -46,9 +47,12 @@
       'aria-labelledby': dialogTitleId
     });
 
-    // Centralisation de la suppression du DOM à la fermeture native
+    // Centralisation de la suppression du DOM et restauration du focus à la fermeture native
     dialog.addEventListener('close', () => {
       dialog.remove();
+      if (triggerEl && typeof triggerEl.focus === 'function') {
+        try { triggerEl.focus(); } catch (_) {}
+      }
     });
     
     const titleEl = createElement('div', { 
@@ -220,7 +224,7 @@
 
       createElement('div', {
         id: 'mm-merge-substatus',
-        style: 'font-size: 12px; color: #aaa; font-family: var(--mm-font-family);',
+        style: 'font-size: 12px; color: var(--mm-on-surface-variant, #5f6368); font-family: var(--mm-font-family);',
         textContent: `0 / ${checkboxes.length} sources traitées`
       })
     ]);
@@ -275,6 +279,8 @@
         // 2. Récupérer le contenu via RPC
         try {
           let content;
+          const safeTitle = window.MM.escapeHtml ? window.MM.escapeHtml(sourceTitle) : sourceTitle;
+
           if (format === 'PDF-Riche') {
             const html = await window.MM.rpc.getSourceContentHtml(sourceId, notebookId);
             if (isCancelled) return;
@@ -282,19 +288,19 @@
               anyTruncated = true;
             }
             if (html) {
-              content = `<h1>${sourceTitle}</h1>` + html + `<hr>`;
+              content = `<h1>${safeTitle}</h1>` + html + `<hr>`;
             } else {
               // Fallback au texte brut enveloppé dans du HTML si HTML absent
               const txt = await window.MM.rpc.getSourceContent(sourceId, notebookId, { format: 'text' });
-              const wrappedTxt = (txt || '').replace(/\n/g, '<br>');
-              content = `<h1>${sourceTitle}</h1><p>${wrappedTxt}</p><hr>`;
+              const safeTxt = (window.MM.escapeHtml ? window.MM.escapeHtml(txt || '') : (txt || '')).replace(/\n/g, '<br>');
+              content = `<h1>${safeTitle}</h1><p>${safeTxt}</p><hr>`;
             }
           } else if (format === 'PDF-Simple') {
+            // Le PDF-Simple utilise renderSimplePdf qui traite du texte brut (zéro balise HTML)
             const txt = await window.MM.rpc.getSourceContent(sourceId, notebookId, { format: 'text' });
             if (isCancelled) return;
             if (txt) {
-              const wrappedTxt = (txt || '').replace(/\n/g, '<br>');
-              content = `<h1>${sourceTitle}</h1><p>${wrappedTxt}</p><hr>`;
+              content = `${sourceTitle}\n\n${txt}\n\n---\n\n`;
             }
           } else {
             // Markdown-Riche ou Markdown-Simple
@@ -352,14 +358,14 @@
       if (spinner) spinner.style.display = 'none';
 
       statusEl.textContent = 'Fusion terminée !';
-      statusEl.style.color = '#34A853';
+      statusEl.style.color = 'var(--mm-success, #0d652d)';
       
       if (anyTruncated) {
         substatusEl.replaceChildren(
           document.createTextNode('La nouvelle source a été ajoutée. '),
           document.createElement('br'),
           createElement('strong', {
-            style: 'color: #f59e0b;',
+            style: 'color: var(--warning-text, #b06000);',
             textContent: 'Attention : au moins un document a été tronqué par Google en mode Riche. Si des données manquent, recréez la fusion en mode Simple.'
           })
         );
@@ -368,14 +374,17 @@
       }
       
       const btnClose = createElement('button', {
-        className: 'mm-merge-btn-confirm',
-        style: 'margin-top: 16px; background-color: #34A853;',
+        className: 'mm-btn mm-btn-primary',
+        style: 'margin-top: 16px;',
         textContent: 'Fermer',
         onClick: () => {
           dialog.close();
         }
       });
       progressContainer.appendChild(btnClose);
+      setTimeout(() => {
+        try { btnClose.focus(); } catch (_) {}
+      }, 50);
 
     } catch (err) {
       console.error('[MM] Erreur lors de la fusion :', err);
@@ -384,11 +393,11 @@
       if (spinner) spinner.style.display = 'none';
 
       statusEl.textContent = 'Une erreur est survenue';
-      statusEl.style.color = '#EA4335';
+      statusEl.style.color = 'var(--mm-error, #ea4335)';
       substatusEl.textContent = err.message || err;
       
       const btnClose = createElement('button', {
-        className: 'mm-merge-btn-cancel',
+        className: 'mm-btn mm-btn-secondary',
         style: 'margin-top: 16px;',
         textContent: 'Fermer',
         onClick: () => {
@@ -396,6 +405,9 @@
         }
       });
       progressContainer.appendChild(btnClose);
+      setTimeout(() => {
+        try { btnClose.focus(); } catch (_) {}
+      }, 50);
     }
   }
 

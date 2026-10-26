@@ -1,8 +1,18 @@
-# Fichiers privés SDD
+# Fichiers privés SDD & de suivi
 AGENTS.md
 spec.md
 task*.md
-plan.md
+tasks*.md
+plan*.md
+submission_kit.md
+audit_report.md
+JUSTIFICATION_*.md
+NOTES_*.md
+BRAINSTORM_*.md
+
+# Dépendances et manifestes npm hors extension
+package.json
+package-lock.json
 
 # Documentation interne
 ARCHITECTURE.md

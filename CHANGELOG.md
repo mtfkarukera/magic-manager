@@ -4,6 +4,42 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte une numérotation sémantique `X.Y.Z` (où `X` consacre la maturité stable de production, `Y` la branche d'innovation des 28 sprints majeurs, et `Z` les consolidations et audits qualité).
 
+## [1.28.6] — 2026-10-26
+
+### 📱 Robustesse Responsive & Recherche Mobile (Sources & Studio)
+- **Rattachement DOM Actif des Barres de Recherche (`search.js` & `studio-search.js`)** : Remplacement des sorties prématurées (`display = ''` avec `return;`) par un contrôle systématique de présence dans l'arbre DOM actif (`document.body.contains`). Ré-insertion garantie de la pilule dans l'en-tête collant mobile (`.mm-sticky-header-search`) et le conteneur Studio après recyclage de vue Angular.
+- **Élargissement des Sélecteurs du Conteneur d'En-tête Studio (`source-helpers.js`)** : Détection robuste de `section.studio-panel` et `.studio-panel` (au lieu de la seule balise custom `studio-panel`), assurant l'ancrage systématique de `.mm-studio-header-container` en mode étroit.
+- **Fiabilisation de la Détection de Mode Document Studio (`studio-search.js`)** : Suppression du faux positif basé sur les chevrons Material (`mat-icon`) du shell mobile ; restriction de la dissimulation de la barre de recherche aux seuls éditeurs et visualiseurs réellement actifs (`form.note-form`, `artifact-viewer`, `note-viewer`).
+- **Filet de Sécurité Double-Dispatch sur Onglets Mobiles (`panel-observer.js`)** : Ajout d'un second cycle d'injection retardé à 550ms lors des clics sur les onglets mobiles (`[role="tab"]`), rattrapant les transitions CSS lentes d'Angular Material et garantissant la présence des barres de recherche dès l'hydratation terminée.
+
+### 🗑️ Fiabilisation des Suppressions RPC
+- **Prise en Charge des Réponses RPC à Résultat `null` (`rpcclient.js`)** : Autorisation explicite de `result === null` via `RPC_ALLOW_NULL_RESULT` pour les mutations de suppression Google (`tGMBJ`, `AH0mwd`, `V5N4be`, `WWINqb`, `GyzE7e`, `J7Gthc`), éliminant l'exception `RpcApiChangedError` qui faisait échouer silencieusement les suppressions individuelles et du Studio.
+- **Format de Paramètres Standardisé pour `deleteArtifact` (`rpcclient.js`)** : Alignement de la signature et du payload RPC sur la structure officielle `[[typeCode], artifactId]`.
+
+## [1.28.5] — 2026-10-26
+
+### 🛡️ Sécurité Anti-Leak & Packaging Conforme
+- **Sanctuaire d'Exclusion `.web-ext-ignore`** : Exclusion stricte de `submission_kit.md`, `package.json`, `package-lock.json`, `audit_report.md` et des fichiers de travail internes pour garantir zéro fuite documentaire dans les archives distribuées `.xpi`.
+- **Conformité CSP MV3 Outillage (`tools/test-table.js`)** : Remplacement d'`eval()` par l'API sécurisée `vm.runInThisContext()` de Node.
+- **Assainissement Manifeste (`manifest.json`)** : Suppression de la déclaration d'icône 96px manquante dans `icons/`.
+- **Sécurisation Réseau des Médias (`export-utils.js`)** : Validation stricte des protocoles autorisés (`https:`, `blob:`, `data:`) et restriction de `credentials: 'include'` exclusivement aux domaines officiels de Google lors du pré-chargement des images d'export PDF.
+
+### ⚙️ Robustesse RPC, Synchronisation Popup & Correction Fusion
+- **Correctif Bloquant Batch RPC (`rpcclient.js`)** : Déclaration locale des accumulateurs dans `sendBatchMultiple`, éliminant le `ReferenceError` et restaurant à 100 % la suppression groupée directe de sources sans dégradation séquentielle.
+- **Persistance du Toggle Citation Rapide (`popup.js`)** : Intégration de `mm_feature_chatQuote: true` dans `DEFAULT_PREFS`, assurant la synchronisation fidèle de l'interrupteur dès l'ouverture de la popup.
+- **Rendu Purge de `PDF-Simple` & Échappement HTML (`merge.js` & `note-copy.js`)** : Suppression intégrale des balises HTML parasites (`<h1>`, `<p>`, `<hr>`) dans le PDF Simple fusionné au profit d'un texte pur structuré, et échappement automatique systématique via `window.MM.escapeHtml` sur tous les titres et corps HTML.
+- **Orchestration Réactive Élargie (`orchestrator.js` & `panel-observer.js`)** : Initialisation fiable de l'observateur central pour l'ensemble des modules dépendants (`search`, `merge`, `syntax`, `chatExport`) et ré-injection du bouton de transfert individuel dans `onPanelMutation`.
+
+### ♿ Accessibilité Numérique WCAG 2.1 AA & Navigation Clavier
+- **Harmonisation Bi-Thème Caméléon (`magic-manager.css`)** : Extension de `html[data-mm-theme="dark"|"light"]` sur l'ensemble des modales `.mm-dialog`, des en-têtes collants, des boutons batch et des sélecteurs de carnets, éliminant tout décalage de contraste texte/fond lors d'une divergence thème OS vs thème NotebookLM.
+- **Contraste Lisible Bandeau Popup (`popup.css`)** : Calibrage du fond de `<code>` (`rgba(0,0,0,0.08)` en clair / `0.14` en sombre) garantissant un ratio de contraste supérieur à 4.5:1.
+- **Focus Visible Universel & Modales Accessibles (`magic-manager.css`, `merge.js`, `transfer.js`, `studio-search.js`)** : Extension du focus ring double-anneau MD3 à tous les boutons d'actions, restauration du focus clavier déclencheur à la fermeture des modales, et pilotage au clavier (`Escape`, `aria-expanded`, `role="dialog"`) du popover de filtres du Studio.
+
+### 🎨 Finitions Material Design 3 & Ergonomie
+- **Badges Web Rétablis (`magic-manager.css`)** : Prise en charge de la classe `.mm-source-badge--web` pour doter les sources Web et vidéos YouTube de leur couleur bleue dédiée `#4285f4`.
+- **Alignement Pixel-Perfect des Actions Individuelles (`magic-manager.css`)** : Calage du bouton de suppression sur `36×36px` et icône `20×20px` pour une parfaite symétrie avec l'export et le transfert.
+- **Grille de Formats de Fusion 2×2 (`magic-manager.css`)** : Disposition en grille équilibrée éliminant la compression textuelle dans la boîte de dialogue de fusion.
+
 ## [1.28.4] — 2026-09-29
 
 ### 💬 Citation Synthétique de Réponses dans le Chat (Quote-to-Prompt)

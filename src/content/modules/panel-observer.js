@@ -34,6 +34,8 @@
 
   /** Timer du clic sur onglet mobile pour nettoyage */
   let tabClickTimer = null;
+  /** Second timer de sécurité pour les hydratations Angular tardives post-clic d'onglet */
+  let tabClickLateTimer = null;
 
   /** Indique si un dispatch est déjà en cours d'exécution (protection anti-réentrance synchrone) */
   let isDispatching = false;
@@ -89,6 +91,9 @@
       }
       if (window.MM.isFeatureEnabled('export') && typeof window.MM.checkAndInjectIndividualExport === 'function') {
         window.MM.checkAndInjectIndividualExport();
+      }
+      if (window.MM.isFeatureEnabled('transfer') && typeof window.MM.checkAndInjectIndividualTransfer === 'function') {
+        window.MM.checkAndInjectIndividualTransfer();
       }
     } else {
       // source-viewer absent → nettoyer les boutons orphelins
@@ -525,7 +530,10 @@
       if (tabClickTimer) {
         clearTimeout(tabClickTimer);
       }
-      // Laisser Angular effectuer la transition d'onglet et hydrater le DOM
+      if (tabClickLateTimer) {
+        clearTimeout(tabClickLateTimer);
+      }
+      // 1. Premier dispatch après transition d'onglet standard (300ms)
       tabClickTimer = setTimeout(function () {
         tabClickTimer = null;
         dispatchCentralInjections();
@@ -548,6 +556,18 @@
           window.MM.updateStudioBatchDeleteButtonState();
         }
       }, 300);
+
+      // 2. Second dispatch retardé (filet de sécurité pour les hydratations Angular tardives à 550ms)
+      tabClickLateTimer = setTimeout(function () {
+        tabClickLateTimer = null;
+        dispatchCentralInjections();
+        if (typeof window.MM.restoreSourceSelection === 'function') {
+          window.MM.restoreSourceSelection();
+        }
+        if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateStudioBatchDeleteButtonState === 'function') {
+          window.MM.updateStudioBatchDeleteButtonState();
+        }
+      }, 550);
     }
   }
 
@@ -615,6 +635,10 @@
     if (tabClickTimer) {
       clearTimeout(tabClickTimer);
       tabClickTimer = null;
+    }
+    if (tabClickLateTimer) {
+      clearTimeout(tabClickLateTimer);
+      tabClickLateTimer = null;
     }
     if (currentObservedPanel) {
       if (panelClickHandler) {

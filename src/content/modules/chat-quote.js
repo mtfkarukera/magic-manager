@@ -140,13 +140,12 @@
   function ensureFloatingPill() {
     if (quotePill && document.body.contains(quotePill)) return quotePill;
 
+    const quoteLabel = t('chatQuoteTooltip') || 'Citer ce passage dans le chat';
     quotePill = createElement('button', {
       className: 'mm-floating-quote-pill',
       type: 'button',
-      attributes: {
-        'aria-label': t('chatQuoteTooltip') || 'Citer ce passage dans le chat',
-        'title': t('chatQuoteTooltip') || 'Citer ce passage dans le chat'
-      }
+      'aria-label': quoteLabel,
+      title: quoteLabel
     });
 
     const icon = createQuoteIcon();

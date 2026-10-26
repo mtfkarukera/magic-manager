@@ -307,7 +307,8 @@
 
       // Combiner le titre avec le contenu
       const fullText = titleText ? `# ${titleText}\n\n${markdownBody}` : markdownBody;
-      const fullHtml = titleText ? `<h1>${titleText}</h1>${cleanHtmlBody}` : cleanHtmlBody;
+      const safeTitle = window.MM.escapeHtml ? window.MM.escapeHtml(titleText) : titleText;
+      const fullHtml = titleText ? `<h1>${safeTitle}</h1>${cleanHtmlBody}` : cleanHtmlBody;
 
       // 4. Écriture Dual-MIME dans le Presse-papier (text/plain + text/html)
       const blobText = new Blob([fullText], { type: 'text/plain' });
@@ -322,15 +323,23 @@
 
       console.log(`[MM] Note/Artéfact (${type}) copié sans sources (Dual-MIME text/plain & text/html)`);
 
-      // 5. Feedback visuel sur le bouton
+      // 5. Feedback visuel et accessible sur le bouton
       if (btnElement) {
         const oldTitle = btnElement.title;
+        const oldAriaLabel = btnElement.getAttribute('aria-label');
+        const successMsg = t('noteCopySuccess') || 'Copié sans sources !';
         btnElement.classList.add('mm-copy-success');
-        btnElement.title = t('noteCopySuccess') || 'Copié sans sources !';
+        btnElement.title = successMsg;
+        btnElement.setAttribute('aria-label', successMsg);
 
         setTimeout(function () {
           btnElement.classList.remove('mm-copy-success');
           btnElement.title = oldTitle;
+          if (oldAriaLabel) {
+            btnElement.setAttribute('aria-label', oldAriaLabel);
+          } else {
+            btnElement.removeAttribute('aria-label');
+          }
         }, 2000);
       }
 

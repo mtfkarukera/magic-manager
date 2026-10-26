@@ -129,8 +129,20 @@
       }
     }
 
-    // Panel observer centralisé : actif si export, delete, badges, batchDelete, studioSearch, transfer ou noteCopy est activé
-    if (isFeatureEnabled(FEATURES.export) || isFeatureEnabled(FEATURES.delete) || isFeatureEnabled(FEATURES.badges) || isFeatureEnabled(FEATURES.batchDelete) || isFeatureEnabled(FEATURES.studioSearch) || isFeatureEnabled(FEATURES.transfer) || isFeatureEnabled(FEATURES.noteCopy)) {
+    // Panel observer centralisé : actif si l'un des modules réactifs UI est activé
+    if (
+      isFeatureEnabled(FEATURES.search) ||
+      isFeatureEnabled(FEATURES.merge) ||
+      isFeatureEnabled(FEATURES.export) ||
+      isFeatureEnabled(FEATURES.delete) ||
+      isFeatureEnabled(FEATURES.badges) ||
+      isFeatureEnabled(FEATURES.batchDelete) ||
+      isFeatureEnabled(FEATURES.studioSearch) ||
+      isFeatureEnabled(FEATURES.transfer) ||
+      isFeatureEnabled(FEATURES.noteCopy) ||
+      isFeatureEnabled(FEATURES.syntax) ||
+      isFeatureEnabled(FEATURES.chatExport)
+    ) {
       try {
         window.MM.initPanelObserver();
       } catch (err) {

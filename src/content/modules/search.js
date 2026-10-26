@@ -237,10 +237,12 @@
    * @returns {Element|null}
    */
   function matchRpcSourceToCard(rpcSource, cards, usedCards) {
-    // Stratégie 1 : attribut data-source-id
+    // Stratégie 1 : attribut data-mm-source-id ou data-source-id
     for (var i = 0; i < cards.length; i++) {
       if (usedCards.has(cards[i])) continue;
-      var sid = cards[i].getAttribute('data-source-id') ||
+      var sid = cards[i].getAttribute('data-mm-source-id') ||
+        cards[i].getAttribute('data-source-id') ||
+        (cards[i].querySelector('[data-mm-source-id]') || {}).dataset?.mmSourceId ||
         (cards[i].querySelector('[data-source-id]') || {}).dataset?.sourceId;
       if (sid === rpcSource.id) {
         usedCards.add(cards[i]);
@@ -268,7 +270,8 @@
    * @returns {Promise<Map<Element, {group: number, score: number}>>}
    */
   async function findContentDuplicates(onProgress) {
-    var notebookId = window.MM._currentNotebookId ||
+    var notebookId = (typeof window.MM.getActiveNotebookId === 'function' ? window.MM.getActiveNotebookId() : null) ||
+      window.MM._currentNotebookId ||
       window.location.pathname.split('/notebook/')[1]?.split('/')[0];
     if (!notebookId) return new Map();
 
@@ -431,6 +434,7 @@
           title: t('searchDupeScore', [String(pct)])
         });
         badge.style.setProperty('--mm-dupe-color', color);
+        badge.style.color = getContrastTextColor(color);
         card.style.setProperty('--mm-dupe-border-color', color);
         card.classList.add('mm-dupe-highlight');
         // Injecter le badge au début de la carte
@@ -499,6 +503,7 @@
           title: t('searchDupeScore', [String(pct)])
         });
         badge.style.setProperty('--mm-dupe-color', color);
+        badge.style.color = getContrastTextColor(color);
         card.style.setProperty('--mm-dupe-border-color', color);
         card.classList.add('mm-dupe-highlight');
         card.insertBefore(badge, card.firstChild);
@@ -692,85 +697,89 @@
       applyFilter(currentQuery);
     }
 
-    // Si on n'est plus en train de lire et que la barre était masquée, on la réaffiche
-    if (searchBarContainer && searchBarContainer.style.display === 'none') {
-      searchBarContainer.style.display = '';
+    const isMobileLayout = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
+    const isAttached = searchBarContainer && document.body.contains(searchBarContainer);
+
+    // Si la barre est déjà dans le DOM actif
+    if (searchBarContainer && isAttached) {
+      if (searchBarContainer.style.display === 'none') {
+        searchBarContainer.style.display = '';
+      }
+      if (isMobileLayout) {
+        const stickyHeader = window.MM.getOrCreateStickyHeader();
+        const searchWrapper = stickyHeader ? stickyHeader.querySelector('.mm-sticky-header-search') : null;
+        if (searchWrapper && !searchWrapper.contains(searchBarContainer)) {
+          searchWrapper.appendChild(searchBarContainer);
+          searchBarContainer.classList.remove('mm-desktop-header');
+          searchBarContainer.style.backgroundColor = 'transparent';
+        }
+      }
       refreshSearchView();
       return;
-    }
-
-    // Si la barre est déjà dans le DOM et visible → on s'assure d'appliquer la vue courante
-    if (searchBarContainer && document.contains(searchBarContainer)) {
-      refreshSearchView();
-      return;
-    }
-
-    // Nettoyer une référence orpheline éventuelle
-    if (searchBarContainer) {
-      searchBarContainer.remove();
-      searchBarContainer = null;
     }
 
     // Chercher le conteneur de la liste scrollable
     const container = findSourcesListContainer();
     if (!container) return;
 
-    // Construire la barre de recherche
-    const input = createElement('input', {
-      type: 'text',
-      className: 'mm-search-input',
-      placeholder: t('searchPlaceholder'),
-      'aria-label': t('searchPlaceholder'),
-      value: currentQuery, // Pré-remplir avec la requête courante (persistance)
-      onInput: function () {
-        clearBtn.classList.toggle('mm-visible', input.value.length > 0);
-        performSearch();
-      },
+    // Construire la barre de recherche uniquement si elle n'existe pas encore en mémoire
+    if (!searchBarContainer) {
+      const input = createElement('input', {
+        type: 'text',
+        className: 'mm-search-input',
+        placeholder: t('searchPlaceholder'),
+        'aria-label': t('searchPlaceholder'),
+        value: currentQuery, // Pré-remplir avec la requête courante (persistance)
+        onInput: function () {
+          clearBtn.classList.toggle('mm-visible', input.value.length > 0);
+          performSearch();
+        },
 
-      onKeydown: function (e) {
-        if (e.key === 'Escape') {
+        onKeydown: function (e) {
+          if (e.key === 'Escape') {
+            input.value = '';
+            currentQuery = '';
+            applyFilter('');
+            clearBtn.classList.remove('mm-visible');
+            input.blur();
+          }
+        }
+      });
+
+      // Bouton de réinitialisation (croix)
+      const clearBtn = createElement('button', {
+        className: 'mm-search-clear' + (currentQuery ? ' mm-visible' : ''),
+        type: 'button',
+        'aria-label': t('searchClearLabel'),
+        textContent: '×',
+        onClick: function () {
           input.value = '';
           currentQuery = '';
           applyFilter('');
           clearBtn.classList.remove('mm-visible');
-          input.blur();
+          input.focus();
         }
-      }
-    });
+      });
 
-    // Bouton de réinitialisation (croix)
-    const clearBtn = createElement('button', {
-      className: 'mm-search-clear' + (currentQuery ? ' mm-visible' : ''),
-      type: 'button',
-      'aria-label': t('searchClearLabel'),
-      textContent: '×',
-      onClick: function () {
-        input.value = '';
-        currentQuery = '';
-        applyFilter('');
-        clearBtn.classList.remove('mm-visible');
-        input.focus();
-      }
-    });
+      // Bouton de détection des doublons
+      const dupeBtn = createElement('button', {
+        className: 'mm-search-dupes-btn' + (isDuplicateMode ? ' mm-active' : ''),
+        type: 'button',
+        'aria-label': t('searchDupesLabel'),
+        title: t('searchDupesLabel'),
+        onClick: handleDuplicateSearch
+      });
+      dupeBtn.appendChild(createDupeIcon());
 
-    // Bouton de détection des doublons
-    const dupeBtn = createElement('button', {
-      className: 'mm-search-dupes-btn' + (isDuplicateMode ? ' mm-active' : ''),
-      type: 'button',
-      'aria-label': t('searchDupesLabel'),
-      title: t('searchDupesLabel'),
-      onClick: handleDuplicateSearch
-    });
-    dupeBtn.appendChild(createDupeIcon());
-
-    searchBarContainer = createElement('div', {
-      className: 'mm-search-bar'
-    }, [input, clearBtn, dupeBtn]);
+      searchBarContainer = createElement('div', {
+        className: 'mm-search-bar'
+      }, [input, clearBtn, dupeBtn]);
+    } else {
+      // Réactiver le conteneur mémorisé
+      searchBarContainer.style.display = '';
+    }
 
     const header = findSourcePanelHeader();
-
-    // En mode mobile, forcer l'utilisation du sticky-header même si le panel-header existe
-    const isMobileLayout = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
 
     if (sourcePanel && header && !isMobileLayout) {
       // Nettoyer l'en-tête collant mobile uniquement s'il ne contient aucune action active

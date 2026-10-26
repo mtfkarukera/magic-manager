@@ -400,12 +400,28 @@
   }
 
   /**
-   * Télécharge une image de manière sécurisée (avec credentials de session Google)
+   * Télécharge une image de manière sécurisée (avec credentials restreints à Google)
    * et retourne sa représentation en Data URL base64 compressée JPEG (70%).
    */
   async function fetchImageAsBase64(url) {
+    if (!url || typeof url !== 'string') {
+      throw new Error('URL d\'image invalide');
+    }
+
+    const parsedUrl = new URL(url, window.location.origin);
+    // Autoriser uniquement les protocoles sécurisés
+    if (!['https:', 'blob:', 'data:'].includes(parsedUrl.protocol)) {
+      throw new Error(`Protocole non sécurisé pour le chargement d'image : ${parsedUrl.protocol}`);
+    }
+
+    // N'inclure les cookies de session que vers les domaines Google autorisés
+    const isGoogleDomain = parsedUrl.hostname.endsWith('.google.com') ||
+      parsedUrl.hostname.endsWith('.googleusercontent.com') ||
+      parsedUrl.hostname.endsWith('.gstatic.com') ||
+      parsedUrl.hostname === 'google.com';
+
     const response = await fetch(url, {
-      credentials: 'include', // Nécessaire pour les images privées de la session Google
+      credentials: isGoogleDomain ? 'include' : 'omit',
       mode: 'cors'
     });
 
