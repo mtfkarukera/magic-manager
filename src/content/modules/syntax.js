@@ -141,16 +141,111 @@
     return 'code';
   }
 
+  // ═══════════════════════════════════════════════════════════════════════
+  // Détection du Streaming IA & Garde Anti-Coupure
+  // ═══════════════════════════════════════════════════════════════════════
+
+  let retryStreamingTimer = null;
+
+  /**
+   * Planifie un re-scan retardé pour capturer la fin du streaming
+   * au cas où la disparition des indicateurs n'émettrait pas de mutation d'enfants.
+   */
+  function scheduleStreamingRetry() {
+    if (retryStreamingTimer) {
+      clearTimeout(retryStreamingTimer);
+    }
+    retryStreamingTimer = setTimeout(function () {
+      retryStreamingTimer = null;
+      scanAndHighlight();
+    }, 600);
+  }
+
+  /**
+   * Vérifie si l'IA est actuellement en train de générer ou diffuser (streaming) une réponse.
+   * Analyse multi-niveaux résiliente au responsive Mobile (onglets) et Desktop (3 colonnes) :
+   * 1. Détection du bouton Stop / Arrêter / Interrompre (global ou dans les capsules de chat).
+   * 2. Inspection des icônes et classes de streaming dans les conteneurs de prompt et de discussion.
+   * @returns {boolean} true si une génération est en cours.
+   */
+  function isStreamingActive() {
+    // 1. Recherche du bouton d'arrêt/interruption (multilingue) dans tout le document
+    const stopSelectors = [
+      'button[aria-label*="stop" i]',
+      'button[aria-label*="arrê" i]',
+      'button[aria-label*="interromp" i]',
+      'button[aria-label*="cancel" i]',
+      'button[aria-label*="annul" i]',
+      'button[aria-label*="halt" i]',
+      'button[aria-label*="deten" i]',
+      'button[aria-label*="abbrech" i]',
+      'button[mattooltip*="stop" i]',
+      'button[mattooltip*="arrê" i]',
+      'button[mattooltip*="interromp" i]',
+      'button[title*="stop" i]',
+      'button[title*="arrê" i]',
+      'button[title*="interromp" i]',
+      'button.chat-stop-button',
+      '[class*="stop-button"]'
+    ];
+
+    const stopButtons = document.querySelectorAll(stopSelectors.join(', '));
+    for (let i = 0; i < stopButtons.length; i++) {
+      const btn = stopButtons[i];
+      if (btn.offsetWidth > 0 || btn.offsetHeight > 0 || (btn.getClientRects && btn.getClientRects().length > 0)) {
+        return true;
+      }
+    }
+
+    // 2. Détection par icône mat-icon stop ou svg stop dans les conteneurs de prompt/discussion
+    const promptContainers = document.querySelectorAll(
+      'query-input, .query-box, [class*="query-box"], .chat-input, [class*="chat-input"], form, section.chat-panel, [class*="chat-panel"], chat-panel'
+    );
+    for (let i = 0; i < promptContainers.length; i++) {
+      const container = promptContainers[i];
+      const iconBtn = container.querySelector('button mat-icon, button svg');
+      if (iconBtn) {
+        const iconText = (iconBtn.textContent || '').trim().toLowerCase();
+        const iconName = (iconBtn.getAttribute('data-mat-icon-name') || '').toLowerCase();
+        if (iconText === 'stop' || iconName === 'stop') {
+          return true;
+        }
+      }
+      if (container.querySelector('[class*="streaming"], [class*="generating"], mat-progress-bar')) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   /**
    * Traite un bloc `<pre>` pour lui appliquer la structure et la coloration syntaxique.
    * @param {Element} preEl - L'élément `<pre>` natif.
    */
   function processPreBlock(preEl) {
-    // Garde de sécurité : ne jamais appliquer de boîte de code sur une note éditable du Studio.
+    // Garde 1 : ne jamais appliquer de boîte de code sur une note éditable du Studio.
     // Les messages du Chat ne sont jamais des notes éditables du Studio et sont toujours traités.
     const isInsideStudioEditor = !!preEl.closest('[class*="studio"], [class*="note"]') && !!preEl.closest('[contenteditable="true"], [contenteditable=""]');
     if (preEl.isContentEditable || isInsideStudioEditor) {
       return;
+    }
+
+    // Garde 2 (Défense en profondeur Mobile & Desktop) : Si le bloc se trouve dans un tour de discussion du Chat,
+    // vérifier impérativement que la réponse de l'IA est complètement achevée (présence des boutons d'actions finales).
+    const chatTurn = preEl.closest(
+      'chat-message, conversation-turn, model-response, [class*="model-turn"], [class*="ai-turn"], [class*="chat-turn"], [class*="message-bubble"], [class*="chat-scroll-card"]'
+    );
+    if (chatTurn) {
+      // Les réponses terminées affichent les boutons d'actions (Copier la réponse, Sauvegarder dans une note, Pouces)
+      const hasFinalActions = !!chatTurn.querySelector(
+        'button[aria-label*="épingl" i], button[aria-label*="note" i], button[aria-label*="Note" i], button[aria-label*="copi" i], button[aria-label*="copy" i], button[aria-label*="thumb" i], button[aria-label*="pouce" i]'
+      );
+      // S'il n'y a pas encore d'actions finales, le message est en cours de streaming : différer l'habillage
+      if (!hasFinalActions) {
+        scheduleStreamingRetry();
+        return;
+      }
     }
 
     const codeEl = preEl.querySelector('code') || preEl;
@@ -214,11 +309,9 @@
       return;
     }
 
-    // Garde anti-streaming : ciblée uniquement sur le bouton d'arrêt actif dans la discussion
-    const chatPanel = document.querySelector('section.chat-panel, [class*="chat-panel"]');
-    const stopBtn = chatPanel && chatPanel.querySelector('button[aria-label*="stop" i], button[aria-label*="arrê" i], button[aria-label*="cancel" i]');
-    const isStreaming = !!(stopBtn && stopBtn.offsetWidth > 0);
-    if (isStreaming) {
+    // Garde anti-streaming sentinelle (Mobile & Desktop)
+    if (isStreamingActive()) {
+      scheduleStreamingRetry();
       return;
     }
 
@@ -233,7 +326,7 @@
         processPreBlock(pre);
       }
     });
-  }, 100);
+  }, 250);
 
   // ═══════════════════════════════════════════════════════════════════════
   // Initialisation et Nettoyage
@@ -252,6 +345,10 @@
    * Nettoie les conteneurs décorés et restaure les balises pre natives.
    */
   function cleanupSyntax() {
+    if (retryStreamingTimer) {
+      clearTimeout(retryStreamingTimer);
+      retryStreamingTimer = null;
+    }
     const codeBlocks = document.querySelectorAll('.mm-code-block');
     codeBlocks.forEach(block => {
       const codeEl = block.querySelector('code');

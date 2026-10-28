@@ -4,6 +4,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte une numérotation sémantique `X.Y.Z` (où `X` consacre la maturité stable de production, `Y` la branche d'innovation des 28 sprints majeurs, et `Z` les consolidations et audits qualité).
 
+## [1.28.10] — 2026-10-28
+
+### 📱 Fiabilisation du Streaming des Boîtes de Code sur Mobile
+- **Sentinelle Anti-Streaming Multi-Niveaux (`syntax.js`)** : Détection étendue du bouton d'interruption dans les conteneurs de prompt (`query-input`, `.query-box`, `.chat-input`, `form`) et dans tout le document avec support multilingue complet (`interromp`, `arrê`, `stop`, `cancel`, `halt`, `deten`, `abbrech`) et recherche d'icônes `stop`, éradiquant le faux négatif en mode mobile à onglets.
+- **Garde Locale de Stabilisation du Tour (`syntax.js`)** : Interdiction stricte d'exécuter `replaceChild` sur un bloc `<pre>` de la discussion tant que le message de l'IA n'est pas complètement finalisé (vérification de la présence des boutons d'actions finales `Copier la réponse` / `Enregistrer dans une note` / `Pouces`), empêchant définitivement la rupture du flux de rendu d'Angular.
+- **Relance Programmée Post-Streaming (`syntax.js`)** : Ajout d'une relance automatique à 600ms pour habiller instantanément les blocs de code dès la fin de génération de la réponse, sans nécessiter de rafraîchissement manuel (`F5`).
+- **Calibrage du Debounce (`syntax.js`)** : Ajustement du délai d'attente à 250ms pour laisser les rafales de tokens s'agréger sans sursollicitation DOM.
+
 ## [1.28.9] — 2026-10-28
 
 ### ♿ Restauration des Couleurs Batch Mobiles & Filtrage Robuste Studio
