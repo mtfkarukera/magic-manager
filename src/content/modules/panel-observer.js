@@ -19,6 +19,7 @@
   let panelObserver = null;
   let globalPageObserver = null;
   let resizeObserver = null;
+  let themeObserver = null;
   let currentObservedPanel = null;
   let globalObservedTarget = null;
 
@@ -306,34 +307,74 @@
   }
 
   /**
-   * Détecte le thème réel (sombre / clair) de NotebookLM via la couleur calculée
-   * du fond effectif de l'application et positionne l'attribut data-mm-theme sur <html>.
-   * Élimine toute dépendance erratique envers l'OS ou des tokens internes Google.
+   * Détecte le thème réel (sombre/clair) de Google NotebookLM de façon infaillible
+   * et positionne l'attribut data-mm-theme sur <html>.
+   * Architecture en 3 niveaux :
+   * 1. Marqueurs de classes/attributs natifs Google (body.dark-theme / body.light-theme)
+   * 2. Calcul de luminance sRGB filtrant les fonds transparents (alpha === 0)
+   * 3. Fallback sur la préférence système OS
    */
   function detectAndApplyTheme() {
     try {
-      const probeEl = document.querySelector('section.source-panel') ||
-                      document.querySelector('studio-panel') ||
-                      document.querySelector('.conversation-panel, section.chat-panel') ||
-                      document.body;
-      if (!probeEl) return;
+      const html = document.documentElement;
+      const body = document.body;
 
-      const bg = window.getComputedStyle(probeEl).backgroundColor;
-      // Analyse du format rgb(...) ou rgba(...)
-      const match = bg && bg.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
-      if (match) {
-        const r = parseInt(match[1], 10);
-        const g = parseInt(match[2], 10);
-        const b = parseInt(match[3], 10);
-        // Formule standard de luminance perçue sRGB (Rec. 601)
-        const luminance = 0.299 * r + 0.587 * g + 0.114 * b;
-        const newTheme = luminance < 128 ? 'dark' : 'light';
-        const currentTheme = document.documentElement.getAttribute('data-mm-theme');
+      // 1. Vérification prioritaire des marqueurs explicites Google / Angular Material
+      const classAndAttr = [
+        html ? html.className : '',
+        body ? body.className : '',
+        html ? (html.getAttribute('data-theme') || '') : '',
+        body ? (body.getAttribute('data-theme') || '') : ''
+      ].join(' ').toLowerCase();
 
-        if (currentTheme !== newTheme) {
-          document.documentElement.setAttribute('data-mm-theme', newTheme);
-          console.log(`[MM] Thème NotebookLM détecté : ${newTheme} (luminance: ${Math.round(luminance)}, fond: ${bg})`);
+      let detectedTheme = null;
+      if (classAndAttr.includes('dark-theme') || classAndAttr.includes('theme-dark')) {
+        detectedTheme = 'dark';
+      } else if (classAndAttr.includes('light-theme') || classAndAttr.includes('theme-light')) {
+        detectedTheme = 'light';
+      }
+
+      // 2. Si aucun marqueur de classe explicite, calcul de luminance sRGB sur les conteneurs réels
+      if (!detectedTheme) {
+        const candidates = [
+          body,
+          document.querySelector('mat-sidenav-container, .mat-drawer-container, main, [role="main"]'),
+          document.querySelector('app-root, [class*="app-root"]'),
+          document.querySelector('section.source-panel, .source-panel'),
+          document.querySelector('section.studio-panel, .studio-panel'),
+          html
+        ].filter(Boolean);
+
+        for (let i = 0; i < candidates.length; i++) {
+          const el = candidates[i];
+          const bg = window.getComputedStyle(el).backgroundColor;
+          const match = bg && bg.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
+          if (match) {
+            const alpha = match[4] !== undefined ? parseFloat(match[4]) : 1;
+            // Ignorer strictement les conteneurs sans fond ou transparents (rgba(0, 0, 0, 0))
+            if (alpha === 0) continue;
+
+            const r = parseInt(match[1], 10);
+            const g = parseInt(match[2], 10);
+            const b = parseInt(match[3], 10);
+            // Formule standard de luminance perçue sRGB (ITU-R BT.709)
+            const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+            detectedTheme = luminance < 0.45 ? 'dark' : 'light';
+            break;
+          }
         }
+      }
+
+      // 3. Fallback ultime sur la préférence système
+      if (!detectedTheme) {
+        const isSystemDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+        detectedTheme = isSystemDark ? 'dark' : 'light';
+      }
+
+      const currentTheme = html ? html.getAttribute('data-mm-theme') : null;
+      if (currentTheme !== detectedTheme && html) {
+        html.setAttribute('data-mm-theme', detectedTheme);
+        console.log(`[MM] Thème NotebookLM détecté : ${detectedTheme}`);
       }
     } catch (e) {
       console.warn('[MM] Erreur lors de la détection du thème :', e);
@@ -613,6 +654,17 @@
     // Détection immédiate du thème réel de l'application
     detectAndApplyTheme();
 
+    // Observer réactif des changements de classes de thème sur body / html (basculement dynamique)
+    if (document.body) {
+      themeObserver = new MutationObserver(function () {
+        detectAndApplyTheme();
+      });
+      themeObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['class', 'style', 'data-theme']
+      });
+    }
+
     // ResizeObserver pour détecter les basculements de layout responsive
     if (typeof ResizeObserver !== 'undefined') {
       resizeObserver = new ResizeObserver(onLayoutResize);
@@ -646,6 +698,10 @@
     if (resizeObserver) {
       resizeObserver.disconnect();
       resizeObserver = null;
+    }
+    if (themeObserver) {
+      themeObserver.disconnect();
+      themeObserver = null;
     }
     if (lateDispatchTimer) {
       clearTimeout(lateDispatchTimer);

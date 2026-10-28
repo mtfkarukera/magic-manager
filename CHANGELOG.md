@@ -4,6 +4,14 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte une numérotation sémantique `X.Y.Z` (où `X` consacre la maturité stable de production, `Y` la branche d'innovation des 28 sprints majeurs, et `Z` les consolidations et audits qualité).
 
+## [1.28.8] — 2026-10-28
+
+### 🎨 Adaptation Dynamique du Thème (Clair / Sombre) & Fidélité Visuelle
+- **Algorithme de Détection en 3 Niveaux (`panel-observer.js`)** : Détection prioritaire des marqueurs natifs de classe Google (`body.dark-theme` / `body.light-theme`), éliminant l'interprétation erronée du thème.
+- **Filtrage Strict des Fonds Transparents (`panel-observer.js`)** : Prise en compte du canal alpha (`alpha === 0`) dans l'analyse de couleur calculée, empêchant les conteneurs intermédiaires sans fond (`rgba(0, 0, 0, 0)`) d'être confondus avec du noir pur et de forcer artificiellement le mode sombre.
+- **Basculement Réactif à Chaud (`panel-observer.js`)** : Surveillance des mutations d'attributs `class` et `style` sur `document.body` via un observateur dédié, assurant un changement immédiat de couleur des pilules et de l'en-tête collant dès que l'utilisateur modifie le thème dans les réglages de NotebookLM.
+- **Harmonisation Mode Clair de l'En-tête Mobile (`magic-manager.css`)** : Déclaration explicite des règles `html[data-mm-theme="light"] .mm-sticky-header` (fond blanc givré `rgba(255, 255, 255, 0.85)` avec bordure claire) et des boutons batch (`background: rgba(0, 0, 0, 0.06)`, couleur `#1f1f1f`).
+
 ## [1.28.7] — 2026-10-28
 
 ### 📱 Résolution des Anomalies Mobile & En-tête Collant (Sticky Header)
