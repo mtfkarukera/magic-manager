@@ -75,7 +75,3 @@ Ce projet est distribué sous la licence [MPL-2.0](./LICENSE).
 ## 🤝 Contribution
 
 Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une *issue* ou à soumettre une *pull request*.
-
----
-
-*Développé par **MTF Karukera**. Découvre toutes les solutions logicielles et outils de productivité de la suite **magic-softs** sur [magic-clipper.mtfk.fr](https://magic-clipper.mtfk.fr/).*
