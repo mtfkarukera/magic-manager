@@ -4,6 +4,15 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte une numérotation sémantique `X.Y.Z` (où `X` consacre la maturité stable de production, `Y` la branche d'innovation des 28 sprints majeurs, et `Z` les consolidations et audits qualité).
 
+## [1.28.7] — 2026-10-28
+
+### 📱 Résolution des Anomalies Mobile & En-tête Collant (Sticky Header)
+- **Réactivation Synchrone de la Recherche Sources (`panel-observer.js` & `search.js`)** : Réinjection et réaffichage immédiats de la barre de recherche sources (`.mm-search-bar`) dès la fermeture du lecteur de document (`source-viewer`), ainsi que lors de toute interaction panneau debouncée. Élimine le délai de plusieurs minutes et la nécessité de ressortir du carnet.
+- **Suppression du Garde-Fou Desktop Bloquant sur Mobile (`search.js`)** : Restriction du contrôle de repli de panneau (`width < 120px`) au seul agencement bureau (`!isMobileLayout`), évitant le masquage intempestif de la barre de recherche lors de l'initialisation de l'onglet sources sur smartphone.
+- **Éradication du Blocage Prématuré `!container` (`search.js`)** : Suppression de l'abandon prématuré sur l'absence temporaire du conteneur scrollable des cartes de sources, permettant le montage direct de la barre de recherche dans l'en-tête collant mobile sans attendre l'hydratation Angular complète.
+- **Éradication de la Bande Noire Parasite en Lecture (`magic-manager.css` & `panel-observer.js`)** : Masquage systématique de l'en-tête collant mobile (`display: none !important`) en CSS via `:has(source-viewer)` et en JavaScript dans `onPanelMutation` dès qu'un document est en cours de lecture, libérant 100 % de l'espace vertical.
+- **Suppression de l'Espace Vide Résiduel au-dessus des Boutons Batch (`magic-manager.css`)** : Neutralisation complète du conteneur `.mm-sticky-header-search:empty` et `:has(.mm-search-bar[style*="display: none"])` (`display: none !important`), annulant le flex gap de 8px au-dessus des 4 boutons d'actions groupées lorsque la recherche est masquée ou en cours de chargement.
+
 ## [1.28.6] — 2026-10-26
 
 ### 📱 Robustesse Responsive & Recherche Mobile (Sources & Studio)

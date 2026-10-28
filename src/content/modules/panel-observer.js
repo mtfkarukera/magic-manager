@@ -54,6 +54,9 @@
    * Debouncé pour regrouper les rafales de clics et d'événements change.
    */
   const debouncedPanelInteraction = window.MM.debounce(function () {
+    if (window.MM.isFeatureEnabled('search') && typeof window.MM.checkAndInjectSearch === 'function') {
+      window.MM.checkAndInjectSearch();
+    }
     if (window.MM.isFeatureEnabled('batchDelete') && typeof window.MM.updateBatchDeleteButtonState === 'function') {
       window.MM.updateBatchDeleteButtonState();
     }
@@ -83,8 +86,14 @@
    */
   function onPanelMutation(mutations) {
     const sourceViewer = document.querySelector('source-viewer');
+    const stickyHeader = document.querySelector('.mm-sticky-header');
 
     if (sourceViewer) {
+      // Masquer l'en-tête collant mobile pendant la lecture d'une source pour éliminer la bande noire parasite
+      if (stickyHeader) {
+        stickyHeader.style.display = 'none';
+      }
+
       // source-viewer présent → s'assurer que les boutons sont injectés (si les features sont actives)
       if (window.MM.isFeatureEnabled('delete') && typeof window.MM.checkAndInjectIndividualDelete === 'function') {
         window.MM.checkAndInjectIndividualDelete();
@@ -96,6 +105,16 @@
         window.MM.checkAndInjectIndividualTransfer();
       }
     } else {
+      // source-viewer absent → réafficher l'en-tête collant mobile s'il existe
+      if (stickyHeader) {
+        stickyHeader.style.display = '';
+      }
+
+      // Réactiver ou réinjecter immédiatement la recherche si la fonctionnalité est active
+      if (window.MM.isFeatureEnabled('search') && typeof window.MM.checkAndInjectSearch === 'function') {
+        window.MM.checkAndInjectSearch();
+      }
+
       // source-viewer absent → nettoyer les boutons orphelins
       cleanupPanelButtons();
 

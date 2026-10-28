@@ -642,9 +642,11 @@
       lastNotebookId = activeNotebookId;
     }
 
-    // Détecter si le panneau des sources est présent et visible, ou s'il est minimisé/replié.
+    const isMobileLayout = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
+
+    // Détecter si le panneau des sources est présent et visible, ou s'il est minimisé/replié (desktop uniquement).
     const sourcePanel = document.querySelector('section.source-panel, .source-panel, [class*="source-panel"]');
-    if (sourcePanel) {
+    if (!isMobileLayout && sourcePanel) {
       const rect = sourcePanel.getBoundingClientRect();
       // Si la largeur physique est trop petite (< 120px), le panneau est replié.
       // On masque la barre de recherche pour éviter qu'elle ne déborde.
@@ -697,7 +699,6 @@
       applyFilter(currentQuery);
     }
 
-    const isMobileLayout = typeof window.MM.detectDesktopLayout === 'function' && !window.MM.detectDesktopLayout();
     const isAttached = searchBarContainer && document.body.contains(searchBarContainer);
 
     // Si la barre est déjà dans le DOM actif
@@ -717,10 +718,6 @@
       refreshSearchView();
       return;
     }
-
-    // Chercher le conteneur de la liste scrollable
-    const container = findSourcesListContainer();
-    if (!container) return;
 
     // Construire la barre de recherche uniquement si elle n'existe pas encore en mémoire
     if (!searchBarContainer) {

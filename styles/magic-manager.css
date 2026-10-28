@@ -1124,6 +1124,13 @@ html[data-mm-theme="dark"] .mm-dialog {
   box-sizing: border-box; /* Évite tout débordement horizontal */
 }
 
+/* Masquage immédiat du sticky header mobile lors de la consultation d'un document (anti-bandeau parasite) */
+section.source-panel:has(source-viewer) .mm-sticky-header,
+.source-panel:has(source-viewer) .mm-sticky-header,
+[class*="source-panel"]:has(source-viewer) .mm-sticky-header {
+  display: none !important;
+}
+
 html[data-mm-theme="dark"] .mm-sticky-header {
   background-color: rgba(35, 38, 43, 0.85);
   backdrop-filter: blur(12px);
@@ -1147,6 +1154,13 @@ html[data-mm-theme="dark"] .mm-sticky-header {
   width: 100%;
 }
 
+/* Neutralisation du wrapper et suppression des gaps résiduels si la recherche est masquée ou vide */
+.mm-sticky-header-search:empty,
+.mm-sticky-header-search:has(.mm-search-bar[style*="display: none"]),
+.mm-sticky-header-search[style*="display: none"] {
+  display: none !important;
+}
+
 .mm-sticky-header-search .mm-search-bar {
   width: 100%;
   margin: 0 !important;
@@ -1159,6 +1173,20 @@ html[data-mm-theme="dark"] .mm-sticky-header {
   gap: 12px;
   width: 100%;
   justify-content: center;
+}
+
+.mm-sticky-header-actions:empty,
+.mm-sticky-header-actions[style*="display: none"] {
+  display: none !important;
+}
+
+/* Éradication de l'en-tête collant fantôme si recherche et actions sont tous deux masqués ou vides */
+.mm-sticky-header:has(.mm-sticky-header-search:empty):has(.mm-sticky-header-actions:empty),
+.mm-sticky-header:has(.mm-sticky-header-search[style*="display: none"]):has(.mm-sticky-header-actions:empty),
+.mm-sticky-header:has(.mm-sticky-header-search:has(.mm-search-bar[style*="display: none"])):has(.mm-sticky-header-actions:empty),
+.mm-sticky-header:has(.mm-sticky-header-search:empty):has(.mm-sticky-header-actions[style*="display: none"]),
+.mm-sticky-header:has(.mm-sticky-header-search:has(.mm-search-bar[style*="display: none"])):has(.mm-sticky-header-actions[style*="display: none"]) {
+  display: none !important;
 }
 
 /* Boutons batch agrandis en mode mobile pour le confort tactile */
