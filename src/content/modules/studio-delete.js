@@ -22,10 +22,18 @@
 
   /**
    * Trouve le conteneur principal du Studio de NotebookLM.
+   * Cible en priorité le parent de l'en-tête MM ou les sélecteurs stricts
+   * pour éviter d'intercepter les boutons d'onglets mobiles.
    */
   function findStudioPanel() {
+    const headerContainer = document.querySelector('.mm-studio-header-container');
+    if (headerContainer && headerContainer.parentElement) {
+      const panel = headerContainer.closest('studio-panel, section.studio-panel, .studio-panel, [class*="studio-panel"]') || headerContainer.parentElement;
+      if (panel) return panel;
+    }
+
     return document.querySelector(
-      'section.studio-panel, .studio-panel, [class*="studio-panel"], [class*="studio"]'
+      'studio-panel, section.studio-panel, .studio-panel, [class*="studio-panel"]'
     );
   }
 

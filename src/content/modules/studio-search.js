@@ -43,10 +43,18 @@
 
   /**
    * Trouve le conteneur principal du Studio de NotebookLM.
+   * Cible en priorité le parent de l'en-tête MM ou les sélecteurs stricts
+   * pour éviter d'intercepter les boutons d'onglets mobiles.
    */
   function findStudioPanel() {
+    const headerContainer = document.querySelector('.mm-studio-header-container');
+    if (headerContainer && headerContainer.parentElement) {
+      const panel = headerContainer.closest('studio-panel, section.studio-panel, .studio-panel, [class*="studio-panel"]') || headerContainer.parentElement;
+      if (panel) return panel;
+    }
+
     return document.querySelector(
-      'section.studio-panel, .studio-panel, [class*="studio-panel"], [class*="studio"]'
+      'studio-panel, section.studio-panel, .studio-panel, [class*="studio-panel"]'
     );
   }
 
@@ -337,11 +345,16 @@
       const matchesText = !currentQuery || title.includes(currentQuery);
       const matchesType = activeTypeFilters.size === 0 || activeTypeFilters.has(filterType);
 
+      // Cibler le conteneur hôte Angular complet (artifact-library-note ou artifact-library-item) pour masquer la ligne entière
+      const host = card.closest('artifact-library-note, artifact-library-item, [class*="library-item"], [class*="library-note"]') || card;
+
       if (matchesText && matchesType) {
         card.style.display = '';
+        if (host !== card) host.style.display = '';
         visibleCount++;
       } else {
         card.style.display = 'none';
+        if (host !== card) host.style.display = 'none';
       }
     });
 

@@ -4,6 +4,13 @@ Toutes les modifications notables de ce projet sont documentées dans ce fichier
 
 Le format est basé sur [Keep a Changelog](https://keepachangelog.com/fr/1.0.0/) et ce projet respecte une numérotation sémantique `X.Y.Z` (où `X` consacre la maturité stable de production, `Y` la branche d'innovation des 28 sprints majeurs, et `Z` les consolidations et audits qualité).
 
+## [1.28.9] — 2026-10-28
+
+### ♿ Restauration des Couleurs Batch Mobiles & Filtrage Robuste Studio
+- **Restauration des Couleurs Sémantiques Mobile (`magic-manager.css`)** : Rétablissement de la palette sémantique sur les boutons batch de l'en-tête mobile (rouge pour la suppression, bleu royal pour le transfert, vert émeraude pour la fusion, anthracite en clair et blanc en sombre pour l'export), garantissant une accessibilité WCAG AA et une distinction visuelle immédiate.
+- **Fiabilisation du Détecteur de Panneau Studio (`studio-search.js` & `studio-delete.js`)** : Élimination du sélecteur trop permissif `[class*="studio"]` qui interceptait l'onglet mobile "Studio" ; ciblage direct du parent de `.mm-studio-header-container` ou des conteneurs stricts (`studio-panel`, `section.studio-panel`).
+- **Masquage Intégral des Composants Hôtes Studio (`studio-search.js`)** : Application du filtre sur le composant parent hôte (`artifact-library-note`, `artifact-library-item`), garantissant la disparition complète de la ligne (titre, icône, métadonnées, bouton d'options `⋮`) lorsqu'elle ne correspond pas aux filtres actifs.
+
 ## [1.28.8] — 2026-10-28
 
 ### 🎨 Adaptation Dynamique du Thème (Clair / Sombre) & Fidélité Visuelle

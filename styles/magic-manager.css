@@ -1218,7 +1218,6 @@ html[data-mm-theme="light"] .mm-sticky-header {
 
 html[data-mm-theme="light"] .mm-sticky-header-actions .mm-btn-icon {
   background: rgba(0, 0, 0, 0.06) !important;
-  color: #1f1f1f !important;
 }
 
 html[data-mm-theme="light"] .mm-sticky-header-actions .mm-btn-icon:hover {
@@ -1227,11 +1226,83 @@ html[data-mm-theme="light"] .mm-sticky-header-actions .mm-btn-icon:hover {
 
 html[data-mm-theme="dark"] .mm-sticky-header-actions .mm-btn-icon {
   background: rgba(255, 255, 255, 0.08) !important;
-  color: #e3e3e3 !important;
 }
 
 html[data-mm-theme="dark"] .mm-sticky-header-actions .mm-btn-icon:hover {
   background: rgba(255, 255, 255, 0.16) !important;
+}
+
+/* Couleurs sémantiques individuelles des boutons batch dans l'en-tête collant mobile (Accessibilité WCAG) */
+/* Suppression (Rouge) */
+.mm-sticky-header-actions .mm-batch-delete-btn.mm-btn-icon,
+html[data-mm-theme="light"] .mm-sticky-header-actions .mm-batch-delete-btn.mm-btn-icon {
+  color: #dc2626 !important;
+}
+.mm-sticky-header-actions .mm-batch-delete-btn.mm-btn-icon:hover,
+html[data-mm-theme="light"] .mm-sticky-header-actions .mm-batch-delete-btn.mm-btn-icon:hover {
+  background: rgba(220, 38, 38, 0.12) !important;
+  color: #b91c1c !important;
+}
+html[data-mm-theme="dark"] .mm-sticky-header-actions .mm-batch-delete-btn.mm-btn-icon {
+  color: #fca5a5 !important;
+}
+html[data-mm-theme="dark"] .mm-sticky-header-actions .mm-batch-delete-btn.mm-btn-icon:hover {
+  background: rgba(252, 165, 165, 0.15) !important;
+  color: #f87171 !important;
+}
+
+/* Transfert (Bleu Royal) */
+.mm-sticky-header-actions .mm-batch-transfer-btn.mm-btn-icon,
+html[data-mm-theme="light"] .mm-sticky-header-actions .mm-batch-transfer-btn.mm-btn-icon {
+  color: #2563eb !important;
+}
+.mm-sticky-header-actions .mm-batch-transfer-btn.mm-btn-icon:hover,
+html[data-mm-theme="light"] .mm-sticky-header-actions .mm-batch-transfer-btn.mm-btn-icon:hover {
+  background: rgba(37, 99, 235, 0.12) !important;
+  color: #1d4ed8 !important;
+}
+html[data-mm-theme="dark"] .mm-sticky-header-actions .mm-batch-transfer-btn.mm-btn-icon {
+  color: #60a5fa !important;
+}
+html[data-mm-theme="dark"] .mm-sticky-header-actions .mm-batch-transfer-btn.mm-btn-icon:hover {
+  background: rgba(96, 165, 250, 0.15) !important;
+  color: #93c5fd !important;
+}
+
+/* Fusion (Vert Émeraude) */
+.mm-sticky-header-actions .mm-batch-merge-btn.mm-btn-icon,
+html[data-mm-theme="light"] .mm-sticky-header-actions .mm-batch-merge-btn.mm-btn-icon {
+  color: #16a34a !important;
+}
+.mm-sticky-header-actions .mm-batch-merge-btn.mm-btn-icon:hover,
+html[data-mm-theme="light"] .mm-sticky-header-actions .mm-batch-merge-btn.mm-btn-icon:hover {
+  background: rgba(22, 163, 74, 0.12) !important;
+  color: #15803d !important;
+}
+html[data-mm-theme="dark"] .mm-sticky-header-actions .mm-batch-merge-btn.mm-btn-icon {
+  color: #4ade80 !important;
+}
+html[data-mm-theme="dark"] .mm-sticky-header-actions .mm-batch-merge-btn.mm-btn-icon:hover {
+  background: rgba(74, 222, 128, 0.15) !important;
+  color: #86efac !important;
+}
+
+/* Export (Gris Anthracite / Blanc) */
+.mm-sticky-header-actions .mm-batch-export-btn.mm-btn-icon,
+html[data-mm-theme="light"] .mm-sticky-header-actions .mm-batch-export-btn.mm-btn-icon {
+  color: #334155 !important;
+}
+.mm-sticky-header-actions .mm-batch-export-btn.mm-btn-icon:hover,
+html[data-mm-theme="light"] .mm-sticky-header-actions .mm-batch-export-btn.mm-btn-icon:hover {
+  background: rgba(51, 65, 85, 0.12) !important;
+  color: #0f172a !important;
+}
+html[data-mm-theme="dark"] .mm-sticky-header-actions .mm-batch-export-btn.mm-btn-icon {
+  color: #ffffff !important;
+}
+html[data-mm-theme="dark"] .mm-sticky-header-actions .mm-batch-export-btn.mm-btn-icon:hover {
+  background: rgba(255, 255, 255, 0.15) !important;
+  color: #ffffff !important;
 }
 
 .mm-sticky-header-actions .mm-btn-icon svg {
